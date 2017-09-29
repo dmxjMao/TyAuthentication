@@ -120,7 +120,7 @@ BOOL CSelfServiceBankClientDlg::OnInitDialog()
 	rc.DeflateRect(cx / 5, cy / 15);//左右各缩小1/4，高宽相等
 	SetWindowPos(nullptr, rc.left, rc.top, rc.Width(), rc.Height(), SWP_NOZORDER);//屏幕坐标
 
-	//标题栏、客户、列表、记录区
+	//标题栏、客户、列表、申请认证记录区
 	ScreenToClient(&rc);
 	m_rcCaption.SetRect(rc.left, rc.top, rc.Width(), cstnTitleHeight);
 	m_rcClient.SetRect(rc.left, rc.top + cstnTitleHeight, rc.Width(), rc.Height());
@@ -164,7 +164,8 @@ BOOL CSelfServiceBankClientDlg::OnInitDialog()
 	}
 
 #ifdef  _DEBUG
-	//插入一些申请人员
+	//插入一些申请人员，Create之后是OnInitDialog，所以OnInitDialog里还没有数据，
+	//应该在OnPaint处理
 	_DebugInsertSomeApplyPersonInfo();
 #endif //  _DEBUG
 

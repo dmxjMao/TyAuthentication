@@ -94,12 +94,14 @@ BOOL CApplyRecordDlg::OnInitDialog()
 	//申请认证人员信息
 	GetDlgItem(IDC_Title2)->GetWindowRect(&rc);
 	y += rc.Height() + 2;
-	//LVS_EX_FLATSB  在InsertItem之后才有滚动条
-	m_oPersonInfo.CreateEx(LVS_EX_FLATSB, LVS_REPORT | LVS_OWNERDRAWFIXED | WS_CHILD | WS_VISIBLE, CRect(x, y, m_rcClient.right, y + m_rcClient.Height() / 2), this, 1);
+	//LVS_EX_FLATSB  在InsertItem之后才有滚动条；LVS_NOCOLUMNHEADER占客户区
+	m_oPersonInfo.CreateEx(LVS_EX_FLATSB | LVS_EX_DOUBLEBUFFER, LVS_REPORT | LVS_NOCOLUMNHEADER | LVS_OWNERDRAWFIXED | WS_CHILD | WS_VISIBLE,
+		CRect(x, y, m_rcClient.right, y + m_rcClient.Height() / 2), this, 1);
 #ifdef _DEBUG
-	_DebugInsertPersonInfoListColumn(); //插入申请认证人员信息
+	//_DebugInsertPersonInfoListColumn(); //插入申请认证人员信息
+	//初始显示内容，放到OnPaint
+	//m_oPersonInfo.InitUpdate();
 #endif // _DEBUG
-	
 
 
 	return TRUE;  // return TRUE unless you set the focus to a control
@@ -118,7 +120,10 @@ void CApplyRecordDlg::SetVideInfo(const vector<CString>& vec)
 
 void CApplyRecordDlg::SetPersonInfo(const vector<stApplyPersonInfo>& vec)
 {
+	//新的申请人员
 	m_oPersonInfo.GetInfoVec() = std::move(vec);
+	//初始化界面
+	m_oPersonInfo.InitUpdate();
 }
 
 void CApplyRecordDlg::OnPaint()
@@ -138,22 +143,22 @@ void CApplyRecordDlg::OnPaint()
 
 
 #ifdef _DEBUG
-void CApplyRecordDlg::_DebugInsertPersonInfoListColumn()
-{
-	const CString str[] = { _T("列1"),_T("列2"),_T("列3"),_T("列4"),_T("列5"),_T("列6"),_T("列7"),_T("列8"),_T("列9"),_T("列10") };
-	int n = _countof(str);
-	CRect rc;
-	m_oPersonInfo.GetClientRect(&rc);
-	int w = rc.Width() / 2;
-	for (auto i = 0; i < n; ++i) {
-		m_oPersonInfo.InsertColumn(i, str[i], LVCFMT_LEFT, w);
-	}
+//void CApplyRecordDlg::_DebugInsertPersonInfoListColumn()
+//{
+//	const CString str[] = { _T("列1"),_T("列2"),_T("列3"),_T("列4"),_T("列5"),_T("列6"),_T("列7"),_T("列8"),_T("列9"),_T("列10") };
+//	int n = _countof(str);
+//	CRect rc;
+//	m_oPersonInfo.GetClientRect(&rc);
+//	int w = rc.Width() / 2;
+//	for (auto i = 0; i < n; ++i) {
+//		m_oPersonInfo.InsertColumn(i, str[i], LVCFMT_LEFT, w);
+//	}
 
-	const CString str2[] = { _T("孙悟空"), _T("花果山"),_T("灵长类"),_T("五百年前"),_T("列5"),_T("列6"),_T("列7"),_T("列8"),_T("列9"),_T("列10") };
-	m_oPersonInfo.InsertItem(0, str2[0]);
-	for (auto i = 1; i < n; ++i) {	
-		m_oPersonInfo.SetItemText(0, i, str2[i]);
-	}
+	//const CString str2[] = { _T("孙悟空"), _T("花果山"),_T("灵长类"),_T("五百年前"),_T("列5"),_T("列6"),_T("列7"),_T("列8"),_T("列9"),_T("列10") };
+	//m_oPersonInfo.InsertItem(0, str2[0]);
+	//for (auto i = 1; i < n; ++i) {	
+	//	m_oPersonInfo.SetItemText(0, i, str2[i]);
+	//}
 
-}
+//}
 #endif // _DEBUG

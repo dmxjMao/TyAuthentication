@@ -54,6 +54,9 @@
     <ClInclude Include="MyListCtrl1.h">
       <Filter>MyOwnDraw</Filter>
     </ClInclude>
+    <ClInclude Include="MyScrollBar1.h">
+      <Filter>MyOwnDraw</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SelfServiceBankClient.cpp">
@@ -75,6 +78,9 @@
       <Filter>Dialog</Filter>
     </ClCompile>
     <ClCompile Include="MyListCtrl1.cpp">
+      <Filter>MyOwnDraw</Filter>
+    </ClCompile>
+    <ClCompile Include="MyScrollBar1.cpp">
       <Filter>MyOwnDraw</Filter>
     </ClCompile>
   </ItemGroup>

@@ -190,6 +190,7 @@
     <ClInclude Include="CommonDefine.h" />
     <ClInclude Include="MyListBox1.h" />
     <ClInclude Include="MyListCtrl1.h" />
+    <ClInclude Include="MyScrollBar1.h" />
     <ClInclude Include="MyStatic1.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="SelfServiceBankClient.h" />
@@ -201,6 +202,7 @@
     <ClCompile Include="ApplyRecordDlg.cpp" />
     <ClCompile Include="MyListBox1.cpp" />
     <ClCompile Include="MyListCtrl1.cpp" />
+    <ClCompile Include="MyScrollBar1.cpp" />
     <ClCompile Include="MyStatic1.cpp" />
     <ClCompile Include="SelfServiceBankClient.cpp" />
     <ClCompile Include="SelfServiceBankClientDlg.cpp" />

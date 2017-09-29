@@ -59,6 +59,6 @@ public:
 	
 private:
 #ifdef _DEBUG
-	void _DebugInsertPersonInfoListColumn(); //插入表头
+	//void _DebugInsertPersonInfoListColumn(); //插入表头
 #endif
 };
