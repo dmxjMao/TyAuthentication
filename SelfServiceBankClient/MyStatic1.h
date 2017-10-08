@@ -19,7 +19,7 @@ public:
 protected:
 	Image* m_oImg = nullptr;//常态图片
 	Image* m_oImgHover = nullptr;//悬停图片
-	bool m_bMouseTrack = true;//追踪鼠标悬停
+	bool m_bMouseTrack = false;//追踪鼠标悬停
 	bool m_bHover = false;//鼠标是否悬停
 	bool m_bFixOrImg = true; //固定大小还是按图片大小
 
@@ -31,6 +31,7 @@ public:
 	afx_msg void OnMouseHover(UINT nFlags, CPoint point);
 	afx_msg void OnMouseLeave();
 	//virtual void DrawItem(LPDRAWITEMSTRUCT /*lpDrawItemStruct*/);
+	virtual void DrawItem(LPDRAWITEMSTRUCT /*lpDrawItemStruct*/);
 };
 
 

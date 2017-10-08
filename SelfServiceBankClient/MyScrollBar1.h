@@ -1,5 +1,5 @@
 #pragma once
-
+//考虑用CScrollBar重绘
 
 // CMyScrollBar1
 
@@ -14,7 +14,12 @@ public:
 	inline void Set(CListCtrl* pParent, bool bHor = true) { 
 		pList = pParent; m_bHorizontal = bHor;
 	}
-	UINT GetSize();//获取尺寸（窄边）
+	inline UINT GetSize() { //获取尺寸（窄边）
+		//m_bHorizontal ? m_imgH : m_imgW;
+		return m_imgH;
+	}
+	//更新滑块位置
+	void UpdateThumbPosition();
 
 protected:
 	bool m_bHorizontal = true;//是否是水平滚动条
@@ -24,16 +29,16 @@ protected:
 	bool bMouseDownArrowUp = false, bMouseDownArrowDown = false;
 	bool bMouseDownArrowRight = false, bMouseDownArrowLeft = false;
 	bool bDragging = false;
-	bool bMouseDown = false;
+	bool bMouseDown = false; //在滑块上
 	
 	//左右上下箭头、滑块。。。也可以自己画，中间的填充可以是图片拉伸、纯色、渐变。。。
-	Image* m_imgLArrow, *m_imgRArrow, *m_imgHThumb;
+	Image* m_imgLArrow, *m_imgRArrow, *m_imgHThumb, *m_imgHSpan;
 	Image* m_imgUArrow, *m_imgDArrow, *m_imgVThumb;
+	UINT m_imgW = 0, m_imgH = 0;//宽高
 
 protected:
 	void LimitThumbPosition();
 	//void Draw();
-	void UpdateThumbPosition();
 
 	void ScrollDown();
 	void ScrollUp();

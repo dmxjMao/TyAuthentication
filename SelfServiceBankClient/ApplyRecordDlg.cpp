@@ -56,9 +56,6 @@ BOOL CApplyRecordDlg::OnInitDialog()
 	Create之后调用OnInitDialog，而对话框SetWindowPos传来的尺寸不能用
 	SetWindowPos，这是在子窗口内
 	*/
-	//SetWindowPos(nullptr, m_rcClient.left, m_rcClient.top, m_rcClient.Width(), m_rcClient.Height(), SWP_NOZORDER);
-	//GetClientRect(&m_rcClient); 
-	//const auto& rc = m_rcClient;
 	//左上宽高，rc是临时变量
 	CRect rc = m_rcInParent;
 	int x = rc.left, y = rc.top, w = rc.Width(), h = rc.Height();
@@ -68,13 +65,13 @@ BOOL CApplyRecordDlg::OnInitDialog()
 
 	//现在布局控件，坐标都要相对于客户区的
 	//网点名称
-	x = 0, y = 0, h /= 10; rc.bottom = h;
-	GetDlgItem(IDC_title)->SetWindowPos(0, x, y, w, h, SWP_NOZORDER);
+	x = 10, y = 10, h /= 10; rc.bottom = y + h;
+	GetDlgItem(IDC_title)->SetWindowPos(0, x, y, w - 30, h, SWP_NOZORDER);
 
-	//两路视频
-	y = rc.bottom; w = h = m_rcInParent.Height() - y - 15/*15是 - 分割线 - 间隔*/;
+	//两路视频框
+	y = rc.bottom; w = h = m_rcInParent.Height() - y - 30/*30是 - 分割线 - 间隔*/;
 	m_oVideo1.SetWindowPos(nullptr, x, y, w, h, SWP_NOZORDER);
-	x += w + 1;
+	x += w + 2;
 	m_oVideo2.SetWindowPos(nullptr, x, y, w, h, SWP_NOZORDER);
 
 	//认证人员标签，相对布局没用
@@ -82,49 +79,67 @@ BOOL CApplyRecordDlg::OnInitDialog()
 	GetDlgItem(IDC_Title2)->SetWindowPos(0, x, y, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
 
 	//画分割线，OnInitDialog对话框自己还没画好呢
-	//CClientDC dc(this);
-	//Graphics gh(dc.GetSafeHdc());
-	//Pen pen(Color(255,0,0), 2.0f);
-	//
-	//GetDlgItem(IDC_Title2)->GetWindowRect(&rc);
-	//y += rc.Height() + 1;
-	//gh.DrawLine(&pen, x, y, m_rcClient.right - 5, y);
-
 
 	//申请认证人员信息
 	GetDlgItem(IDC_Title2)->GetWindowRect(&rc);
-	y += rc.Height() + 2;
+	y += rc.Height() + 6;
 	//LVS_EX_FLATSB  在InsertItem之后才有滚动条；LVS_NOCOLUMNHEADER占客户区
 	m_oPersonInfo.CreateEx(LVS_EX_FLATSB | LVS_EX_DOUBLEBUFFER, LVS_REPORT | LVS_NOCOLUMNHEADER | LVS_OWNERDRAWFIXED | WS_CHILD | WS_VISIBLE,
-		CRect(x, y, m_rcClient.right, y + m_rcClient.Height() / 2), this, 1);
-#ifdef _DEBUG
-	//_DebugInsertPersonInfoListColumn(); //插入申请认证人员信息
-	//初始显示内容，放到OnPaint
-	//m_oPersonInfo.InitUpdate();
-#endif // _DEBUG
+		CRect(x, y, m_rcClient.right - 10, y + m_rcClient.Height() * 5 / 12 ), this, 1);
+	//m_oPersonInfo.ShowScrollBar(SB_VERT, FALSE);
+	//InitializeFlatSB(m_oPersonInfo.m_hWnd);
+	//FlatSB_EnableScrollBar(m_oPersonInfo.m_hWnd, SB_BOTH, ESB_DISABLE_BOTH);
+	//FlatSB_ShowScrollBar(m_oPersonInfo.m_hWnd, SB_VERT, FALSE);
 
+	//门，图片从文档下载
+	m_oPersonInfo.GetClientRect(&rc);
+	y += rc.Height() + 20/*间距*/;
+	m_oPicDoor.SetWindowPos(0, x, y, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+	m_oPicDoor.Set(_T("res\\closeddoor_32px.png"));
+
+	//按钮，根据配置灰化处理
+	y -= 15;
+	w = rc.Width();//申请列表宽度
+	m_oPicDoor.GetClientRect(&rc);
+	int nGap = 30;//按钮之间的间距
+	//应急处置
+	x += rc.Width() + 5; 
+	w = (w - (rc.Width() + 5)/*门*/) / 3/*3个按钮*/ - nGap;
+	m_oEmergency.SetWindowPos(0, x, y, w, 20, SWP_NOZORDER);
+	//申请授权
+	x += w + nGap;
+	m_oGrant.SetWindowPos(0, x, y, w, 20, SWP_NOZORDER);
+	//开门
+	x += w + nGap;
+	m_oOpen.SetWindowPos(0, x, y, w, 20, SWP_NOZORDER);
+	m_oOpen.Set(false);
+	//进入图层
+	x -= 2 * (w + nGap);
+	m_oEmergency.GetClientRect(&rc);
+	y += rc.Height() + 10;
+	m_oEnterMapLayer.SetWindowPos(0, x, y, w, 20, SWP_NOZORDER);
+	//锁门
+	x += w + nGap;
+	m_oLock.SetWindowPos(0, x, y, w, 20, SWP_NOZORDER);
+	m_oLock.Set(false);
+	//拒绝开门
+	x += w + nGap;
+	m_oRefuseOpen.SetWindowPos(0, x, y, w, 20, SWP_NOZORDER);
+	m_oRefuseOpen.Set(false);
+	//确认
+	m_oPersonInfo.GetWindowRect(&rc);
+	ScreenToClient(&rc);
+	w = rc.Width() / 2;
+	x = rc.left + w / 2;
+	m_oEmergency.GetClientRect(&rc);
+	y += rc.Height() + 10;
+	m_oConfirm.SetWindowPos(0, x, y, w, 20, SWP_NOZORDER);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // EXCEPTION: OCX Property Pages should return FALSE
 }
 
 
-
-
-
-void CApplyRecordDlg::SetVideInfo(const vector<CString>& vec)
-{
-	m_vecVideoInfo = std::move(vec);
-}
-
-
-void CApplyRecordDlg::SetPersonInfo(const vector<stApplyPersonInfo>& vec)
-{
-	//新的申请人员
-	m_oPersonInfo.GetInfoVec() = std::move(vec);
-	//初始化界面
-	m_oPersonInfo.InitUpdate();
-}
 
 void CApplyRecordDlg::OnPaint()
 {
@@ -136,29 +151,56 @@ void CApplyRecordDlg::OnPaint()
 	CRect rc;
 	GetDlgItem(IDC_Title2)->GetWindowRect(&rc);
 	ScreenToClient(&rc);
-	int x = rc.left, y = rc.bottom + 3;
+	int x = rc.left, y = rc.bottom + 1;
+	gh.DrawLine(&pen, x, y, m_rcClient.right - 20, y);
+
+	//画记录之间的分割线 之间有30px的区域
+	GetDlgItem(IDC_Video1)->GetWindowRect(&rc);
+	ScreenToClient(&rc);
+	x = rc.left, y = rc.bottom + 20;
 	gh.DrawLine(&pen, x, y, m_rcClient.right - 5, y);
+
+	//如果支持管控，高亮边框
+	if (m_stApplyInfo->nImportance) {
+		Pen pen(Color(255, 123, 112), 3.0f);
+		pen.SetAlignment(PenAlignmentInset);
+		Rect rcGdi(m_rcClient.left, m_rcClient.top, m_rcClient.Width(), m_rcClient.Height());
+		//rcGdi.Inflate(5, 5);
+		gh.DrawRectangle(&pen, rcGdi);
+		
+		//SolidBrush sbrBG(Color(255, 223, 112));
+		//gh.FillRectangle(&sbrBG, 
+		//	Rect(m_rcClient.left, m_rcClient.top, m_rcClient.Width(), m_rcClient.Height()));
+	}
 }
 
 
+void CApplyRecordDlg::Update()
+{
+	if (m_stApplyInfo) {
+		//网点名称
+		GetDlgItem(IDC_title)->SetWindowText(m_stApplyInfo->strWebSiteName);
 
-#ifdef _DEBUG
-//void CApplyRecordDlg::_DebugInsertPersonInfoListColumn()
-//{
-//	const CString str[] = { _T("列1"),_T("列2"),_T("列3"),_T("列4"),_T("列5"),_T("列6"),_T("列7"),_T("列8"),_T("列9"),_T("列10") };
-//	int n = _countof(str);
-//	CRect rc;
-//	m_oPersonInfo.GetClientRect(&rc);
-//	int w = rc.Width() / 2;
-//	for (auto i = 0; i < n; ++i) {
-//		m_oPersonInfo.InsertColumn(i, str[i], LVCFMT_LEFT, w);
-//	}
+		//申请人员列表
+		m_oPersonInfo.MyInsertSubItem(m_stApplyInfo->vecPersonInfo);
+		//m_oPersonInfo.Update();  //导致多了垂直滚动条
+		//UpdateWindow();
+		Invalidate();
+		ShowWindow(SW_NORMAL);
+	}
+}
 
-	//const CString str2[] = { _T("孙悟空"), _T("花果山"),_T("灵长类"),_T("五百年前"),_T("列5"),_T("列6"),_T("列7"),_T("列8"),_T("列9"),_T("列10") };
-	//m_oPersonInfo.InsertItem(0, str2[0]);
-	//for (auto i = 1; i < n; ++i) {	
-	//	m_oPersonInfo.SetItemText(0, i, str2[i]);
-	//}
+//按钮灰化/可用处理
+void CApplyRecordDlg::EnableButton(emButton em)
+{
+	static vector<CStatic*> vec = {
+		&m_oEmergency, &m_oGrant, &m_oOpen,
+		&m_oEnterMapLayer, &m_oLock, &m_oRefuseOpen,
+		&m_oConfirm
+	};
 
-//}
-#endif // _DEBUG
+	static std::bitset<emButtonBuff> bs;
+
+}
+
+

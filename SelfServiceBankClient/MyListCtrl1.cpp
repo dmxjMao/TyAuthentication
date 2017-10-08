@@ -4,7 +4,9 @@
 #include "stdafx.h"
 #include "SelfServiceBankClient.h"
 #include "MyListCtrl1.h"
+#include <tuple>
 
+using std::tuple;
 
 // CMyListCtrl1
 
@@ -24,7 +26,10 @@ BEGIN_MESSAGE_MAP(CMyListCtrl1, CListCtrl)
 	//ON_NOTIFY_REFLECT(NM_CUSTOMDRAW, &CMyListCtrl1::OnNMCustomdraw)
 	//ON_WM_MEASUREITEM()
 	ON_WM_MEASUREITEM_REFLECT()
-	//ON_WM_PAINT()
+	ON_WM_PAINT()
+	//ON_NOTIFY_REFLECT(NM_CLICK, &CMyListCtrl1::OnNMClick)
+	//ON_WM_ERASEBKGND()
+	//ON_WM_CTLCOLOR_REFLECT() //不调用
 END_MESSAGE_MAP()
 
 
@@ -35,8 +40,9 @@ END_MESSAGE_MAP()
 
 //void CMyListCtrl1::PreSubclassWindow()
 //{	
-//	SetExtendedStyle(GetExtendedStyle() | LVS_EX_FLATSB);
-//	CListCtrl::PreSubclassWindow();
+//	//SetExtendedStyle(GetExtendedStyle() &~ WS_VSCROLL);
+//	//ModifyStyle(WS_VSCROLL, 0);
+//	//CListCtrl::PreSubclassWindow();
 //}
 
 
@@ -68,19 +74,23 @@ void CMyListCtrl1::MeasureItem(LPMEASUREITEMSTRUCT lpMeasureItemStruct)
 {
 	CRect rc;
 	GetClientRect(&rc); //除了表头，但是包含滚动条
-	UINT nSBHeight = m_oScrollBar.GetSize();//滚动条高度
-	lpMeasureItemStruct->itemHeight = rc.Height() - nSBHeight;
+	//UINT nSBHeight = m_oScrollBar.GetSize();//滚动条高度
+	lpMeasureItemStruct->itemHeight = rc.Height()/* - nSBHeight*/;
 	
 	//CListCtrl::MeasureItem(lpMeasureItemStruct);
 }
 
 
-//只有InsertItem了才会进来，而且必须重写
+//InsertItem了才会进来，而且必须重写
+//WM_DRAWITEM画子内容，只有宿主会收到 -> OnDrawItem -> DrawItem
+//OnCtlColor子内容设置dc属性，OnCtlColor -> OnDrawItem 不会调用
+//响应OnPaint（WM_ERASEBACK总在WM_PAINT之前），内部判断是否发送WM_DRAWITEM，
 void CMyListCtrl1::DrawItem(LPDRAWITEMSTRUCT lpDis/*lpDrawItemStruct*/)
 {
+	//TRACE("ABC\n");
 	//SetRedraw(FALSE);
 	//UINT idx = lpDis->itemID; 只有一行 idx = 0
-	auto nItemCnt = (int)m_vecStPersonInfo.size();//人员个数，为0，InitUpdate会返回，故不会执行下面
+	auto nItemCnt = (int)m_vecPersonInfo.size();//人员个数，为0，Update会返回，故不会执行下面
 	nItemCnt = min(nItemCnt, 10);
 
 	//列宽 cx
@@ -99,43 +109,74 @@ void CMyListCtrl1::DrawItem(LPDRAWITEMSTRUCT lpDis/*lpDrawItemStruct*/)
 	//lpDis->rcItem right=1590按列，bottom=21默认，包括滚动条高度
 	CRect rcClient;
 	GetClientRect(&rcClient);
-	//照片，文字宽度
+	//Rect rcGdi(lpDis->rcItem.left, lpDis->rcItem.top, lpDis->rcItem.right, lpDis->rcItem.bottom);
+	//SolidBrush sbr(Color(255, 255, 255));
+	//gh.FillRectangle(&sbr, rcGdi);
+
+	//照片，文字宽度，字体
 	int nPicWidth = w / 3, nOtherWidth = w - nPicWidth;
+	static FontFamily ff(_T("微软雅黑"));
+	static Gdiplus::Font font(&ff, 12, FontStyleRegular, UnitPixel);
+	static SolidBrush sbrText(Color(0, 0, 0));
+	static float nLineHeight = font.GetHeight(0.0); //一行的高度
 	
-	//y，高度
+	//临时变量：y坐标，高度。。。
 	int y = lpDis->rcItem.top, h = lpDis->rcItem.bottom - lpDis->rcItem.top;
+	CString str;
+	//std::vector<tuple<CString,PointF>> tmpVec;
+	//str.Format(_T("姓名：%s"), st.strName)
+
+	//TRACE("rcItem : %d, %d, %d, %d\n", lpDis->rcItem.left, lpDis->rcItem.top, lpDis->rcItem.right, lpDis->rcItem.bottom);
 
 	for (auto i = 0; i < nItemCnt; ++i){
-		const auto& st = m_vecStPersonInfo[i];
+		const auto& st = m_vecPersonInfo[i];
 
 		//画照片、姓名、单位、分类、认证时间。。。
 		//Image pic(st.strPic); //照片
 
-		int x =/* w * i*/ lpDis->rcItem.left;  //left是随滚动条变化的，不然图片重叠
+		int x = lpDis->rcItem.left;  //left是随滚动条变化的，不然图片重叠
 		if (i > 0)
 			x = lpDis->rcItem.left += w; //lpDis要改变，因为这是个输出参数
-		//lpDis->rcItem.left = w * i;
-		//lpDis->rcItem.right = lpDis->rcItem.left + w;
+		
 		Rect rcPic(x, y, nPicWidth, h);
-
+		//画照片
 		gh.DrawImage(&pic, rcPic);
-
-		if (!i) {
-			Status s = gh.GetLastStatus();
-			//TRACE("Status: %d, rcPic: %d,%d,%d,%d\n", s, rcPic.X, rcPic.Y, rcPic.Width, rcPic.Height);
-			TRACE("rcItem:%d,%d,%d,%d\n", lpDis->rcItem.left, lpDis->rcItem.top, lpDis->rcItem.right, lpDis->rcItem.bottom);
-		}
+		//姓名标签 & 姓名
+		PointF pf(x + nPicWidth * 1.0f, y * 1.0f);
+		str.Format(_T("姓名：%s"), st.strName);
+		gh.DrawString(str, -1, &font, pf, &sbrText);   pf.Y += nLineHeight;
+		//单位标签 & 单位
+		str.Format(_T("单位：%s"), st.strOffice);
+		gh.DrawString(str, -1, &font, pf, &sbrText);	pf.Y += nLineHeight;
+		//分类标签 & 分类
+		str.Format(_T("分类：%s"), st.strCategory);
+		gh.DrawString(str, -1, &font, pf, &sbrText);	pf.Y += nLineHeight;
+		//认证时间标签 & 认证时间
+		/*str.Format(_T("认证 时间：%s"), st.tmApply.Format(_T("%Y-%M-%d %H:%m:%s")));
+		gh.DrawString(str, -1, &font, pf, &sbrText);	*//*pf.Y += nLineHeight;*/
 	}
 	 
 	//
 	//SetRedraw();
 }
 
-
-
-bool CMyListCtrl1::InitUpdate()
+void CMyListCtrl1::MyInsertSubItem(std::vector<stApplyPersonInfo>& vec/*std::shared_ptr<stApplyPersonInfo> st*/)
 {
-	auto nInfoCnt = (int)m_vecStPersonInfo.size();
+	//m_vecPersonInfo.push_back(st);
+	//Update();
+
+	m_vecPersonInfo = vec;
+	Update();
+
+	//m_vecPersonInfo.clear();
+	//for (auto& st : vec) {
+	//	m_vecPersonInfo.push_back(std::shared_ptr<stApplyPersonInfo>(&st));
+	//}
+}
+
+bool CMyListCtrl1::Update()
+{
+	auto nInfoCnt = (int)m_vecPersonInfo.size();
 	if (0 == nInfoCnt) 
 		return false; //没有申请人员
 	nInfoCnt = min(10, nInfoCnt);//最多显示10条记录
@@ -143,7 +184,7 @@ bool CMyListCtrl1::InitUpdate()
 	//删除列
 	auto nColCnt = GetHeaderCtrl()->GetItemCount();
 	for (auto i = 0; i < nColCnt; ++i)
-		DeleteColumn(i);
+		DeleteColumn(0); //不能DeleteColumn(i);
 
 	//插入nInfoCnt列
 	CRect rc;
@@ -155,39 +196,90 @@ bool CMyListCtrl1::InitUpdate()
 
 	//插入一行
 	//const CString str2[] = { _T("item"), _T("item"), _T("item"), _T("item"), _T("item") };
+	//删除行，不然之前的还在，垂直滚动
+	DeleteAllItems();
 	InsertItem(0, _T("item"));
+	//SetItemState(0, )
 	for (auto i = 1; i < nInfoCnt; ++i) {
 		SetItemText(0, i, _T("item"));
 	}
 
-	//滚动条,CListCtrl的滚动条是画上去的，这种类型叫FlatSB
-	InitializeFlatSB(m_hWnd);
-	//FlatSB_EnableScrollBar(m_hWnd, SB_HORZ, ESB_DISABLE_BOTH);
-	FlatSB_ShowScrollBar(m_hWnd, SB_BOTH, FALSE);
+	
+	//滚动条
+	//CListCtrl的滚动条是画上去的，这种类型叫FlatSB
+	//InitializeFlatSB(m_hWnd);
+	//////FlatSB_EnableScrollBar(m_hWnd, SB_BOTH, ESB_DISABLE_BOTH);
+	//FlatSB_ShowScrollBar(m_hWnd, SB_VERT, FALSE);
 
 
-	m_oScrollBar.Create(0, WS_CHILD | SS_LEFT | SS_NOTIFY | WS_VISIBLE | WS_GROUP,
-		CRect(0, 0, 0, 0), /*this*/GetParent());//父窗口是对话框
-	//m_oScrollBar.pList = this; //可以用模板
-	m_oScrollBar.Set(this); 
-	//位置，因为是画在CListCtrl边上的，相对对话框客户区坐标
-	//获取CListCtrl坐标
-	CRect rcList;
-	GetWindowRect(&rcList);
-	//转成在对话框中的坐标，因为无边框，所以不用考虑WS_CAPTION、WS_BORDER、WS_THICKFRAME大小
-	GetParent()->ScreenToClient(&rcList); 
-	UINT nHeight = m_oScrollBar.GetSize();
-	//CRect rcSBar(rcList.left, rcList.bottom - nHeight, rcList.right, rcList.bottom);
+	//m_oScrollBar.Create(0, WS_CHILD | SS_LEFT | SS_NOTIFY | WS_VISIBLE | WS_GROUP,
+	//	CRect(0, 0, 0, 0), /*this*/GetParent());//父窗口是对话框
+	////m_oScrollBar.pList = this; //可以用模板
+	//m_oScrollBar.Set(this); 
+	////位置，因为是画在CListCtrl边上的，相对对话框客户区坐标
+	////获取CListCtrl坐标
+	//CRect rcList;
+	//GetWindowRect(&rcList);
+	////转成在对话框中的坐标，因为无边框，所以不用考虑WS_CAPTION、WS_BORDER、WS_THICKFRAME大小
+	//GetParent()->ScreenToClient(&rcList); 
+	//UINT nHeight = m_oScrollBar.GetSize();
+	////CRect rcSBar(rcList.left, rcList.bottom - nHeight, rcList.right, rcList.bottom);
 
-	m_oScrollBar.SetWindowPos(0, rcList.left, rcList.bottom - nHeight, rcList.Width(), nHeight, SWP_NOZORDER);
-	//m_oScrollBar.ShowWindow(SW_NORMAL);
+	//m_oScrollBar.SetWindowPos(0, rcList.left, rcList.bottom - nHeight, rcList.Width(), nHeight, SWP_NOZORDER);
+	////m_oScrollBar.ShowWindow(SW_NORMAL);
+	//m_oScrollBar.UpdateThumbPosition();
 
+	
 	return true;
 }
 
-//void CMyListCtrl1::OnPaint()
+
+//走了OnPaint就不走DrawItem 和 OnEraseBkgnd
+void CMyListCtrl1::OnPaint()
+{
+	CPaintDC dc(this); 
+	DRAWITEMSTRUCT dis;
+	dis.itemID = 0;
+	dis.hDC = dc.GetSafeHdc();
+
+	SCROLLINFO si;
+	GetScrollInfo(SB_HORZ, &si, SIF_POS | SIF_RANGE);
+	//InsertColumn限定了列长
+	CRect rc;
+	GetClientRect(&rc);
+	//TRACE("si:min=%d,max=%d,pos=%d\n", si.nMin, si.nMax, si.nPos);
+	dis.rcItem = { si.nMin - si.nPos, rc.top, si.nMax - si.nPos, rc.bottom };
+
+	//ModifyStyle(WS_VSCROLL, 0);
+	DrawItem(&dis);
+	//CListCtrl::OnPaint();
+}
+
+
+//void CMyListCtrl1::OnNMClick(NMHDR *pNMHDR, LRESULT *pResult)
 //{
-//	CPaintDC dc(this); 
+//	LPNMITEMACTIVATE pNMItemActivate = reinterpret_cast<LPNMITEMACTIVATE>(pNMHDR);
+//	// TODO: Add your control notification handler code here
+//	*pResult = 0;
+//}
+
+
+//OnPaint调用了
+//DefWindowProc使用窗口类的背景画刷，白色
+//BOOL CMyListCtrl1::OnEraseBkgnd(CDC* pDC)
+//{
+//	return CListCtrl::OnEraseBkgnd(pDC); //白色擦除背景，走DrawItem，但是点击又走一遍
+//	//return FALSE; //不擦除背景，无画面，不走DrawItem；
+//	//return TRUE;  //不擦除背景，画面重叠，不走DrawItem；
 //
-//	//CListCtrl::OnPaint();
+//}
+
+
+
+
+//BOOL CMyListCtrl1::PreCreateWindow(CREATESTRUCT& cs)
+//{
+//	cs.style &= ~WS_VSCROLL;
+//
+//	return CListCtrl::PreCreateWindow(cs);
 //}

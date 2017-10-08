@@ -61,7 +61,7 @@ CSelfServiceBankClientDlg::CSelfServiceBankClientDlg(CWnd* pParent /*=NULL*/)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 
-	m_vecApplyRecordDlg.resize(cstnApplyRecordCnt);
+	m_liApplyRecordDlg.resize(cstnApplyRecordCnt);
 }
 
 void CSelfServiceBankClientDlg::DoDataExchange(CDataExchange* pDX)
@@ -73,7 +73,7 @@ void CSelfServiceBankClientDlg::DoDataExchange(CDataExchange* pDX)
 }
 
 BEGIN_MESSAGE_MAP(CSelfServiceBankClientDlg, CDialogEx)
-	//ON_WM_SYSCOMMAND()
+	ON_WM_SYSCOMMAND()
 	ON_WM_PAINT()
 	//ON_WM_QUERYDRAGICON()
 	ON_STN_CLICKED(IDC_CloseWindow, &CSelfServiceBankClientDlg::OnStnClickedClosewindow)
@@ -120,11 +120,11 @@ BOOL CSelfServiceBankClientDlg::OnInitDialog()
 	rc.DeflateRect(cx / 5, cy / 15);//左右各缩小1/4，高宽相等
 	SetWindowPos(nullptr, rc.left, rc.top, rc.Width(), rc.Height(), SWP_NOZORDER);//屏幕坐标
 
-	//标题栏、客户、列表、申请认证记录区
+	//标题栏、客户、列表、申请认证记录区，SetRect参数是坐标值
 	ScreenToClient(&rc);
 	m_rcCaption.SetRect(rc.left, rc.top, rc.Width(), cstnTitleHeight);
 	m_rcClient.SetRect(rc.left, rc.top + cstnTitleHeight, rc.Width(), rc.Height());
-	m_rcList.SetRect(m_rcClient.left + 1, m_rcClient.top + 1, m_rcClient.Width() / 6, m_rcClient.Height() - 1);
+	m_rcList.SetRect(m_rcClient.left + 1, m_rcClient.top + 1, m_rcClient.Width() / 6, m_rcClient.bottom);
 	m_rcRecord.SetRect(m_rcList.right + 5, m_rcList.top, m_rcClient.right, m_rcList.bottom);
 	//GetClientRect(&m_rcClient);
 
@@ -136,54 +136,87 @@ BOOL CSelfServiceBankClientDlg::OnInitDialog()
 
 
 	//申请列表
-	m_oApplyList.Create(LBS_OWNERDRAWFIXED | LBS_HASSTRINGS | LBS_NOTIFY | /*LBS_EXTENDEDSEL |*/ WS_CHILD | WS_VISIBLE, 
+	m_oApplyList.Create(LBS_OWNERDRAWFIXED | LBS_HASSTRINGS | LBS_NOTIFY 
+		| /*LBS_EXTENDEDSEL |*/ WS_CHILD | WS_VISIBLE /*| LBS_SORT*/, 
 		CRect(0, 0, 0, 0), this, 1);
+	//在笔记本上实际高度并不是m_rcList.Height()，？
 	m_oApplyList.SetWindowPos(nullptr, m_rcList.left, m_rcList.top, m_rcList.Width(), m_rcList.Height(), SWP_NOZORDER);
+	//m_oApplyList.MySetItemData(m_vecApplyInfo); //
+	m_oApplyList.Set(this);
+
 #ifdef  _DEBUG
-	//插入测试数据
-	_DebugInsertListItem();
-	////插入一些申请人员，对话框还没创建好
-	//_DebugInsertSomeApplyPersonInfo();
+	//CMyListBox1::ItemData d1 = { _T("大华abc"), 2, CTime(2017,10,3,1,1,1) };
+	//m_oApplyList.MyInsertString(d1);
 #endif //  _DEBUG
 
-	//移动申请详情对话框
+	//申请认证详情对话框
 	int nDlgHeight = 
-		m_rcClient.Height() / cstnApplyRecordCnt;//每条记录的高度是 1/n （包含 - 分割线 - 间距 15px）
-	for (auto i = 0; i < cstnApplyRecordCnt; ++i) {
-		auto& dlg = m_vecApplyRecordDlg[i];
-		int x = m_rcRecord.left, y = m_rcRecord.top + i * nDlgHeight;
-		dlg.SetRectInParent(CRect(x, y, x + m_rcRecord.Width(), y + nDlgHeight));//设置在父窗口中的坐标
-		//dlg.SetWindowPos(nullptr,
-		//	x, y, m_rcRecord.Width(), nDlgHeight, SWP_NOZORDER);
+		m_rcClient.Height() / cstnApplyRecordCnt;//每条记录的高度是 1/n （包含 - 分割线 - 间距 30px）
+	int i = 0;
+	for (/*auto i = 0; i < cstnApplyRecordCnt; ++i*/auto& dlg : m_liApplyRecordDlg) {
+		//auto& dlg = m_liApplyRecordDlg;
+		int x = m_rcRecord.left, y = m_rcRecord.top + i++ * nDlgHeight;
+		dlg.SetRectInParent(CRect(x, y, m_rcRecord.right,
+			y + nDlgHeight/*x + m_rcRecord.Width(), y + nDlgHeight*/));//设置在父窗口中的坐标
 
 		dlg.Create(IDD_ApplyRecordDlg, this);
 		/*dlg.SetWindowPos(nullptr,
 			m_rcRecord.left, m_rcRecord.top + i * nDlgHeight,
 			m_rcRecord.Width(), nDlgHeight - 15, SWP_NOZORDER);*/
-		dlg.ShowWindow(SW_NORMAL);
+		//dlg.ShowWindow(SW_NORMAL);
 	}
 
 #ifdef  _DEBUG
 	//插入一些申请人员，Create之后是OnInitDialog，所以OnInitDialog里还没有数据，
 	//应该在OnPaint处理
-	_DebugInsertSomeApplyPersonInfo();
+	//_DebugInsertSomeApplyPersonInfo();
+	/*模拟来了一个申请（一个人还是所有相关的人？）
+	一个一个来较复杂，结构体成员如何标识这是一个申请？左ListBox要合并、右ListCtrl要合并；
+	暂时用全部申请人员；
+	//左：haoyun->测试->大华-》大华-》数码  //右：数码-》haoyun-》测试
+	*/
+	_DebugInsertApplyInfo(stApplyInfo(_T("数码"), 0, CTime(2017, 8, 28, 10, 7, 34),
+	{ stApplyPersonInfo(_T("person1.jpg"), _T("person1"), _T("张江地铁站"), _T("内部人员")),
+	stApplyPersonInfo(_T("person2.jpg"),_T("person2"), _T("张江地铁站"),_T("内部人员")),
+	stApplyPersonInfo(_T("person3.jpg"),_T("person3"), _T("张江地铁站"),_T("内部人员")),
+	stApplyPersonInfo(_T("person4.jpg"),_T("person4"),_T("张江地铁站"),_T("内部人员")),
+	stApplyPersonInfo(_T("person5.jpg"),_T("person5"),_T("张江地铁站"),_T("内部人员")),
+	stApplyPersonInfo(_T("person6.jpg"),_T("person6"),_T("张江地铁站"),_T("内部人员")),
+	stApplyPersonInfo(_T("person7.jpg"),_T("person7"),_T("张江地铁站"),_T("内部人员")),
+	stApplyPersonInfo(_T("person8.jpg"),_T("person8"),_T("张江地铁站"),_T("内部人员")),
+	stApplyPersonInfo(_T("person9.jpg"),_T("person9"),_T("张江地铁站"),_T("内部人员")),
+	stApplyPersonInfo(_T("person10.jpg"),_T("person10"),_T("张江地铁站"),_T("内部人员")),
+	stApplyPersonInfo(_T("person11.jpg"),_T("person11"),_T("张江地铁站"),_T("内部人员")),
+	stApplyPersonInfo(_T("person12.jpg"),_T("person12"),_T("张江地铁站"),_T("内部人员"))
+	}));
+	_DebugInsertApplyInfo(stApplyInfo(_T("测试"), 0, CTime(2017, 9, 28, 10, 8, 34),
+	{ stApplyPersonInfo(_T("person1.jpg"), _T("person1"), _T("张江地铁站"), _T("内部人员"))
+	}));
+	_DebugInsertApplyInfo(stApplyInfo(_T("haoyun"), 1, CTime(2017, 9, 27, 10, 9, 34),
+	{ stApplyPersonInfo(_T("person1.jpg"), _T("person1"), _T("张江地铁站"), _T("内部人员")),
+		stApplyPersonInfo(_T("person3.jpg"),_T("person3"), _T("张江地铁站"),_T("内部人员"))
+	}));
+	_DebugInsertApplyInfo(stApplyInfo(_T("大华"), 3, CTime(2017, 9, 1, 10, 7, 34),
+	{ stApplyPersonInfo(_T("person1.jpg"), _T("person1"), _T("张江地铁站"), _T("内部人员")),
+		stApplyPersonInfo(_T("person3.jpg"),_T("person3"), _T("张江地铁站"),_T("内部人员"))
+	}));
 #endif //  _DEBUG
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
 
-//void CSelfServiceBankClientDlg::OnSysCommand(UINT nID, LPARAM lParam)
-//{
-//	if ((nID & 0xFFF0) == IDM_ABOUTBOX)
-//	{
-//		CAboutDlg dlgAbout;
-//		dlgAbout.DoModal();
-//	}
-//	else
-//	{
-//		CDialogEx::OnSysCommand(nID, lParam);
-//	}
-//}
+void CSelfServiceBankClientDlg::OnSysCommand(UINT nID, LPARAM lParam)
+{
+	if ((nID & 0xFFF0) == IDM_ABOUTBOX)
+	{
+		CAboutDlg dlgAbout;
+		dlgAbout.DoModal();
+	}
+	else
+	{
+		CDialogEx::OnSysCommand(nID, lParam);
+	}
+}
 
 // If you add a minimize button to your dialog, you will need the code below
 //  to draw the icon.  For MFC applications using the document/view model,
@@ -202,6 +235,24 @@ void CSelfServiceBankClientDlg::OnPaint()
 	Graphics gh(dc.GetSafeHdc());
 	SolidBrush sbr(cstClrTitle);
 	gh.FillRectangle(&sbr, x, y, w, cstnTitleHeight);
+
+	//写标题
+	FontFamily ff(_T("微软雅黑"));
+	Gdiplus::Font font(&ff, 16, FontStyleRegular, UnitPixel);
+	SolidBrush sbrText(Color(255, 255, 255));
+	PointF pf(5.0f, 5.0f);
+	gh.DrawString(_T("门禁认证信息"), -1, &font, pf, &sbrText);
+
+	//“没有更多的认证信息” 提示
+	StringFormat sf;
+	//sf.SetAlignment(StringAlignmentCenter);//文本居中
+	//sf.SetLineAlignment(StringAlignmentCenter);//上下居中
+	RectF rcGdiF((m_rcRecord.left + 10) * 1.0f, (m_rcRecord.top+10) * 1.0f, 
+		m_rcRecord.right * 1.0f, m_rcRecord.bottom * 1.0f / 3);
+	sbrText.SetColor(Color(255, 0, 0));
+	Gdiplus::Font fontTip1(&ff, 20, FontStyleRegular, UnitPixel);
+	gh.DrawString(_T("现在没有申请认证信息！"), -1, &fontTip1, rcGdiF, &sf, &sbrText);
+
 
 	//if (IsIconic())
 	//{
@@ -256,56 +307,105 @@ void CSelfServiceBankClientDlg::OnLButtonDown(UINT nFlags, CPoint point)
 
 
 #ifdef _DEBUG
-void CSelfServiceBankClientDlg::_DebugInsertSomeApplyPersonInfo()
+void CSelfServiceBankClientDlg::_DebugInsertApplyInfo(stApplyInfo&& st)
 {
-	const CString strWsName[] = { _T("我的金库1") ,_T("我的金库2") ,_T("我的金库3") };
-	const vector<vector<CString>> vec = {
-		{ _T("我的金库1探头1"),_T("我的金库1探头2") },
-		{ _T("我的金库2探头1"),_T("我的金库2探头2") },
-		{ _T("我的金库3探头1"),_T("我的金库3探头2") }
-	};
-	const vector<vector<stApplyPersonInfo>> vecPInfo = {
-		{
-			stApplyPersonInfo(_T("person1.jpg"),_T("张江地铁站"),_T("内部人员"),CTime(2017,9,28,10,7,34)),
-			stApplyPersonInfo(_T("person2.jpg"),_T("张江地铁站"),_T("内部人员"),CTime(2017,9,28,10,7,34)),
-			stApplyPersonInfo(_T("person3.jpg"),_T("张江地铁站"),_T("内部人员"),CTime(2017,9,28,10,8,34)),
-			stApplyPersonInfo(_T("person4.jpg"),_T("张江地铁站"),_T("内部人员"),CTime(2017,9,28,10,9,34)),
-			stApplyPersonInfo(_T("person5.jpg"),_T("张江地铁站"),_T("内部人员"),CTime(2017,9,28,10,10,34)),
-			stApplyPersonInfo(_T("person6.jpg"),_T("张江地铁站"),_T("内部人员"),CTime(2017,9,28,10,11,34)),
-			stApplyPersonInfo(_T("person7.jpg"),_T("张江地铁站"),_T("内部人员"),CTime(2017,9,28,10,12,34)),
-			stApplyPersonInfo(_T("person8.jpg"),_T("张江地铁站"),_T("内部人员"),CTime(2017,9,28,10,13,34)),
-			stApplyPersonInfo(_T("person9.jpg"),_T("张江地铁站"),_T("内部人员"),CTime(2017,9,28,10,7,34)),
-			stApplyPersonInfo(_T("person10.jpg"),_T("张江地铁站"),_T("内部人员"),CTime(2017,9,28,10,7,4)),
-			stApplyPersonInfo(_T("person11.jpg"),_T("张江地铁站"),_T("内部人员"),CTime(2017,9,28,10,7,54)),
-			stApplyPersonInfo(_T("person12.jpg"),_T("张江地铁站"),_T("内部人员"),CTime(2017,9,28,10,7,54)),
-		},
-		{
-			stApplyPersonInfo(_T("person1.jpg"),_T("张江地铁站"),_T("内部人员"),CTime(2017,9,28,10,7,34))
-		},
-		{
-			stApplyPersonInfo(_T("person1.jpg"),_T("张江地铁站"),_T("内部人员"),CTime(2017,9,28,10,7,34)),
-			stApplyPersonInfo(_T("person2.jpg"),_T("张江地铁站"),_T("内部人员"),CTime(2017,9,28,10,7,34)),
-			stApplyPersonInfo(_T("person3.jpg"),_T("张江地铁站"),_T("内部人员"),CTime(2017,9,28,10,8,34))
-		}
-	};
+	//如果消息是一个人一个人来的，先查找是否有该申请通道
 
+	//sp引用1，m_vecApplyInfo引用2，MyInsertString参数是引用不算
+	auto& sp = std::make_shared<stApplyInfo>(st);
+	m_vecApplyInfo.push_back(sp);
 
-	for (auto i = 0; i < cstnApplyRecordCnt;++i) {
-		auto& dlg = m_vecApplyRecordDlg[i];
-		dlg.SetWebSiteName(strWsName[i]);
-		dlg.SetVideInfo(vec[i]);
-		dlg.SetPersonInfo(vecPInfo[i]);
-	}
-
-}
-
-void CSelfServiceBankClientDlg::_DebugInsertListItem()
-{
-	const CString str[] = { _T("数码"),_T("营业网点"), _T("测试"), _T("上海农商行"), _T("haoyun") };
-	const int n = _countof(str);
-	for (auto i = 0; i < n; ++i) {
-		m_oApplyList.AddString(str[i]);
-	}
+	//插入到左侧申请列表
+	m_oApplyList.MyInsertString(sp);
+	
+	//插入到右侧申请详情
+	MyInsertRecord(sp);
 }
 #endif //_DEBUG
+
+//查找申请时间
+bool Lambda_InsertRecord(CApplyRecordDlg& dlg, const std::shared_ptr<stApplyInfo>& st)
+{
+	auto& sp = dlg.GetApplyInfo();
+	return nullptr == sp || st->tmApply < sp->tmApply;
+}
+
+bool Lambda_SortRecordList(const CApplyRecordDlg& dlg1,
+	const CApplyRecordDlg& dlg2)
+{
+	const auto& st1 = dlg1.GetApplyInfo();
+	const auto& st2 = dlg2.GetApplyInfo();
+	if (!st1 || !st2)
+		return false;
+	return st1->tmApply < st2->tmApply;
+}
+
+//（对话框程序对数据发生变化的更新显示贼烦！）
+//仿Doc-View，右侧用一个类CView类管理vector<CRecord>
+void CSelfServiceBankClientDlg::MyInsertRecord(const std::shared_ptr<stApplyInfo>& st)
+{
+	//找st比哪个时间早
+	using std::placeholders::_1;
+	auto it = std::find_if(m_liApplyRecordDlg.begin(), m_liApplyRecordDlg.end(),
+		std::bind(Lambda_InsertRecord, _1, st));
+
+	if (m_liApplyRecordDlg.end() != it) {
+		if (nullptr == it->GetApplyInfo()) {
+			it->SetApplyInfo(st);
+		}
+		else {
+			auto& lastDlg = *m_liApplyRecordDlg.rbegin();
+			lastDlg.SetApplyInfo(st);
+		}
+	}
+	m_liApplyRecordDlg.sort(Lambda_SortRecordList);
+	for (auto& dlg : m_liApplyRecordDlg) {
+		dlg.Update();
+	}
+
+	//如果有：替换最后一个，并向后顺延
+	//if (m_liApplyRecordDlg.end() != it) {
+	//	//
+	//	if (nullptr == it->GetApplyInfo()) {
+	//		it->SetApplyInfo(st);
+	//		return;
+	//	}
+
+	//	//替换最后一个并显示
+	//	auto& lastDlg = m_vecApplyRecordDlg[cstnApplyRecordCnt - 1];
+	//	lastDlg.SetApplyInfo(st);
+	//	//将它移动到it所在位置
+	//	int nDis = std::distance(m_vecApplyRecordDlg.begin(), it);
+	//	CRect rc;
+	//	lastDlg.GetClientRect(&rc);
+	//	lastDlg.SetWindowPos(0, m_rcRecord.left,
+	//		m_rcRecord.top + nDis*rc.Height(), 0, 0, 
+	//		SWP_NOZORDER | SWP_NOSIZE);
+	//	//其它顺延
+	//	for (int i = cstnApplyRecordCnt - 2; i >= nDis; --i) {
+	//		auto& moveDlg = m_vecApplyRecordDlg[i];
+	//		moveDlg.SetWindowPos(0, m_rcRecord.left,
+	//			m_rcRecord.top + (i + 1)*rc.Height(), 0, 0,
+	//			SWP_NOZORDER | SWP_NOSIZE);
+	//	}
+	//	
+	//}
+	//else { //st没有比谁早
+	//	for (auto& dlg : m_vecApplyRecordDlg) {
+	//		if (nullptr == dlg.GetApplyInfo())
+	//			dlg.SetApplyInfo(st);
+	//	}
+	//}
+
+	
+}
+
+void CSelfServiceBankClientDlg::DisplayDetail(const std::shared_ptr<stApplyInfo>& st)
+{
+	//在右侧第一行显示，原右侧第一行信息将在左侧参与排序后显示
+	//int n = m_liApplyRecordDlg.size();
+	auto& dlg = *m_liApplyRecordDlg.begin();
+	dlg.SetApplyInfo(st);
+	dlg.Update();
+}
 

@@ -36,11 +36,14 @@ END_MESSAGE_MAP()
 void CMyStatic1::Set(TCHAR* pszImgNormalPath, TCHAR* pszImgHoverPath, bool bFixOrImg)
 {
 	Image img(pszImgNormalPath);
+	MySafeDelete(m_oImg);
 	m_oImg = img.Clone();
 	//pszImgHoverPath为空但m_oImgHover不是
 	if (pszImgHoverPath) {
 		Image imgHover(pszImgHoverPath);
+		MySafeDelete(m_oImgHover);
 		m_oImgHover = imgHover.Clone();
+		m_bMouseTrack = true;//追踪鼠标悬停消息
 	}
 
 	m_bFixOrImg = bFixOrImg;
@@ -62,8 +65,8 @@ void CMyStatic1::OnPaint()
 		//设置大小
 		if(!m_bFixOrImg)
 			SetWindowPos(nullptr, 0, 0, w, h, SWP_NOMOVE | SWP_NOZORDER);
-		//清空背景
-		gh.Clear(cstClrTitle);
+		//清空背景，白色
+		//gh.Clear(/*cstClrTitle*/Color(255, 255, 255));
 		gh.DrawImage(img, 0, 0, w, h);
 	}
 }
@@ -126,3 +129,10 @@ void CMyStatic1::OnMouseLeave()
 //	//画指定的图片
 //	gh.DrawImage(m_oImg, 0, 0, m_oImg->GetWidth(), m_oImg->GetHeight());
 //}
+
+
+void CMyStatic1::DrawItem(LPDRAWITEMSTRUCT /*lpDrawItemStruct*/)
+{
+
+	// TODO:  Add your code to draw the specified item
+}

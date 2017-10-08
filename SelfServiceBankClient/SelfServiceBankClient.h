@@ -46,7 +46,12 @@ public:
 	//CString m_strStgCfgPath;//配置文档路径
 	//std::vector<StgCfg*> m_vecCfg;//配置
 	//HANDLE m_hEventReadStgCfg;//读取配置线程完成事件
-
+	
+	//const
+	//字体
+	//const FontFamily cstFontFamily = _T("微软雅黑");
+	//const Gdiplus::Font cstFont = Gdiplus::Font(&cstFontFamily, 12, FontStyleRegular, UnitPixel);
+	//const SolidBrush cstSolidBrushText = Color(125, 125, 125);
 
 public:
 	CGobalVariable();

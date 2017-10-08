@@ -5,14 +5,32 @@
 
 
 /*界面标题栏
-颜色
-高度
+标题颜色
+标题高度
 */
 const Color cstClrTitle = Color(54, 132, 215);
-const int cstnTitleHeight = 25;
+const int cstnTitleHeight = 30;
 
 
+//默认字体  不成功，因为GDI+还没有初始化，既然是全局变量，为什么不放在类里？
+//const FontFamily cstFontFamily(_T("微软雅黑"));
+//const Gdiplus::Font cstFont(&cstFontFamily, 12, FontStyleRegular, UnitPixel);
+//const SolidBrush cstSolidBrushText(Color(125, 125, 125));
 
+
+/*
+按钮枚举
+*/
+enum emButton {
+	EmergencyBtn,
+	GrantBtn,
+	OpenDoorBtn,
+	EnterMapLayerBtn,
+	LockDoorBtn,
+	RefuseOpenBtn,
+	ConfirmBtn,
+	emButtonBuff
+};
 
 /*结构体
 */
@@ -21,17 +39,46 @@ const int cstnTitleHeight = 25;
 网络传输；支持本地存储；
 */
 struct stApplyPersonInfo {
-	//不属于人员信息，放入CApplyRecordDlg
-	//CString strWebSiteName;//网点名称
-	//std::vector<CString> vecVideoStr;//视频
 	CString strPic;//照片
+	CString strName;//姓名
 	CString strOffice;//单位
 	CString strCategory;//分类
-	CTime tmApply;//申请认证时间，CString不好转CTime
 
-	stApplyPersonInfo(/*CString wsName, std::vector<CString> vec, */CString pic,
-		CString office, CString cate, CTime tm) 
-		: /*strWebSiteName(wsName), vecVideoStr(vec), */strPic(pic), 
-		strOffice(office), strCategory(cate), tmApply(tm) {}
+	stApplyPersonInfo(CString pic,
+		CString name, CString office, CString cate)
+		: strPic(pic), strName(name),
+		strOffice(office), strCategory(cate) {}
 };
 
+
+/*申请信息
+一个人一条申请信息
+*/
+//struct stApplyInfo {
+//	CString strWebSiteName;//申请网点
+//	int nImportance;//重要程度
+//	CTime tmApply;//申请认证时间，CString不好转CTime
+//	//两路视频
+//	stApplyPersonInfo stPersonInfo;//申请人员信息（是一个人还是多个？）
+//
+//	stApplyInfo(CString wbName, int nImp, CTime tm, stApplyPersonInfo&& st)
+//		: strWebSiteName(wbName), nImportance(nImp), tmApply(tm), 
+//		stPersonInfo(st) {}
+//};
+
+
+/*申请信息
+全部人一条申请信息
+*/
+struct stApplyInfo {
+	CString strWebSiteName;//申请网点
+	int nImportance;//重要程度，为0不管控
+	CTime tmApply;//申请认证时间，CString不好转CTime
+				  //两路视频
+	//认证方式：远程认证、本地认证
+	std::vector<stApplyPersonInfo> vecPersonInfo;//申请人员信息
+
+	stApplyInfo(CString wbName, int nImp, CTime tm, std::vector<stApplyPersonInfo>&& vec)
+		: strWebSiteName(wbName), nImportance(nImp), tmApply(tm),
+		vecPersonInfo(vec) {}
+};

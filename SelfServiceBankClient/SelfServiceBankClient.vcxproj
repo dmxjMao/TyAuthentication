@@ -192,6 +192,7 @@
     <ClInclude Include="MyListCtrl1.h" />
     <ClInclude Include="MyScrollBar1.h" />
     <ClInclude Include="MyStatic1.h" />
+    <ClInclude Include="MyStatic2.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="SelfServiceBankClient.h" />
     <ClInclude Include="SelfServiceBankClientDlg.h" />
@@ -204,6 +205,7 @@
     <ClCompile Include="MyListCtrl1.cpp" />
     <ClCompile Include="MyScrollBar1.cpp" />
     <ClCompile Include="MyStatic1.cpp" />
+    <ClCompile Include="MyStatic2.cpp" />
     <ClCompile Include="SelfServiceBankClient.cpp" />
     <ClCompile Include="SelfServiceBankClientDlg.cpp" />
     <ClCompile Include="stdafx.cpp">
