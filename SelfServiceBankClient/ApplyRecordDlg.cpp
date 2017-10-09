@@ -6,7 +6,10 @@
 #include "ApplyRecordDlg.h"
 #include "afxdialogex.h"
 
+#include "EmergencyPlanDialog.h" //应急处置
+
 using std::vector;
+#define IDT_Valid	1
 
 // CApplyRecordDlg dialog
 
@@ -42,6 +45,8 @@ void CApplyRecordDlg::DoDataExchange(CDataExchange* pDX)
 
 BEGIN_MESSAGE_MAP(CApplyRecordDlg, CDialogEx)
 	ON_WM_PAINT()
+	ON_WM_TIMER()
+	ON_STN_CLICKED(IDC_Emergency, &CApplyRecordDlg::OnClickedEmergency)
 END_MESSAGE_MAP()
 
 
@@ -116,7 +121,7 @@ BOOL CApplyRecordDlg::OnInitDialog()
 	//进入图层
 	x -= 2 * (w + nGap);
 	m_oEmergency.GetClientRect(&rc);
-	y += rc.Height() + 10;
+	y += rc.Height() + 2;
 	m_oEnterMapLayer.SetWindowPos(0, x, y, w, 20, SWP_NOZORDER);
 	//锁门
 	x += w + nGap;
@@ -132,7 +137,7 @@ BOOL CApplyRecordDlg::OnInitDialog()
 	w = rc.Width() / 2;
 	x = rc.left + w / 2;
 	m_oEmergency.GetClientRect(&rc);
-	y += rc.Height() + 10;
+	y += rc.Height() + 2;
 	m_oConfirm.SetWindowPos(0, x, y, w, 20, SWP_NOZORDER);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
@@ -178,6 +183,19 @@ void CApplyRecordDlg::OnPaint()
 void CApplyRecordDlg::Update()
 {
 	if (m_stApplyInfo) {
+		//计时“已失效”，N秒，点击左侧就不能这样了
+		//SetTimer(IDT_Valid, 5 * 1000, 0);
+		//计算剩余时间
+		CTimeSpan tmLeft = CTime::GetCurrentTime() - m_stApplyInfo->tmApply;
+		if (tmLeft.GetTotalSeconds() < 30) {//小于10s
+			SetTimer(IDT_Valid, (30 - (int)tmLeft.GetTotalSeconds()) * 1000, 0);
+		}
+		else {
+			//OnTimer(IDT_Valid);  //窗口还没创建好，崩溃
+			SetTimer(IDT_Valid, 0, 0);
+		}
+		
+
 		//网点名称
 		GetDlgItem(IDC_title)->SetWindowText(m_stApplyInfo->strWebSiteName);
 
@@ -204,3 +222,45 @@ void CApplyRecordDlg::EnableButton(emButton em)
 }
 
 
+
+
+void CApplyRecordDlg::OnTimer(UINT_PTR nIDEvent)
+{
+	switch (nIDEvent) {
+	case IDT_Valid: //”已失效“
+	{
+		KillTimer(nIDEvent);
+		//获取m_oVideo1.right，“已失效”的宽
+		CRect rc;
+		m_oVideo1.GetWindowRect(&rc);
+		ScreenToClient(&rc);
+		Image img(_T("res\\已失效.png"));
+		int w = img.GetWidth(), h = img.GetHeight();
+		int x = rc.right - w / 2;
+		int y = rc.top + rc.Height() / 2 - h / 2;
+		
+		CClientDC dc(this);
+		Graphics gh(dc.GetSafeHdc());
+		gh.DrawImage(&img, x, y, w, h);
+
+		break;
+	}	
+	}
+
+	CDialogEx::OnTimer(nIDEvent);
+}
+
+
+void CApplyRecordDlg::OnClickedEmergency()
+{
+	
+	static vector<stEmergPlan> vecPlan = { 
+		{stEmergPlan(_T("医院洪水预案"), { stEmergPlanStep(1,_T("开门")), stEmergPlanStep(2,_T("关警报，查看停尸间是否有人在睡觉，然后回机房拿消防斧回来砍断水管，最后关门")) })},
+		{ stEmergPlan(_T("火山喷发预案"),{ stEmergPlanStep(1,_T("扯下窗帘")), stEmergPlanStep(2,_T("裹在头上祈祷")) }) }
+	};
+
+	static auto sp = std::make_shared<vector<stEmergPlan>>(vecPlan);
+
+	CEmergencyPlanDialog dlg(sp, this);
+	dlg.DoModal();
+}

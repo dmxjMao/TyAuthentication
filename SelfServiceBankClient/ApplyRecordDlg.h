@@ -50,7 +50,8 @@ protected:
 
 public:
 	//获取成员m_stApplyInfo
-	inline decltype(m_stApplyInfo) GetApplyInfo() const { return m_stApplyInfo; }
+	inline /*decltype(m_stApplyInfo)*/const std::shared_ptr<stApplyInfo>& 
+		GetApplyInfo() const { return m_stApplyInfo; }
 	inline void SetApplyInfo(const std::shared_ptr<stApplyInfo>& st) {
 		m_stApplyInfo = st; 
 		//Update();
@@ -63,4 +64,7 @@ public:
 	void EnableButton(emButton em);
 
 private:
+public:
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	afx_msg void OnClickedEmergency();
 };

@@ -61,7 +61,7 @@ CSelfServiceBankClientDlg::CSelfServiceBankClientDlg(CWnd* pParent /*=NULL*/)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 
-	m_liApplyRecordDlg.resize(cstnApplyRecordCnt);
+	m_vecApplyRecordDlg.resize(cstnApplyRecordCnt);
 }
 
 void CSelfServiceBankClientDlg::DoDataExchange(CDataExchange* pDX)
@@ -153,7 +153,7 @@ BOOL CSelfServiceBankClientDlg::OnInitDialog()
 	int nDlgHeight = 
 		m_rcClient.Height() / cstnApplyRecordCnt;//每条记录的高度是 1/n （包含 - 分割线 - 间距 30px）
 	int i = 0;
-	for (/*auto i = 0; i < cstnApplyRecordCnt; ++i*/auto& dlg : m_liApplyRecordDlg) {
+	for (/*auto i = 0; i < cstnApplyRecordCnt; ++i*/auto& dlg : m_vecApplyRecordDlg) {
 		//auto& dlg = m_liApplyRecordDlg;
 		int x = m_rcRecord.left, y = m_rcRecord.top + i++ * nDlgHeight;
 		dlg.SetRectInParent(CRect(x, y, m_rcRecord.right,
@@ -175,7 +175,7 @@ BOOL CSelfServiceBankClientDlg::OnInitDialog()
 	暂时用全部申请人员；
 	//左：haoyun->测试->大华-》大华-》数码  //右：数码-》haoyun-》测试
 	*/
-	_DebugInsertApplyInfo(stApplyInfo(_T("数码"), 0, CTime(2017, 8, 28, 10, 7, 34),
+	_DebugInsertApplyInfo(stApplyInfo(_T("数码"), 0, CTime(CTime::GetCurrentTime()),
 	{ stApplyPersonInfo(_T("person1.jpg"), _T("person1"), _T("张江地铁站"), _T("内部人员")),
 	stApplyPersonInfo(_T("person2.jpg"),_T("person2"), _T("张江地铁站"),_T("内部人员")),
 	stApplyPersonInfo(_T("person3.jpg"),_T("person3"), _T("张江地铁站"),_T("内部人员")),
@@ -189,14 +189,14 @@ BOOL CSelfServiceBankClientDlg::OnInitDialog()
 	stApplyPersonInfo(_T("person11.jpg"),_T("person11"),_T("张江地铁站"),_T("内部人员")),
 	stApplyPersonInfo(_T("person12.jpg"),_T("person12"),_T("张江地铁站"),_T("内部人员"))
 	}));
-	_DebugInsertApplyInfo(stApplyInfo(_T("测试"), 0, CTime(2017, 9, 28, 10, 8, 34),
+	_DebugInsertApplyInfo(stApplyInfo(_T("测试"), 0, CTime(2017, 10, 9, 10, 35, 34),
 	{ stApplyPersonInfo(_T("person1.jpg"), _T("person1"), _T("张江地铁站"), _T("内部人员"))
 	}));
-	_DebugInsertApplyInfo(stApplyInfo(_T("haoyun"), 1, CTime(2017, 9, 27, 10, 9, 34),
+	_DebugInsertApplyInfo(stApplyInfo(_T("haoyun"), 1, CTime(2017, 10, 9, 10, 34, 34),
 	{ stApplyPersonInfo(_T("person1.jpg"), _T("person1"), _T("张江地铁站"), _T("内部人员")),
 		stApplyPersonInfo(_T("person3.jpg"),_T("person3"), _T("张江地铁站"),_T("内部人员"))
 	}));
-	_DebugInsertApplyInfo(stApplyInfo(_T("大华"), 3, CTime(2017, 9, 1, 10, 7, 34),
+	_DebugInsertApplyInfo(stApplyInfo(_T("大华"), 3, CTime(2017, 10, 9, 10, 34, 34),
 	{ stApplyPersonInfo(_T("person1.jpg"), _T("person1"), _T("张江地铁站"), _T("内部人员")),
 		stApplyPersonInfo(_T("person3.jpg"),_T("person3"), _T("张江地铁站"),_T("内部人员"))
 	}));
@@ -324,44 +324,97 @@ void CSelfServiceBankClientDlg::_DebugInsertApplyInfo(stApplyInfo&& st)
 #endif //_DEBUG
 
 //查找申请时间
-bool Lambda_InsertRecord(CApplyRecordDlg& dlg, const std::shared_ptr<stApplyInfo>& st)
+bool Lambda_InsertRecord(/*CApplyRecordDlg& dlg*/const std::shared_ptr<stApplyInfo>& sp, const std::shared_ptr<stApplyInfo>& st)
 {
-	auto& sp = dlg.GetApplyInfo();
+	//auto& sp = dlg.GetApplyInfo();
 	return nullptr == sp || st->tmApply < sp->tmApply;
 }
 
-bool Lambda_SortRecordList(const CApplyRecordDlg& dlg1,
-	const CApplyRecordDlg& dlg2)
+//bool Lambda_SortRecordList(const CApplyRecordDlg& dlg1,
+//	const CApplyRecordDlg& dlg2)
+//{
+//	//排序不是按顺序来的
+//	const auto& st1 = dlg1.GetApplyInfo();
+//	const auto& st2 = dlg2.GetApplyInfo();
+//	//两个都为空 或者 st2为空，不用交换
+//	//if (!st1 && !st2 || st1 && !st2)
+//	//	return false;
+//	//if (!st1 && st2)
+//	//	return true;
+//
+//	//return st1->tmApply < st2->tmApply;
+//	if (st1 && !st2)
+//		return true;
+//	if (!st1 && !st2 || !st1 && st2)
+//		return false;
+//
+//	return st1->tmApply < st2->tmApply;
+//}
+
+bool Lambda_SortRecordVector(const std::shared_ptr<stApplyInfo>& sp1,
+	const std::shared_ptr<stApplyInfo>& sp2)
 {
-	const auto& st1 = dlg1.GetApplyInfo();
-	const auto& st2 = dlg2.GetApplyInfo();
-	if (!st1 || !st2)
+	if (sp1 && !sp2)
+		return true;
+	if (!sp1 && !sp2 || !sp1 && sp2)
 		return false;
-	return st1->tmApply < st2->tmApply;
+	
+	return sp1->tmApply < sp2->tmApply;
 }
 
 //（对话框程序对数据发生变化的更新显示贼烦！）
 //仿Doc-View，右侧用一个类CView类管理vector<CRecord>
 void CSelfServiceBankClientDlg::MyInsertRecord(const std::shared_ptr<stApplyInfo>& st)
 {
-	//找st比哪个时间早
+	//找st比哪个时间早，排序m_liApplyRecordDlg把坐标都换了
 	using std::placeholders::_1;
-	auto it = std::find_if(m_liApplyRecordDlg.begin(), m_liApplyRecordDlg.end(),
-		std::bind(Lambda_InsertRecord, _1, st));
 
-	if (m_liApplyRecordDlg.end() != it) {
-		if (nullptr == it->GetApplyInfo()) {
-			it->SetApplyInfo(st);
+	vector<std::shared_ptr<stApplyInfo>> vec;
+	for (auto& st : m_vecApplyRecordDlg)
+		vec.push_back(st.GetApplyInfo());
+
+	auto it = std::find_if(vec.begin(), vec.end(),
+		std::bind(Lambda_InsertRecord, _1, st));
+	if (vec.end() != it) {
+		//存在为空或更晚的记录
+		int i = std::distance(vec.begin(), it);
+		auto itDlg = m_vecApplyRecordDlg.begin();
+		std::advance(itDlg, i);
+		if (nullptr == *it) {
+			itDlg->SetApplyInfo(st);
+			itDlg->Update();
 		}
 		else {
-			auto& lastDlg = *m_liApplyRecordDlg.rbegin();
-			lastDlg.SetApplyInfo(st);
+			auto& last = *vec.rbegin();
+			last = st;
+			sort(vec.begin(), vec.end(), Lambda_SortRecordVector);
+			for (/*auto& st : vec*/int i = 0; i < (int)vec.size(); ++i) {
+				auto& dlg = m_vecApplyRecordDlg[i];
+				if (vec[i] == dlg.GetApplyInfo())
+					continue;
+				dlg.SetApplyInfo(vec[i]);
+				dlg.Update();
+			}
 		}
 	}
-	m_liApplyRecordDlg.sort(Lambda_SortRecordList);
-	for (auto& dlg : m_liApplyRecordDlg) {
-		dlg.Update();
-	}
+	//auto it = std::find_if(m_liApplyRecordDlg.begin(), m_liApplyRecordDlg.end(),
+	//	std::bind(Lambda_InsertRecord, _1, st));
+
+	//if (m_liApplyRecordDlg.end() != it) {
+	//	if (nullptr == it->GetApplyInfo()) {
+	//		it->SetApplyInfo(st);
+	//	}
+	//	else {
+	//		auto& lastDlg = *m_liApplyRecordDlg.rbegin();
+	//		lastDlg.SetApplyInfo(st);
+	//	}
+
+	//	//把窗口坐标都换了！改为排临时变量
+	//	m_liApplyRecordDlg.sort(Lambda_SortRecordList);
+	//	for (auto& dlg : m_liApplyRecordDlg) {
+	//		dlg.Update();
+	//	}
+	//}
 
 	//如果有：替换最后一个，并向后顺延
 	//if (m_liApplyRecordDlg.end() != it) {
@@ -404,7 +457,7 @@ void CSelfServiceBankClientDlg::DisplayDetail(const std::shared_ptr<stApplyInfo>
 {
 	//在右侧第一行显示，原右侧第一行信息将在左侧参与排序后显示
 	//int n = m_liApplyRecordDlg.size();
-	auto& dlg = *m_liApplyRecordDlg.begin();
+	auto& dlg = *m_vecApplyRecordDlg.begin();
 	dlg.SetApplyInfo(st);
 	dlg.Update();
 }

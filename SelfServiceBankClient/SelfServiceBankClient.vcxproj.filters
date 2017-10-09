@@ -60,6 +60,18 @@
     <ClInclude Include="MyStatic2.h">
       <Filter>MyOwnDraw</Filter>
     </ClInclude>
+    <ClInclude Include="EmergencyPlanDialog.h">
+      <Filter>Dialog</Filter>
+    </ClInclude>
+    <ClInclude Include="MyButton1.h">
+      <Filter>MyOwnDraw</Filter>
+    </ClInclude>
+    <ClInclude Include="MyButton2.h">
+      <Filter>MyOwnDraw</Filter>
+    </ClInclude>
+    <ClInclude Include="MyStatic3.h">
+      <Filter>MyOwnDraw</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SelfServiceBankClient.cpp">
@@ -87,6 +99,18 @@
       <Filter>MyOwnDraw</Filter>
     </ClCompile>
     <ClCompile Include="MyStatic2.cpp">
+      <Filter>MyOwnDraw</Filter>
+    </ClCompile>
+    <ClCompile Include="EmergencyPlanDialog.cpp">
+      <Filter>Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="MyButton1.cpp">
+      <Filter>MyOwnDraw</Filter>
+    </ClCompile>
+    <ClCompile Include="MyButton2.cpp">
+      <Filter>MyOwnDraw</Filter>
+    </ClCompile>
+    <ClCompile Include="MyStatic3.cpp">
       <Filter>MyOwnDraw</Filter>
     </ClCompile>
   </ItemGroup>

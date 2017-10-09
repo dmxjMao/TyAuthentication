@@ -188,11 +188,15 @@
   <ItemGroup>
     <ClInclude Include="ApplyRecordDlg.h" />
     <ClInclude Include="CommonDefine.h" />
+    <ClInclude Include="EmergencyPlanDialog.h" />
+    <ClInclude Include="MyButton1.h" />
+    <ClInclude Include="MyButton2.h" />
     <ClInclude Include="MyListBox1.h" />
     <ClInclude Include="MyListCtrl1.h" />
     <ClInclude Include="MyScrollBar1.h" />
     <ClInclude Include="MyStatic1.h" />
     <ClInclude Include="MyStatic2.h" />
+    <ClInclude Include="MyStatic3.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="SelfServiceBankClient.h" />
     <ClInclude Include="SelfServiceBankClientDlg.h" />
@@ -201,11 +205,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ApplyRecordDlg.cpp" />
+    <ClCompile Include="EmergencyPlanDialog.cpp" />
+    <ClCompile Include="MyButton1.cpp" />
+    <ClCompile Include="MyButton2.cpp" />
     <ClCompile Include="MyListBox1.cpp" />
     <ClCompile Include="MyListCtrl1.cpp" />
     <ClCompile Include="MyScrollBar1.cpp" />
     <ClCompile Include="MyStatic1.cpp" />
     <ClCompile Include="MyStatic2.cpp" />
+    <ClCompile Include="MyStatic3.cpp" />
     <ClCompile Include="SelfServiceBankClient.cpp" />
     <ClCompile Include="SelfServiceBankClientDlg.cpp" />
     <ClCompile Include="stdafx.cpp">

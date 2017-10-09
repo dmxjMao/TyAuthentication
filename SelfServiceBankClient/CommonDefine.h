@@ -82,3 +82,23 @@ struct stApplyInfo {
 		: strWebSiteName(wbName), nImportance(nImp), tmApply(tm),
 		vecPersonInfo(vec) {}
 };
+
+
+
+/*预案信息
+*/
+//预案步骤
+struct stEmergPlanStep {
+	int nNo;//编号
+	CString strName;//名称
+
+	stEmergPlanStep(int n, CString name)
+		: nNo(n), strName(name) {}
+};
+struct stEmergPlan {
+	CString strPlanName;//预案名
+	std::vector<stEmergPlanStep> vecStep;//预案步骤
+
+	stEmergPlan(CString name, std::vector<stEmergPlanStep>&& vec)
+		: strPlanName(name), vecStep(vec) {}
+};

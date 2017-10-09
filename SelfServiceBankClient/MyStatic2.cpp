@@ -25,7 +25,7 @@ BEGIN_MESSAGE_MAP(CMyStatic2, CStatic)
 	ON_WM_MOUSEMOVE()
 	ON_WM_MOUSEHOVER()
 	ON_WM_MOUSELEAVE()
-	ON_CONTROL_REFLECT(STN_CLICKED, &CMyStatic2::OnStnClicked)
+	//ON_CONTROL_REFLECT(STN_CLICKED, &CMyStatic2::OnStnClicked)
 END_MESSAGE_MAP()
 
 
@@ -123,50 +123,50 @@ void CMyStatic2::OnMouseLeave()
 }
 
 
-
-GraphicsPath* CMyStatic2::MakeRoundRect(Point topLeft, Point bottomRight, INT percentageRounded)
-{
-	ASSERT(percentageRounded >= 1 && percentageRounded <= 100);
-	//if(percentageRounded >= 1 && percentageRounded <= 100)
-
-	INT left = min(topLeft.X, bottomRight.X);
-	INT right = max(topLeft.X, bottomRight.X);
-
-	INT top = min(topLeft.Y, bottomRight.Y);
-	INT bottom = max(topLeft.Y, bottomRight.Y);
-
-	INT offsetX = (right - left)*percentageRounded / 100;
-	INT offsetY = (bottom - top)*percentageRounded / 100;
-
-	GraphicsPath pt;
-	GraphicsPath * path = pt.Clone();
-
-	//path->AddEllipse(Rect(left, top, right, bottom));
-	//画弧是顺时针画的：左上右上右下左下，角度顺时针指定，x轴和起始点之间的角度
-	path->AddArc(left, top, 2*offsetX, 2*offsetY, 180.0f, 90.0f);
-	path->AddArc(right - 2*offsetX, top, 2*offsetX, 2*offsetY, 90.0f, 90.0f);
-	path->AddArc(right - 2*offsetX,  bottom - 2*offsetY, 2*offsetX, 2*offsetY, 0.0f, 90.0f);
-	path->AddArc(left, bottom - 2*offsetY, 2*offsetX, 2*offsetY, 270.0f, 90.0f);
-	//画直线：顶部右侧底部左侧
-	// 边线修正  
-	//int lineMove = 1;
-	//path->AddLine(left + offsetX - lineMove, top, right - offsetX + lineMove, top);
-	//path->AddLine(right, top + offsetY - lineMove, right, bottom - offsetY + lineMove);
-	//path->AddLine(left + offsetX + lineMove, bottom, right - offsetX - lineMove, bottom);
-	////path->AddLine(left, top + offsetY, left, bottom - offsetY);
-	////线要首尾连接！
-	//path->AddLine(left, bottom - offsetY + lineMove, left, top + offsetY - lineMove);
-
-	path->AddLine(left + offsetX , top, right - offsetX , top);
-	path->AddLine(right, top + offsetY , right, bottom - offsetY );
-	path->AddLine(left + offsetX , bottom, right - offsetX, bottom);
-	//path->AddLine(left, top + offsetY, left, bottom - offsetY);
-	//线要首尾连接！
-	path->AddLine(left, bottom - offsetY , left, top + offsetY);
-
-
-	return path;
-}
+//
+//GraphicsPath* CMyStatic2::MakeRoundRect(Point topLeft, Point bottomRight, INT percentageRounded)
+//{
+//	ASSERT(percentageRounded >= 1 && percentageRounded <= 100);
+//	//if(percentageRounded >= 1 && percentageRounded <= 100)
+//
+//	INT left = min(topLeft.X, bottomRight.X);
+//	INT right = max(topLeft.X, bottomRight.X);
+//
+//	INT top = min(topLeft.Y, bottomRight.Y);
+//	INT bottom = max(topLeft.Y, bottomRight.Y);
+//
+//	INT offsetX = (right - left)*percentageRounded / 100;
+//	INT offsetY = (bottom - top)*percentageRounded / 100;
+//
+//	GraphicsPath pt;
+//	GraphicsPath * path = pt.Clone();
+//
+//	//path->AddEllipse(Rect(left, top, right, bottom));
+//	//画弧是顺时针画的：左上右上右下左下，角度顺时针指定，x轴和起始点之间的角度
+//	path->AddArc(left, top, 2*offsetX, 2*offsetY, 180.0f, 90.0f);
+//	path->AddArc(right - 2*offsetX, top, 2*offsetX, 2*offsetY, 90.0f, 90.0f);
+//	path->AddArc(right - 2*offsetX,  bottom - 2*offsetY, 2*offsetX, 2*offsetY, 0.0f, 90.0f);
+//	path->AddArc(left, bottom - 2*offsetY, 2*offsetX, 2*offsetY, 270.0f, 90.0f);
+//	//画直线：顶部右侧底部左侧
+//	// 边线修正  
+//	//int lineMove = 1;
+//	//path->AddLine(left + offsetX - lineMove, top, right - offsetX + lineMove, top);
+//	//path->AddLine(right, top + offsetY - lineMove, right, bottom - offsetY + lineMove);
+//	//path->AddLine(left + offsetX + lineMove, bottom, right - offsetX - lineMove, bottom);
+//	////path->AddLine(left, top + offsetY, left, bottom - offsetY);
+//	////线要首尾连接！
+//	//path->AddLine(left, bottom - offsetY + lineMove, left, top + offsetY - lineMove);
+//
+//	path->AddLine(left + offsetX , top, right - offsetX , top);
+//	path->AddLine(right, top + offsetY , right, bottom - offsetY );
+//	path->AddLine(left + offsetX , bottom, right - offsetX, bottom);
+//	//path->AddLine(left, top + offsetY, left, bottom - offsetY);
+//	//线要首尾连接！
+//	path->AddLine(left, bottom - offsetY , left, top + offsetY);
+//
+//
+//	return path;
+//}
 
 void CMyStatic2::DrawItem(LPDRAWITEMSTRUCT /*lpDrawItemStruct*/)
 {
@@ -174,12 +174,12 @@ void CMyStatic2::DrawItem(LPDRAWITEMSTRUCT /*lpDrawItemStruct*/)
 }
 
 
-void CMyStatic2::OnStnClicked()
-{
-	if (!m_bEnable)
-		return;
-
-	CString str;
-	GetWindowText(str);
-	AfxMessageBox(str);
-}
+//void CMyStatic2::OnStnClicked()
+//{
+//	if (!m_bEnable)
+//		return;
+//
+//	CString str;
+//	GetWindowText(str);
+//	AfxMessageBox(str);
+//}

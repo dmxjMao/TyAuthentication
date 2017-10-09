@@ -39,7 +39,8 @@ protected:
 	CMyStatic1 m_oCloseWindow;//关闭按钮
 	
 	CMyListBox1 m_oApplyList;//申请列表
-	std::list<CApplyRecordDlg> m_liApplyRecordDlg; //申请记录详细对话框
+	//std::list<CApplyRecordDlg> m_liApplyRecordDlg; //申请记录详细对话框
+	std::vector<CApplyRecordDlg> m_vecApplyRecordDlg; //申请记录详细对话框
 	std::vector<std::shared_ptr<stApplyInfo>> m_vecApplyInfo;//申请消息
 
 	// Generated message map functions

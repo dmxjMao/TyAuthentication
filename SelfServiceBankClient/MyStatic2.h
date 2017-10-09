@@ -43,10 +43,10 @@ protected:
 
 private:
 	//»­Ô²½Ç¾ØÐÎ
-	GraphicsPath* MakeRoundRect(Point topLeft, Point bottomRight, INT percentageRounded);
+	//GraphicsPath* MakeRoundRect(Point topLeft, Point bottomRight, INT percentageRounded);
 public:
 	virtual void DrawItem(LPDRAWITEMSTRUCT /*lpDrawItemStruct*/);
-	afx_msg void OnStnClicked();
+	//afx_msg void OnStnClicked();
 };
 
 
