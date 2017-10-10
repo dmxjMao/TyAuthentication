@@ -117,7 +117,7 @@ BOOL CApplyRecordDlg::OnInitDialog()
 	//开门
 	x += w + nGap;
 	m_oOpen.SetWindowPos(0, x, y, w, 20, SWP_NOZORDER);
-	m_oOpen.Set(false);
+	//m_oOpen.Set(false);
 	//进入图层
 	x -= 2 * (w + nGap);
 	m_oEmergency.GetClientRect(&rc);
@@ -126,11 +126,11 @@ BOOL CApplyRecordDlg::OnInitDialog()
 	//锁门
 	x += w + nGap;
 	m_oLock.SetWindowPos(0, x, y, w, 20, SWP_NOZORDER);
-	m_oLock.Set(false);
+	//m_oLock.Set(false);
 	//拒绝开门
 	x += w + nGap;
 	m_oRefuseOpen.SetWindowPos(0, x, y, w, 20, SWP_NOZORDER);
-	m_oRefuseOpen.Set(false);
+	//m_oRefuseOpen.Set(false);
 	//确认
 	m_oPersonInfo.GetWindowRect(&rc);
 	ScreenToClient(&rc);
@@ -185,9 +185,10 @@ void CApplyRecordDlg::Update()
 	if (m_stApplyInfo) {
 		//计时“已失效”，N秒，点击左侧就不能这样了
 		//SetTimer(IDT_Valid, 5 * 1000, 0);
-		//计算剩余时间
+		//点击、初始时，计算剩余时间
 		CTimeSpan tmLeft = CTime::GetCurrentTime() - m_stApplyInfo->tmApply;
 		if (tmLeft.GetTotalSeconds() < 30) {//小于10s
+			EnableButton({ GrantBtn ,OpenDoorBtn ,LockDoorBtn ,RefuseOpenBtn }, true); //
 			SetTimer(IDT_Valid, (30 - (int)tmLeft.GetTotalSeconds()) * 1000, 0);
 		}
 		else {
@@ -209,16 +210,22 @@ void CApplyRecordDlg::Update()
 }
 
 //按钮灰化/可用处理
-void CApplyRecordDlg::EnableButton(emButton em)
+void CApplyRecordDlg::EnableButton(std::vector<emButton> vec, bool b)
 {
-	static vector<CStatic*> vec = {
+	//和枚举对应，不能用static
+	/*static*/ vector<CMyStatic2*> vecBtn = {
 		&m_oEmergency, &m_oGrant, &m_oOpen,
 		&m_oEnterMapLayer, &m_oLock, &m_oRefuseOpen,
 		&m_oConfirm
 	};
 
-	static std::bitset<emButtonBuff> bs;
-
+	//static std::bitset<emButtonBuff> bs;
+	for (auto em : vec) {
+		if (em < emButtonBuff) {
+			vecBtn[em]->Set(b);
+			vecBtn[em]->Invalidate(); //一设置就要全部OnPaint,这样真的好么？
+		}
+	}
 }
 
 
@@ -242,6 +249,14 @@ void CApplyRecordDlg::OnTimer(UINT_PTR nIDEvent)
 		CClientDC dc(this);
 		Graphics gh(dc.GetSafeHdc());
 		gh.DrawImage(&img, x, y, w, h);
+
+		//灰化按钮
+		//vector<emButton> vec = { GrantBtn ,OpenDoorBtn ,LockDoorBtn ,RefuseOpenBtn };
+		//for (auto em : vec) {
+			//m_oGrant.Set(false);
+			//m_oGrant.Invalidate();
+		EnableButton({ GrantBtn ,OpenDoorBtn ,LockDoorBtn ,RefuseOpenBtn }, false);
+		//}
 
 		break;
 	}	

@@ -37,7 +37,7 @@ extern CSelfServiceBankClientApp theApp;
 //全局类
 struct StgCfg;
 class CGobalVariable {
-public:
+private:
 	//GDI+初始化
 	ULONG_PTR gdiplusToken;
 	GdiplusStartupInput gdiplusStartupInput;
@@ -57,5 +57,6 @@ public:
 	CGobalVariable();
 	~CGobalVariable();
 	bool Init();
+	const CString& GetExePath() const { return m_strExePath; }
 };
 extern CGobalVariable g_GobalVariable; //全局变量

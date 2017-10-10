@@ -6,6 +6,8 @@
 #include "SelfServiceBankClient.h"
 #include "SelfServiceBankClientDlg.h"
 
+#include "ZCMsgManager.h"
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -53,6 +55,9 @@ BOOL CSelfServiceBankClientApp::InitInstance()
 
 	//全局变量初始化
 	g_GobalVariable.Init();
+	
+	//初始化消息服务
+	CZCMsgManager::Instance()->Init(0);
 
 	// Create the shell manager, in case the dialog contains
 	// any shell tree view or shell list view controls.

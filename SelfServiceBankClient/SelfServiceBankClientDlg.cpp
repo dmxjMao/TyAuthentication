@@ -189,10 +189,10 @@ BOOL CSelfServiceBankClientDlg::OnInitDialog()
 	stApplyPersonInfo(_T("person11.jpg"),_T("person11"),_T("张江地铁站"),_T("内部人员")),
 	stApplyPersonInfo(_T("person12.jpg"),_T("person12"),_T("张江地铁站"),_T("内部人员"))
 	}));
-	_DebugInsertApplyInfo(stApplyInfo(_T("测试"), 0, CTime(2017, 10, 9, 10, 35, 34),
+	_DebugInsertApplyInfo(stApplyInfo(_T("测试"), 0, CTime(CTime::GetCurrentTime()),
 	{ stApplyPersonInfo(_T("person1.jpg"), _T("person1"), _T("张江地铁站"), _T("内部人员"))
 	}));
-	_DebugInsertApplyInfo(stApplyInfo(_T("haoyun"), 1, CTime(2017, 10, 9, 10, 34, 34),
+	_DebugInsertApplyInfo(stApplyInfo(_T("haoyun"), 1, CTime(CTime::GetCurrentTime()),
 	{ stApplyPersonInfo(_T("person1.jpg"), _T("person1"), _T("张江地铁站"), _T("内部人员")),
 		stApplyPersonInfo(_T("person3.jpg"),_T("person3"), _T("张江地铁站"),_T("内部人员"))
 	}));

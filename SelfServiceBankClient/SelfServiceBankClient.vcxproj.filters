@@ -72,6 +72,12 @@
     <ClInclude Include="MyStatic3.h">
       <Filter>MyOwnDraw</Filter>
     </ClInclude>
+    <ClInclude Include="MyListBox2.h">
+      <Filter>MyOwnDraw</Filter>
+    </ClInclude>
+    <ClInclude Include="ZCMsgManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SelfServiceBankClient.cpp">
@@ -112,6 +118,12 @@
     </ClCompile>
     <ClCompile Include="MyStatic3.cpp">
       <Filter>MyOwnDraw</Filter>
+    </ClCompile>
+    <ClCompile Include="MyListBox2.cpp">
+      <Filter>MyOwnDraw</Filter>
+    </ClCompile>
+    <ClCompile Include="ZCMsgManager.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

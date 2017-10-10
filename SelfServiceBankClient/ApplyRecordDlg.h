@@ -60,8 +60,8 @@ public:
 	inline void SetRectInParent(const CRect& rc) { m_rcInParent = rc; }
 	//刷新显示
 	void Update();
-	//按钮灰化/可用处理
-	void EnableButton(emButton em);
+	//按钮灰化/可用处理，改为按钮
+	void EnableButton(std::vector<emButton> em, bool b);
 
 private:
 public:

@@ -60,3 +60,8 @@ void CMyStatic3::OnPaint()
 	RectF rcGdiF(rcGdi.X * 1.0f, rcGdi.Y * 1.0f, rcGdi.Width * 1.0f, rcGdi.Height * 1.0f);
 	gh.DrawString(str, -1, &font, rcGdiF, &sf, &sbrText);
 }
+
+
+void CMyStatic3::DrawItem(LPDRAWITEMSTRUCT /*lpDrawItemStruct*/)
+{
+}
