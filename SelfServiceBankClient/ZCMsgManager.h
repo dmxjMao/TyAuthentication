@@ -5,8 +5,13 @@
 #include "ConnectAppProtocol.h"
 #include "ZCProtocol.h"
 //#include "DeBugLog.h"
+
+/*后期ZCMsg放到dll工程中，以组件形式给出接口，
+入接口：发送消息，
+出接口：注册感兴趣的消息及处理方法
+*/
 //
-//#define MESSAGENUM                70  //消息条数 
+#define MESSAGENUM                70  //消息条数 
 //#define EROCURRENTUSER            0   //当前用户信息
 //#define EROAREA                   1   //区域信息
 //#define EROCERTIFICATION          2   //认证查询
@@ -71,7 +76,7 @@
 //#define EROLINKESCORTCARDRECORD   63  //关联押运认证记录
 //#define EROGETESCORTINFOFROMWEB   64  //获取web端押运信息
 //
-//#define ZC_MSG_SERIAL_ID_MAX_VALUE				10000	// 消息序列号最大值
+#define ZC_MSG_SERIAL_ID_MAX_VALUE				10000	// 消息序列号最大值
 //#define USER_MSG_SERIAL_ID_DELETE_DEPARTMENT	10001	// 删除部门消息序列号
 
 
@@ -79,39 +84,29 @@ class CZCMsgManager
 {
 public:
 	static CZCMsgManager* m_pZcInst;
-	CZCMsgManager(void);
+	static CZCMsgManager* Instance() { return (m_pZcInst == NULL ? m_pZcInst = new CZCMsgManager() : m_pZcInst); }
+	static void FreeInstance() { MySafeDelete(m_pZcInst); }
+
+	bool Init(DWORD dwUser);
+	void SetInitState(bool bInit);
+	//bool Reg
 
 private:
-	bool m_bInit;
-	HANDLE m_hEvent;
-
-public:
-	bool Init(DWORD dwUser);
+	CZCMsgManager(void);
+	~CZCMsgManager(void);
 	bool UnInit();
-	void SetInitState(bool bInit);
-	bool AddSendMsg(WORD wModlueType,DWORD dwMsgId,DWORD dwMsgType,BYTE* pBuf,DWORD nBufSize);
+	bool AddSendMsg(WORD wModlueType, DWORD dwMsgId, DWORD dwMsgType, BYTE* pBuf, DWORD nBufSize);
 	void SetLastError(DWORD nError);
 	DWORD GetValidMsgID();
 
-public:
-	~CZCMsgManager(void);
 
-	static CZCMsgManager* Instance(){ return ( m_pZcInst == NULL ? m_pZcInst=new CZCMsgManager() : m_pZcInst);}
+	bool m_bInit; //是否初始化完成
+	HANDLE m_hConnectEvent;//连接ZCMsgManager.exe事件
 
-	static void FreeInstance()
-	{
-		if(m_pZcInst)
-		{
-			delete m_pZcInst;
-			m_pZcInst = NULL;
-		}
-	}
-
-//public:
-//	DWORD m_dwMsgID;
-//	DWORD m_LastError;
-//	bool m_bError[MESSAGENUM];
-//	int m_iErrorCode[MESSAGENUM];
+	DWORD m_dwMsgID = 0; //消息码
+	DWORD m_LastError; //上一条错误信息
+	bool m_bError[MESSAGENUM] = { true }; //错误
+	int m_iErrorCode[MESSAGENUM] = { 0 };//错误码
 //	DWORD m_dGroup;  
 //	char m_cImage[512];
 //	bool m_bIsAbnormalId;  //标定是否为异常录入请求认证ID
@@ -122,10 +117,12 @@ public:
 
 public:
 	//请求函数
-//	bool RequestCurrentUserInfo();   //请求当前用户信息
-//	T_CURUSER_INFO_EX m_CurrentUserInfo;
-//	bool RequestOpenDoorDisposalInfo();		// 请求第三方处理权限
-//	T_OPENDOORPOSALINFO m_tOpenDoorDisposalInfo;
+	//请求当前用户信息
+	bool RequestCurrentUserInfo();   
+	T_CURUSER_INFO_EX m_CurrentUserInfo;
+	// 请求第三方处理权限
+	bool RequestOpenDoorDisposalInfo();		
+	T_OPENDOORPOSALINFO m_tOpenDoorDisposalInfo;
 //	void AddCurrentUserInfo(T_CURUSER_INFO_EX *info);
 //	bool RequestAreaInfo();   //请求区域信息
 //	std::vector<T_AREA_INFO> m_AreaInfo;
@@ -314,12 +311,9 @@ public:
 //	CString OnGetSwipPersonCardNumber(CString csMemo);		//得到刷卡人卡号
 //	CString OnGetSwipCardPersonImgId(CString csIdNumber);	//得到刷卡人对应的头像
 //
-//	/**
-//	* @brief 请求获取所有用户信息
-//	**/
-//	bool RequestUserDetail(char chUserName[64], int nIndex);
-//	//用户的详细信息
-//	S_New_UserInfo* m_pUserDetail;
+	bool RequestUserDetail(char chUserName[64], int nIndex); //请求获取所有用户信息
+	S_New_UserInfo* m_pUserDetail;//用户的详细信息
+
 //
 //		/**
 //	* @brief 请求关闭回放下载

@@ -7,6 +7,8 @@
 #include "SelfServiceBankClientDlg.h"
 #include "afxdialogex.h"
 
+#include "LogDialog.h"
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -62,6 +64,7 @@ CSelfServiceBankClientDlg::CSelfServiceBankClientDlg(CWnd* pParent /*=NULL*/)
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 
 	m_vecApplyRecordDlg.resize(cstnApplyRecordCnt);
+	m_oLogDlg = std::make_shared<CLogDialog>();
 }
 
 void CSelfServiceBankClientDlg::DoDataExchange(CDataExchange* pDX)
@@ -87,7 +90,7 @@ BOOL CSelfServiceBankClientDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
-	// Add "About..." menu item to system menu.
+	// 添加“关于”、菜单项
 
 	// IDM_ABOUTBOX must be in the system command range.
 	ASSERT((IDM_ABOUTBOX & 0xFFF0) == IDM_ABOUTBOX);
@@ -96,15 +99,22 @@ BOOL CSelfServiceBankClientDlg::OnInitDialog()
 	CMenu* pSysMenu = GetSystemMenu(FALSE);
 	if (pSysMenu != NULL)
 	{
-		BOOL bNameValid;
-		CString strAboutMenu;
-		bNameValid = strAboutMenu.LoadString(IDS_ABOUTBOX);
-		ASSERT(bNameValid);
-		if (!strAboutMenu.IsEmpty())
-		{
-			pSysMenu->AppendMenu(MF_SEPARATOR);
-			pSysMenu->AppendMenu(MF_STRING, IDM_ABOUTBOX, strAboutMenu);
+		vector<std::tuple<int, CString>> vecMenu = { 
+			{ IDM_ABOUTBOX,_T("关于")},
+			{ IDM_Log,_T("日志") } };
+		//vector<int> vecMenu = { IDM_ABOUTBOX , IDM_Log };
+
+		//BOOL bNameValid;
+		//CString strAboutMenu;
+		//bNameValid = strAboutMenu.LoadString(IDS_ABOUTBOX);
+		//ASSERT(bNameValid);
+		//if (!strAboutMenu.IsEmpty())
+		//{
+		pSysMenu->AppendMenu(MF_SEPARATOR);
+		for (const auto& tpl : vecMenu) {
+			pSysMenu->AppendMenu(MF_STRING, std::get<0>(tpl), std::get<1>(tpl));
 		}
+		
 	}
 
 	// Set the icon for this dialog.  The framework does this automatically
@@ -207,10 +217,19 @@ BOOL CSelfServiceBankClientDlg::OnInitDialog()
 
 void CSelfServiceBankClientDlg::OnSysCommand(UINT nID, LPARAM lParam)
 {
-	if ((nID & 0xFFF0) == IDM_ABOUTBOX)
+	//低4位系统使用
+	UINT id = nID & 0xFFF0;
+	if (IDM_ABOUTBOX == id)
 	{
 		CAboutDlg dlgAbout;
 		dlgAbout.DoModal();
+	}
+	else if (IDM_Log == id) {
+		//auto& pDlg = theApp.GetLogDlg();
+		if(nullptr == m_oLogDlg->GetSafeHwnd()){
+			m_oLogDlg->Create(IDD_Log, this);
+		}
+		m_oLogDlg->ShowWindow(SW_NORMAL);
 	}
 	else
 	{

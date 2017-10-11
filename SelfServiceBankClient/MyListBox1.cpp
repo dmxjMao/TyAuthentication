@@ -368,6 +368,8 @@ void CMyListBox1::OnLbnSelchange()
 	//中介者，各控件之间的关系
 	//获取所选item内容-》传给中介，中介获取右侧第一行信息排序
 	int nSel = GetCurSel();
+	//点击空白，nSel = -1
+	if (nSel < 0) return;
 	const auto& st = m_vecApplyInfo[nSel];
 	m_oMediator->DisplayDetail(st); //m_oMediator=0xcccc竟然也能进去，所以m_li崩溃
 }

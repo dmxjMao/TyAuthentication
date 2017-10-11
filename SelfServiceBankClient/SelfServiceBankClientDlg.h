@@ -8,6 +8,8 @@
 #include "MyListBox1.h"
 #include "ApplyRecordDlg.h"
 
+//class CLogDialog;
+
 // CSelfServiceBankClientDlg dialog
 class CSelfServiceBankClientDlg : public CDialogEx
 {
@@ -43,6 +45,8 @@ protected:
 	std::vector<CApplyRecordDlg> m_vecApplyRecordDlg; //申请记录详细对话框
 	std::vector<std::shared_ptr<stApplyInfo>> m_vecApplyInfo;//申请消息
 
+	std::shared_ptr<CLogDialog> m_oLogDlg = 0;//日志对话框
+
 	// Generated message map functions
 	virtual BOOL OnInitDialog();
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
@@ -58,9 +62,6 @@ protected:
 private:
 #ifdef _DEBUG
 	void _DebugInsertApplyInfo(stApplyInfo&& st);//插入申请消息
-	//void _DebugInsertListItem();//插入列表数据
-	//void _DebugInsertSomeApplyPersonInfo();//插入申请认证人员信息
-
 #endif
 	
 };

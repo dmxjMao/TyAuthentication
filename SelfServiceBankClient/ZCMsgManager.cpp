@@ -2489,138 +2489,110 @@ void _stdcall pfStateCallback(DWORD dwState, void* pMessage, INT pnMessageSize, 
 
 CZCMsgManager::CZCMsgManager(void): m_bInit(false)
 {
-	/*for(int i=0;i<MESSAGENUM;++i)
-	{
-		m_bError[i]=true;
-		m_iErrorCode[i]=0;
-	}
-	m_iShow=0;
-	memcpy(m_CurrentUserInfo.chUserName,"\0",64);
-	InitializeCriticalSection(&g_csPreCaptureVector);
-	CString strDebugName = _T("第三方认证");
-	char* tmp =NULL;
-	CStringToChar(strDebugName, &tmp);
-	m_cDebugLog =new CDebugLogService(tmp);
-	free(tmp);
-	tmp = NULL;
+	//for(int i=0;i<MESSAGENUM;++i)
+	//{
+	//	m_bError[i]=true;
+	//	m_iErrorCode[i]=0;
+	//}
+	//m_iShow=0;
+	//memcpy(m_CurrentUserInfo.chUserName,"\0",64);
+	m_CurrentUserInfo.chUserName[0] = 0;
+	//InitializeCriticalSection(&g_csPreCaptureVector);
+	//CString strDebugName = _T("第三方认证");
+	//char* tmp =NULL;
+	//CStringToChar(strDebugName, &tmp);
+	//m_cDebugLog =new CDebugLogService(tmp);
+	//free(tmp);
+	//tmp = NULL;
 	
-	memset(&m_cImage, 0, 512);
-	try
-	{
-		m_pUserDetail = new S_New_UserInfo;
-	}
-	catch (std::bad_alloc)
-	{
-		CZCMsgManager::Instance()->m_cDebugLog->MessageRecord("<<ERROR>>class = CZCMsgManager: func = CZCMsgManager(void) detail = 分配内存失败");
-	}
-	memset(m_pUserDetail, 0 , sizeof(S_New_UserInfo));
+	//memset(&m_cImage, 0, 512);
+	//try
+	//{
+	m_pUserDetail = new S_New_UserInfo;
+	//}
+	//catch (std::bad_alloc)
+	//{
+	//	CZCMsgManager::Instance()->m_cDebugLog->MessageRecord("<<ERROR>>class = CZCMsgManager: func = CZCMsgManager(void) detail = 分配内存失败");
+	//}
+	//memset(m_pUserDetail, 0 , sizeof(S_New_UserInfo));
 	memset(&m_tOpenDoorDisposalInfo, 0, sizeof(m_tOpenDoorDisposalInfo));
 
-	m_hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-	m_dwMsgID = 0;*/
+	m_hConnectEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	m_dwMsgID = 0;
 }
 
 CZCMsgManager::~CZCMsgManager(void)
 {
-	/*DeleteCriticalSection(&g_csPreCaptureVector);
-	std::map<int,char*>::iterator mapPhotoIter = CZCMsgManager::Instance()->m_vPersonPhoto.begin();
-	for (; mapPhotoIter != CZCMsgManager::Instance()->m_vPersonPhoto.end(); mapPhotoIter++)
-	{
-		delete(mapPhotoIter->second);
-		mapPhotoIter->second = NULL;
-	}	
-	CZCMsgManager::Instance()->m_vPersonPhoto.clear();
+	//DeleteCriticalSection(&g_csPreCaptureVector);
+	//std::map<int,char*>::iterator mapPhotoIter = CZCMsgManager::Instance()->m_vPersonPhoto.begin();
+	//for (; mapPhotoIter != CZCMsgManager::Instance()->m_vPersonPhoto.end(); mapPhotoIter++)
+	//{
+	//	delete(mapPhotoIter->second);
+	//	mapPhotoIter->second = NULL;
+	//}	
+	
+	/*CZCMsgManager::Instance()->m_vPersonPhoto.clear();
 	delete m_pUserDetail;
 	if (NULL != m_cDebugLog)
 	{
 		delete m_cDebugLog;
 		m_cDebugLog = NULL;
-	}
+	}*/
 
-	CZCMsgManager::Instance()->m_vecStaffDepartment.clear();
+	//CZCMsgManager::Instance()->m_vecStaffDepartment.clear();
 
-	CZCMsgManager::Instance()->m_vecfAuthGroup.clear();
+	//CZCMsgManager::Instance()->m_vecfAuthGroup.clear();
 
-	CZCMsgManager::Instance()->m_vecStaffinfo.clear();
+	//CZCMsgManager::Instance()->m_vecStaffinfo.clear();
 
-	CZCMsgManager::Instance()->m_vecStaffOperationinfo.clear();
+	//CZCMsgManager::Instance()->m_vecStaffOperationinfo.clear();
 
-	CloseHandle(m_hEvent);*/
+	CloseHandle(m_hConnectEvent); m_hConnectEvent = 0;
 }
 
 bool CZCMsgManager::Init(DWORD dwUser)
 {
-	//TCHAR szPath[512];
-	//GetModuleFileName(NULL, szPath, 512);
-	//for (int i=wcslen(szPath)-1; i>=0; --i)
-	//{   
-	//	if (szPath[i] == '\\')
-	//	{
-	//		szPath[i] = '\0';
-	//		break;   
-	//	}
-	//}
-	
+	//exe目录
 	auto str = g_GobalVariable.GetExePath();
 
+	//配置
+	int iPort = 5555, iFlag = 0;
 
-	//wcscat(szPath,_T("\\system\\config.ini\0"));
-	//FILE *fp=NULL;
-	//CString cstrTemp(szPath);
-	//char *pTempPath=NULL;
-	//CStringToChar(cstrTemp,&pTempPath);
-	//if(NULL==pTempPath)
-	//{
-	//	return false;
-	//}
-	//fp=fopen(pTempPath,"r");
-	//int iPort=0,iFlag=0;
-	//if(fp)
-	//{
-	//	iPort=GetPrivateProfileInt(_T("Config"),_T("Port"),5555,szPath);
-	//	iFlag=GetPrivateProfileInt(_T("Config"),_T("Flag"),0,szPath);
-	//	fclose(fp);
-	//	free(pTempPath);
-	//	pTempPath=NULL;
-	//}
-	//else
-	//{
-	//	MessageBox(NULL,_T("配置文件打开失败！"),_T("提示"),MB_OK);
-	//	free(pTempPath);
-	//	pTempPath=NULL;
-	//	return false;
-	//}
+	TJTY_TcpClient_SetThreadCount(1,1);
 
-	//TJTY_TcpClient_SetThreadCount(1,1);
+	TCPCLIENTMODULE_INIT_INFO info = {0};
+	info.dwUser = (DWORD)this;;
+	info.pfCallback = pfCallback;
+	info.pfStateCallBack = pfStateCallback;
+	info.wLoaclModuleType = ZC_MODULE_OPENDOOR; //三方认证模块
+	info.wPort = iPort;
+	info.wProtocolVersion = 0;
+	TJTY_TcpClient_Init(info);
+	//m_bInit = true;
+	if(1==iFlag) 
+	{//写日志
+		TJTY_TcpClient_SetLogWriteType(true);
+	}
 
-	//TCPCLIENTMODULE_INIT_INFO info = {0};
-	//info.dwUser = (DWORD)this;;
-	//info.pfCallback = pfCallback;
-	//info.pfStateCallBack = pfStateCallback;
-	//info.wLoaclModuleType = ZC_MODULE_OPENDOOR;
-	//info.wPort = iPort;
-	//info.wProtocolVersion = 0;
-	//TJTY_TcpClient_Init(info);
-	////m_bInit = true;
-	//if(1==iFlag)
-	//{
-	//	TJTY_TcpClient_SetLogWriteType(true);
-	//}
+	//不死等，以防初始化函数连续调用时，状态回掉无反馈
+	if(WaitForSingleObject(m_hConnectEvent, 2000) != WAIT_OBJECT_0)
+	{
+		//连ZCMsgService.exe
+		theApp.WriteLog(error, _T("CZCMsgManager::Init failed !"));
+		AfxMessageBox(_T("连接消息服务失败！"));
+		return false;
+	}
 
-	//if(WaitForSingleObject(m_hEvent, 2000) != WAIT_OBJECT_0) //不死等，以防初始化函数连续调用时，状态回掉无反馈
-	//{
-	//	return false;
-	//}
+	//请求初始信息
 
-	//return m_bInit;
 
-	return 0;
+	return m_bInit;
 }
 
 void CZCMsgManager::SetInitState(bool bInit)
 {
 	m_bInit = bInit;
-	SetEvent(m_hEvent);
+	SetEvent(m_hConnectEvent);
 }
 
 bool CZCMsgManager::AddSendMsg(WORD wModlueType,DWORD dwMsgId,DWORD dwMsgType,BYTE* pBuf,DWORD nBufSize)
@@ -2651,18 +2623,17 @@ bool CZCMsgManager::UnInit()
 
 void CZCMsgManager::SetLastError(DWORD nError)
 {
-	//m_LastError = nError;
+	m_LastError = nError;
 }
 
 DWORD CZCMsgManager::GetValidMsgID()
 {
-	/*m_dwMsgID++;
+	++m_dwMsgID;
 	if(m_dwMsgID > ZC_MSG_SERIAL_ID_MAX_VALUE)
 	{
 		m_dwMsgID = 0;
 	}
-	return m_dwMsgID;*/
-	return 0;
+	return m_dwMsgID;
 }
 //
 //bool CZCMsgManager::RequestCurrentUserInfo()   //请求当前用户信息

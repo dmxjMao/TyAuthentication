@@ -78,6 +78,12 @@
     <ClInclude Include="ZCMsgManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="LogDialog.h">
+      <Filter>Dialog</Filter>
+    </ClInclude>
+    <ClInclude Include="MyLogListCtrl.h">
+      <Filter>MyOwnDraw</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SelfServiceBankClient.cpp">
@@ -124,6 +130,12 @@
     </ClCompile>
     <ClCompile Include="ZCMsgManager.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LogDialog.cpp">
+      <Filter>Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="MyLogListCtrl.cpp">
+      <Filter>MyOwnDraw</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

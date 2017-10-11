@@ -78,3 +78,9 @@ using namespace Gdiplus;
 
 //小工具
 #include "..\MyUtilityStatic\MyUtilityStatic.h"
+
+
+//boost日志
+#include <boost\log\trivial.hpp>//宏
+using namespace boost::log::trivial;
+//void WriteLog(boost::log::trivial::severity_level, const TCHAR* szMsg, ...);//写日志

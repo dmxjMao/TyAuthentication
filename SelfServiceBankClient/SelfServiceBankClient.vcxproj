@@ -91,12 +91,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\ZCMsgManager</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\ZCMsgManager;E:\maoyinan\prj\boost_1_63_0</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>MyUtilityStatic.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>E:\maoyinan\prj\boost_1_63_0\stage\lib</AdditionalLibraryDirectories>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -190,11 +191,13 @@
     <ClInclude Include="ApplyRecordDlg.h" />
     <ClInclude Include="CommonDefine.h" />
     <ClInclude Include="EmergencyPlanDialog.h" />
+    <ClInclude Include="LogDialog.h" />
     <ClInclude Include="MyButton1.h" />
     <ClInclude Include="MyButton2.h" />
     <ClInclude Include="MyListBox1.h" />
     <ClInclude Include="MyListBox2.h" />
     <ClInclude Include="MyListCtrl1.h" />
+    <ClInclude Include="MyLogListCtrl.h" />
     <ClInclude Include="MyScrollBar1.h" />
     <ClInclude Include="MyStatic1.h" />
     <ClInclude Include="MyStatic2.h" />
@@ -209,11 +212,13 @@
   <ItemGroup>
     <ClCompile Include="ApplyRecordDlg.cpp" />
     <ClCompile Include="EmergencyPlanDialog.cpp" />
+    <ClCompile Include="LogDialog.cpp" />
     <ClCompile Include="MyButton1.cpp" />
     <ClCompile Include="MyButton2.cpp" />
     <ClCompile Include="MyListBox1.cpp" />
     <ClCompile Include="MyListBox2.cpp" />
     <ClCompile Include="MyListCtrl1.cpp" />
+    <ClCompile Include="MyLogListCtrl.cpp" />
     <ClCompile Include="MyScrollBar1.cpp" />
     <ClCompile Include="MyStatic1.cpp" />
     <ClCompile Include="MyStatic2.cpp" />

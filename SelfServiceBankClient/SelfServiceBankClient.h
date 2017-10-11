@@ -15,26 +15,32 @@
 // See SelfServiceBankClient.cpp for the implementation of this class
 //
 
+class CLogDialog;
 class CSelfServiceBankClientApp : public CWinApp
 {
 public:
 	CSelfServiceBankClientApp();
 
-// Overrides
 public:
 	virtual BOOL InitInstance();
+	//inline const std::shared_ptr<CLogDialog>& GetLogDlg() const { return m_oLogDlg; }
+	//写日志
+	void _cdecl WriteLog(severity_level, const TCHAR* szMsg, ...);
 
-// Implementation
 
 	DECLARE_MESSAGE_MAP()
 	virtual int ExitInstance();
+
+private:
+	bool InitLog();
+	//std::shared_ptr<CLogDialog> m_oLogDlg = 0;//日志对话框
 };
 
 extern CSelfServiceBankClientApp theApp;
 
 
 
-//全局类
+//全局类，后期作为theApp成员
 struct StgCfg;
 class CGobalVariable {
 private:
