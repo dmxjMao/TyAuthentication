@@ -69,8 +69,8 @@ using namespace Gdiplus;
 //STL
 #include <vector>
 #include <list>
-//#include <map>
-#include <bitset>
+#include <map>
+//#include <bitset>
 #include <memory> //shared_ptr
 #include <algorithm>
 #include <functional>

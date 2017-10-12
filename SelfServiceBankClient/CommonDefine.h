@@ -1,8 +1,11 @@
 #pragma once
-
+#include "ConnectAppProtocol.h"
+#include "ZCProtocol.h"
 
 /*公共定义*/
 
+//ZCMsg消息头大小
+#define ZCMsgHeaderLen sizeof(ZC_MSG_RESP_RESULT)
 
 /*界面标题栏
 标题颜色
@@ -31,6 +34,7 @@ enum emButton {
 	ConfirmBtn,
 	emButtonBuff
 };
+
 
 /*结构体
 */
@@ -101,4 +105,23 @@ struct stEmergPlan {
 
 	stEmergPlan(CString name, std::vector<stEmergPlanStep>&& vec)
 		: strPlanName(name), vecStep(vec) {}
+};
+
+
+
+
+/*用户信息
+基础信息、权限
+*/
+struct stUserInfo {
+	S_New_UserInfo stBaseInfo;//基础
+	T_OPENDOORPOSALINFO stDisposalInfo;//权限
+};
+
+
+/*管辖人员信息
+*/
+struct stControledPersonInfo {
+	TAGDOAPERSONINFO_S stBaseInfo;//基础
+	TCHAR szHeadPic[MAX_PATH] = { 0 };//头像全路径
 };

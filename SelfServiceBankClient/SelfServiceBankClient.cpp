@@ -6,14 +6,21 @@
 #include "SelfServiceBankClient.h"
 #include "SelfServiceBankClientDlg.h"
 
-#include <boost\log\expressions.hpp> //格式化
-#include <boost\date_time\posix_time\posix_time_types.hpp>
-#include <boost\log\support\date_time.hpp>
+#include <boost/log/expressions.hpp> //格式化
+#include <boost/date_time/posix_time/posix_time_types.hpp> //时间格式
+#include <boost/log/support/date_time.hpp>
+#include <boost/locale/generator.hpp>
 
-#include <boost\log\sources\severity_logger.hpp> //source 源
-#include <boost\log\utility\setup\common_attributes.hpp> //公共属性
-//#include <boost\log\core.hpp> //core 核心
-#include <boost\log\utility\setup\file.hpp> //sink 文件
+//#include <boost/smart_ptr/shared_ptr.hpp>
+//#include <boost/smart_ptr/make_shared_object.hpp>
+//#include <boost/log/sinks/sync_frontend.hpp>
+//#include <boost/log/sinks/text_ostream_backend.hpp>
+//#include <boost/log/sources/record_ostream.hpp>
+//#include <boost/core/null_deleter.hpp>
+
+#include <boost/log/sources/severity_logger.hpp> //级别 源
+#include <boost/log/utility/setup/common_attributes.hpp> //公共属性
+#include <boost/log/utility/setup/file.hpp> //sink 文件
 
 #include "ZCMsgManager.h"
 #include "LogDialog.h"
@@ -30,7 +37,8 @@ namespace keywords = logging::keywords;
 namespace expr = boost::log::expressions;
 using namespace logging::trivial;
 
-src::severity_logger< severity_level > g_slog;//级别日志器
+src::wseverity_logger< severity_level > g_slog;//级别日志器
+//BOOST_LOG_INLINE_GLOBAL_LOGGER_DEFAULT(my_logger, src::logger_mt)
 
 // CSelfServiceBankClientApp
 
@@ -77,6 +85,9 @@ BOOL CSelfServiceBankClientApp::InitInstance()
 
 	//初始化日志
 	InitLog();
+
+	//初始化消息处理函数
+	InitZCMsgHandler();
 
 	//初始化消息服务
 	if (! CZCMsgManager::Instance()->Init(0))
@@ -155,19 +166,27 @@ bool CSelfServiceBankClientApp::InitLog()
 		::GetCurrentDirectory(MAX_PATH, szCurPath);
 		::SetCurrentDirectory(str);
 
-		//注册 文件sink
-		logging::add_file_log(
+		//注册 文件sink 这在修改全局日志器，先初始化
+		auto& sink = logging::add_file_log(
 			keywords::file_name = "applog_%N.log",
 			keywords::rotation_size = 10 * 1024 * 1024, //10M生成新文件
 			keywords::time_based_rotation = sinks::file::rotation_at_time_point(0, 0, 0),//按天
 			//keywords::format = "[%TimeStamp%]: %Message%"
 			keywords::format = (
-				expr::stream
-				<< expr::attr< unsigned int >("LineID")
+				//expr::stream << expr::format<wchar_t>(L"%1%：<%2%>, [ %3% ], { %4% }")
+				//% expr::attr< unsigned int >("LineID") % logging::trivial::severity
+				//% expr::format_date_time<boost::posix_time::ptime>("TimeStamp", "%H:%M:%S")
+				//% expr::wmessage
+				expr::stream << expr::attr< unsigned int >("LineID")
 				<< ": <" << logging::trivial::severity
-				<< "> " << ",[ "<< expr::format_date_time<boost::posix_time::ptime>("TimeStamp", "%H:%M:%S") << " ] " << ",{ " << expr::smessage << " } "
+				<< "> " << ",[ "<< expr::format_date_time<boost::posix_time::ptime>("TimeStamp", "%H:%M:%S") << " ] " << ",{ " << expr::message << " } "
 				)
 		);
+
+		
+		//sink会自动转化
+		std::locale loc = boost::locale::generator()("en_US.UTF-8");
+		sink->imbue(loc);
 
 		logging::add_common_attributes();//公共属性
 
@@ -186,7 +205,134 @@ bool CSelfServiceBankClientApp::InitLog()
 	return true;
 }
 
-void _cdecl CSelfServiceBankClientApp::WriteLog(severity_level, const TCHAR* szMsg, ...)
+void CSelfServiceBankClientApp::InitZCMsgHandler()
+{
+	//m_mapZCMsgHandler[ZC_MSG_COMMON_CURUSERINFOEX] = ZCMsgCurrentUserInfo;
+	//注册自己感兴趣的消息，其他不处理
+	m_mapZCMsgHandler = { /*<反馈， 处理方法>*/
+		{ ZC_MSG_COMMON_CURUSERINFOEX, &CSelfServiceBankClientApp::ZCMsgCurrentUserInfo },//当前用户信息
+		{ ZC_MSG_COMMON_USERALLINFO, &CSelfServiceBankClientApp::ZCMsgUserDetailInfo },//用户详情
+		{ ZC_MSG_OPENDOOR_DISPOSALINFO, &CSelfServiceBankClientApp::ZCMsgDisposalInfo },//权限信息
+		{ ZC_MSG_OPENDOOR_GETALLPEPOLEINFO, &CSelfServiceBankClientApp::ZCMsgControledPersonInfo },//管辖人员信息
+		{ ZC_MSG_COMMON_DOWNLOADPIC, &CSelfServiceBankClientApp::ZCMsgControledHeadPic },//管辖人员头像 
+		{ ZC_MSG_OPENDOOR_DEPARTMENTINFO, &CSelfServiceBankClientApp::ZCMsgDepartmentInfo }//部门信息
+	};
+}
+
+
+
+void CSelfServiceBankClientApp::Update(bool bOK, DWORD dwType, DWORD dwMsgID, PBYTE pMsg)
+{
+	if (bOK) {
+		auto it = m_mapZCMsgHandler.find(dwType);
+		if (m_mapZCMsgHandler.end() != it) {
+			auto& pfun = it->second;
+			(this->*pfun)(pMsg, dwMsgID);
+		}
+	}
+	else {
+		WriteLog(error, _T("请求消息反馈失败，消息码：%d"), dwType);
+	}
+}
+
+
+//获取用户信息
+std::shared_ptr<stUserInfo>& CSelfServiceBankClientApp::CreateOrGetUserInfo(const CString& strName)
+{
+	auto& spUserInfo = m_mapUserInfo[strName];
+	if (nullptr == spUserInfo)
+		spUserInfo = std::make_shared<stUserInfo>();
+	return spUserInfo;
+}
+
+void CSelfServiceBankClientApp::ZCMsgCurrentUserInfo(PBYTE pMsg, DWORD dwMsgID)
+{
+	T_CURUSER_INFO_EX* pInfo = (T_CURUSER_INFO_EX*)(&pMsg[ZCMsgHeaderLen]);
+	CString strName(pInfo->chUserName);
+	m_strCurUserName = strName;
+	
+	//创建用户
+	CreateOrGetUserInfo(strName);
+
+	//请求当前用户的详细信息
+	CZCMsgManager::Instance()->RequestMsgWithMsgID(ZC_MODULE_APP, ZC_MSG_APP_USERALLINFO,
+		-1, (PBYTE)pInfo->chUserName, 64);
+}
+
+
+//用户详细信息 : 经常在权限信息之后收到
+void CSelfServiceBankClientApp::ZCMsgUserDetailInfo(PBYTE pMsg, DWORD dwMsgID)
+{
+	S_New_UserInfo* pInfo = (S_New_UserInfo*)(&pMsg[ZCMsgHeaderLen]);
+	CString strName(pInfo->chUserName);
+	//if (-1 == dwMsgID) {//dwMsgID = -1是当前登录用户
+	//	m_strCurUserName = strName;
+	//}
+	//如何避免 pInfo无效时的m_mapUserInfo内存问题？
+	auto& spUserInfo = CreateOrGetUserInfo(strName);
+
+	spUserInfo->stBaseInfo = std::move(*pInfo);
+}
+
+//当前用户权限信息 ： ZCMsgManger.exe保存了登录名
+void CSelfServiceBankClientApp::ZCMsgDisposalInfo(PBYTE pMsg, DWORD dwMsgID)
+{
+	T_OPENDOORPOSALINFO* pInfo = (T_OPENDOORPOSALINFO*)(&pMsg[ZCMsgHeaderLen]);
+	auto& spUserInfo = CreateOrGetUserInfo(m_strCurUserName);
+	spUserInfo->stDisposalInfo = std::move(*pInfo);
+}
+
+//管辖人员信息
+void CSelfServiceBankClientApp::ZCMsgControledPersonInfo(PBYTE pMsg, DWORD dwMsgID)
+{
+	int nMsgLen = sizeof(pMsg) / sizeof(BYTE);
+	nMsgLen = strlen((char*)pMsg);
+
+	const int nStructLen = sizeof(TAGDOAPERSONINFO_S);
+	int iCount = (nMsgLen - ZCMsgHeaderLen) / nStructLen;
+	auto pZCMsg = CZCMsgManager::Instance();
+	for (int i = 0; i < iCount; ++i){
+		TAGDOAPERSONINFO_S* pInfo = (TAGDOAPERSONINFO_S*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
+		
+		auto sp = std::make_shared<stControledPersonInfo>();
+		sp->stBaseInfo = std::move(*pInfo);
+		m_vecControledPersonInfo.push_back(sp);
+		//获取照片信息
+		PBYTE pImage = 
+			(TRUE == IsBadReadPtr(pInfo->chHeadImage, sizeof(int))) ? (PBYTE)"" : (PBYTE)pInfo->chHeadImage;
+		
+		pZCMsg->RequestMsgWithMsgID(ZC_MODULE_BCBCLIENT, ZC_MSG_BCBCLIENT_DOWNLOADPIC, i, pImage, 512);
+	}
+}
+
+//管辖人员头像：一条一条
+void CSelfServiceBankClientApp::ZCMsgControledHeadPic(PBYTE pMsg, DWORD dwMsgID)
+{
+	assert(dwMsgID < 0 || dwMsgID > m_vecControledPersonInfo.size());
+
+	auto& sp = m_vecControledPersonInfo[dwMsgID];
+	PBYTE pImgPath = &pMsg[ZCMsgHeaderLen];
+	memcpy(sp->szHeadPic, pImgPath, MAX_PATH);
+}
+
+//部门信息
+void CSelfServiceBankClientApp::ZCMsgDepartmentInfo(PBYTE pMsg, DWORD dwMsgID)
+{
+	int nMsgLen = sizeof(pMsg) / sizeof(BYTE);
+	nMsgLen = strlen((char*)pMsg);
+
+	const int nStructLen = sizeof(TAGDOADEPARTMENTINFO_S);
+	int iCount = (nMsgLen - ZCMsgHeaderLen) / nStructLen;
+	for (int i = 0; i < iCount; ++i) {
+		TAGDOADEPARTMENTINFO_S* pInfo = (TAGDOADEPARTMENTINFO_S*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
+
+	}
+
+}
+
+
+//写日志
+void _cdecl CSelfServiceBankClientApp::WriteLog(severity_level level, const TCHAR* szMsg, ...)
 {
 	TCHAR szBuffer[1024];
 	va_list pArgList; //char*
@@ -194,12 +340,11 @@ void _cdecl CSelfServiceBankClientApp::WriteLog(severity_level, const TCHAR* szM
 
 	//专门写进szBuffer的函数
 	_vsntprintf_s(szBuffer, _countof(szBuffer), szMsg, pArgList);
+	
+	BOOST_LOG_SEV(g_slog, level) << szBuffer/*L"你好"*//*"abc"*/;
+
 	va_end(pArgList); //清理
-
-	BOOST_LOG_SEV(g_slog, trace) << szBuffer;
 }
-
-
 
 
 /*****  全局类  */

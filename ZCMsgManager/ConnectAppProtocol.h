@@ -1157,7 +1157,7 @@ typedef struct
     int nChannels;             ///< 对应主机全部通道（拼接的通道号组成的整形值）
 }S_UserInfo;
 
-///< 获取用户详细信息(4-out)(带头像)
+//< 获取用户详细信息(4-out)(带头像)
 typedef struct
 {
     int nID;                    ///< 用户ID
@@ -1174,6 +1174,7 @@ typedef struct
     char chAbout[500];          ///< 用户简介
     char chImage[512];          ///< 用户头像
 }S_New_UserInfo;
+
 
 ///< 获取用户详细信息(4-out)[附加启用/禁用]
 typedef struct
