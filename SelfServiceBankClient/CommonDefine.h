@@ -6,6 +6,14 @@
 
 //ZCMsg消息头大小
 #define ZCMsgHeaderLen sizeof(ZC_MSG_RESP_RESULT)
+//消息处理公共代码提取宏
+#define ZCMsgMacro_beginfor(T, pMsg, nMsgLen)	\
+const int nStructLen = sizeof(T);	\
+int iCount = (nMsgLen - ZCMsgHeaderLen) / nStructLen;	\
+for (int i = 0; i < iCount; ++i) {	\
+	//T* pInfo = (T*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);	
+
+#define ZCMsgMacro_endfor	}
 
 /*界面标题栏
 标题颜色

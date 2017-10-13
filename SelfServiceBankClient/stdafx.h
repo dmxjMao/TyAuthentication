@@ -70,6 +70,7 @@ using namespace Gdiplus;
 #include <vector>
 #include <list>
 #include <map>
+#include <tuple>
 //#include <bitset>
 #include <memory> //shared_ptr
 #include <algorithm>

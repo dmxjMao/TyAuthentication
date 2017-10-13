@@ -16,6 +16,8 @@
 #define ZC_MSG_SERIAL_ID_MAX_VALUE				10000	// 消息序列号最大值
 //#define USER_MSG_SERIAL_ID_DELETE_DEPARTMENT	10001	// 删除部门消息序列号
 
+
+
 class CZCMsgObserver;
 class CZCMsgManager
 {
@@ -29,7 +31,7 @@ public:
 	bool RequestMsg(WORD wModlueType, DWORD dwMsgType, PBYTE pBuf = 0, DWORD nBufSize = 0);
 	//msgid有特殊作用
 	bool RequestMsgWithMsgID(WORD wModlueType, DWORD dwMsgType, DWORD dwMsgID, PBYTE pBuf = 0, DWORD nBufSize = 0);
-	void NotifyObserver(bool bOK, DWORD dwMsgType, PBYTE pMsg = 0, DWORD dwMsgID = 0);
+	void NotifyObserver(bool bOK, DWORD dwMsgType, DWORD dwMsgID, PBYTE pMsg, INT nMsgLen);
 
 
 private:
@@ -39,6 +41,7 @@ private:
 	bool AddSendMsg(WORD wModlueType, DWORD dwMsgId, DWORD dwMsgType, BYTE* pBuf, DWORD nBufSize);
 	//void SetLastError(DWORD nError);
 	DWORD GetValidMsgID();
+	//void WriteLog(DWORD dwMsgType, );//写日志
 
 	void AddObserver(CZCMsgObserver*);
 	void RemoveObserver(CZCMsgObserver*);

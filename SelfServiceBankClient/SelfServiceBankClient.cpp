@@ -60,6 +60,8 @@ CSelfServiceBankClientApp::CSelfServiceBankClientApp()
 
 CSelfServiceBankClientApp theApp;
 CGobalVariable g_GobalVariable; //全局变量
+CSelfServiceBankClientDlg* g_pMainDlg = 0;//主界面对话框
+
 
 // CSelfServiceBankClientApp initialization
 
@@ -111,6 +113,7 @@ BOOL CSelfServiceBankClientApp::InitInstance()
 
 	CSelfServiceBankClientDlg dlg;
 	m_pMainWnd = &dlg;
+	g_pMainDlg = &dlg;
 	INT_PTR nResponse = dlg.DoModal();
 	if (nResponse == IDOK)
 	{
@@ -213,25 +216,36 @@ void CSelfServiceBankClientApp::InitZCMsgHandler()
 		{ ZC_MSG_COMMON_CURUSERINFOEX, &CSelfServiceBankClientApp::ZCMsgCurrentUserInfo },//当前用户信息
 		{ ZC_MSG_COMMON_USERALLINFO, &CSelfServiceBankClientApp::ZCMsgUserDetailInfo },//用户详情
 		{ ZC_MSG_OPENDOOR_DISPOSALINFO, &CSelfServiceBankClientApp::ZCMsgDisposalInfo },//权限信息
+		{ ZC_MSG_COMMON_ALLAREAINFO, &CSelfServiceBankClientApp::ZCMsgAreaInfo },//权限信息
 		{ ZC_MSG_OPENDOOR_GETALLPEPOLEINFO, &CSelfServiceBankClientApp::ZCMsgControledPersonInfo },//管辖人员信息
 		{ ZC_MSG_COMMON_DOWNLOADPIC, &CSelfServiceBankClientApp::ZCMsgControledHeadPic },//管辖人员头像 
-		{ ZC_MSG_OPENDOOR_DEPARTMENTINFO, &CSelfServiceBankClientApp::ZCMsgDepartmentInfo }//部门信息
+		{ ZC_MSG_OPENDOOR_DEPARTMENTINFO, &CSelfServiceBankClientApp::ZCMsgDepartmentInfo },//部门信息
+		{ ZC_MSG_OPENDOOR_ACCESSRELATION, &CSelfServiceBankClientApp::ZCMsgEntranceRelation },//门禁主从关系
+		{ ZC_MSG_OPENDOOR_GETALLACSHOSTINFO, &CSelfServiceBankClientApp::ZCMsgACSHostInfo },//所有门禁主机信息
+		{ ZC_MSG_OPENDOOR_CTRLLEVELMULINFO, &CSelfServiceBankClientApp::ZCMsgCtrlLevelInfo },//获取管控等级信息
+		{ ZC_MSG_OPENDOOR_CTRLLEVELPLAN, &CSelfServiceBankClientApp::ZCMsgCtrlPlanInfo }, //管控策略信息
+		{ ZC_MSG_COMMON_ALLKEYPARTINFO, &CSelfServiceBankClientApp::ZCMsgKeypartInfo },//部位信息
+		{ ZC_MSG_OPENDOOR_GETACSHOSTLINKINFO, &CSelfServiceBankClientApp::ZCMsgACSHostLinkCameraInfo },//门禁主机关联摄像头设备
+		{ ZC_MSG_OPENDOOR_GETACSHOSTLINKTALKINFO, &CSelfServiceBankClientApp::ZCMsgACSHostLinkTalkInfo },//门禁主机关联对讲设备
+		{ ZC_MSG_COMMON_ALLUSERINFO, &CSelfServiceBankClientApp::ZCMsgHandlerInfo },//所有处置人姓名
+		{ ZC_MSG_OPENDOOR_USERDOORCAMERARELATION, &CSelfServiceBankClientApp::ZCMsgDoorRelationInfo }//用户门禁摄像头关联信息
 	};
 }
 
 
 
-void CSelfServiceBankClientApp::Update(bool bOK, DWORD dwType, DWORD dwMsgID, PBYTE pMsg)
+void CSelfServiceBankClientApp::Update(bool bOK, DWORD dwType, DWORD dwMsgID, PBYTE pMsg, INT nMsgLen)
 {
 	if (bOK) {
 		auto it = m_mapZCMsgHandler.find(dwType);
 		if (m_mapZCMsgHandler.end() != it) {
 			auto& pfun = it->second;
-			(this->*pfun)(pMsg, dwMsgID);
+			(this->*pfun)(pMsg, dwMsgID, nMsgLen);
 		}
 	}
 	else {
-		WriteLog(error, _T("请求消息反馈失败，消息码：%d"), dwType);
+		extern std::map<DWORD, TCHAR*> g_mapZCMsgErrInfo;
+		WriteLog(error, g_mapZCMsgErrInfo[dwType]);
 	}
 }
 
@@ -245,7 +259,7 @@ std::shared_ptr<stUserInfo>& CSelfServiceBankClientApp::CreateOrGetUserInfo(cons
 	return spUserInfo;
 }
 
-void CSelfServiceBankClientApp::ZCMsgCurrentUserInfo(PBYTE pMsg, DWORD dwMsgID)
+void CSelfServiceBankClientApp::ZCMsgCurrentUserInfo(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
 {
 	T_CURUSER_INFO_EX* pInfo = (T_CURUSER_INFO_EX*)(&pMsg[ZCMsgHeaderLen]);
 	CString strName(pInfo->chUserName);
@@ -261,7 +275,7 @@ void CSelfServiceBankClientApp::ZCMsgCurrentUserInfo(PBYTE pMsg, DWORD dwMsgID)
 
 
 //用户详细信息 : 经常在权限信息之后收到
-void CSelfServiceBankClientApp::ZCMsgUserDetailInfo(PBYTE pMsg, DWORD dwMsgID)
+void CSelfServiceBankClientApp::ZCMsgUserDetailInfo(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
 {
 	S_New_UserInfo* pInfo = (S_New_UserInfo*)(&pMsg[ZCMsgHeaderLen]);
 	CString strName(pInfo->chUserName);
@@ -275,19 +289,26 @@ void CSelfServiceBankClientApp::ZCMsgUserDetailInfo(PBYTE pMsg, DWORD dwMsgID)
 }
 
 //当前用户权限信息 ： ZCMsgManger.exe保存了登录名
-void CSelfServiceBankClientApp::ZCMsgDisposalInfo(PBYTE pMsg, DWORD dwMsgID)
+void CSelfServiceBankClientApp::ZCMsgDisposalInfo(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
 {
 	T_OPENDOORPOSALINFO* pInfo = (T_OPENDOORPOSALINFO*)(&pMsg[ZCMsgHeaderLen]);
 	auto& spUserInfo = CreateOrGetUserInfo(m_strCurUserName);
 	spUserInfo->stDisposalInfo = std::move(*pInfo);
 }
 
-//管辖人员信息
-void CSelfServiceBankClientApp::ZCMsgControledPersonInfo(PBYTE pMsg, DWORD dwMsgID)
+//区域信息
+void CSelfServiceBankClientApp::ZCMsgAreaInfo(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
 {
-	int nMsgLen = sizeof(pMsg) / sizeof(BYTE);
-	nMsgLen = strlen((char*)pMsg);
+	ZCMsgMacro_beginfor(T_AREA_INFO, pMsg, nMsgLen)
+		T_AREA_INFO* pInfo = (T_AREA_INFO*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
+		pInfo = 0;
+	ZCMsgMacro_endfor
+	
+}
 
+//管辖人员信息
+void CSelfServiceBankClientApp::ZCMsgControledPersonInfo(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
+{
 	const int nStructLen = sizeof(TAGDOAPERSONINFO_S);
 	int iCount = (nMsgLen - ZCMsgHeaderLen) / nStructLen;
 	auto pZCMsg = CZCMsgManager::Instance();
@@ -306,7 +327,7 @@ void CSelfServiceBankClientApp::ZCMsgControledPersonInfo(PBYTE pMsg, DWORD dwMsg
 }
 
 //管辖人员头像：一条一条
-void CSelfServiceBankClientApp::ZCMsgControledHeadPic(PBYTE pMsg, DWORD dwMsgID)
+void CSelfServiceBankClientApp::ZCMsgControledHeadPic(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
 {
 	assert(dwMsgID < 0 || dwMsgID > m_vecControledPersonInfo.size());
 
@@ -316,20 +337,104 @@ void CSelfServiceBankClientApp::ZCMsgControledHeadPic(PBYTE pMsg, DWORD dwMsgID)
 }
 
 //部门信息
-void CSelfServiceBankClientApp::ZCMsgDepartmentInfo(PBYTE pMsg, DWORD dwMsgID)
+void CSelfServiceBankClientApp::ZCMsgDepartmentInfo(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
 {
-	int nMsgLen = sizeof(pMsg) / sizeof(BYTE);
-	nMsgLen = strlen((char*)pMsg);
-
-	const int nStructLen = sizeof(TAGDOADEPARTMENTINFO_S);
-	int iCount = (nMsgLen - ZCMsgHeaderLen) / nStructLen;
-	for (int i = 0; i < iCount; ++i) {
+	ZCMsgMacro_beginfor(TAGDOADEPARTMENTINFO_S, pMsg, nMsgLen)
 		TAGDOADEPARTMENTINFO_S* pInfo = (TAGDOADEPARTMENTINFO_S*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
+		pInfo = 0;
+		m_vecDepartmentInfo.push_back(std::make_shared<TAGDOADEPARTMENTINFO_S>(*pInfo));
+	ZCMsgMacro_endfor
+}
 
+
+//门禁主从关系
+void CSelfServiceBankClientApp::ZCMsgEntranceRelation(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
+{
+	ZCMsgMacro_beginfor(TAGDOACCESSRELATION_S, pMsg, nMsgLen)
+		TAGDOACCESSRELATION_S* pInfo = (TAGDOACCESSRELATION_S*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
+		pInfo = 0;
+	ZCMsgMacro_endfor
+}
+
+//所有门禁主机信息
+void CSelfServiceBankClientApp::ZCMsgACSHostInfo(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
+{
+	ZCMsgMacro_beginfor(TAGDOAACCESSINFO_S, pMsg, nMsgLen)
+		TAGDOAACCESSINFO_S* pInfo = (TAGDOAACCESSINFO_S*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
+		pInfo = 0;
+	ZCMsgMacro_endfor
+}
+
+//管控等级信息：针对设备，设备所在的场所和部位，它的管控等级
+void CSelfServiceBankClientApp::ZCMsgCtrlLevelInfo(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
+{
+	ZCMsgMacro_beginfor(S_NEW_CTRLLEVELINFO, pMsg, nMsgLen)
+		S_NEW_CTRLLEVELINFO* pInfo = (S_NEW_CTRLLEVELINFO*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
+		pInfo = 0;
+	ZCMsgMacro_endfor
+}
+
+//管控策略信息
+void CSelfServiceBankClientApp::ZCMsgCtrlPlanInfo(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
+{
+	ZCMsgMacro_beginfor(TAGCTRLEVELPLAN_S, pMsg, nMsgLen)
+		TAGCTRLEVELPLAN_S* pInfo = (TAGCTRLEVELPLAN_S*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
+		pInfo = 0;
+	ZCMsgMacro_endfor
+}
+
+//部位信息
+void CSelfServiceBankClientApp::ZCMsgKeypartInfo(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
+{
+	ZCMsgMacro_beginfor(S_NEW_SHOWPOSITIONINFO, pMsg, nMsgLen)
+		S_NEW_SHOWPOSITIONINFO* pInfo = (S_NEW_SHOWPOSITIONINFO*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
+		pInfo = 0;
+	ZCMsgMacro_endfor
+}
+
+//门禁主机关联摄像头设备
+void CSelfServiceBankClientApp::ZCMsgACSHostLinkCameraInfo(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
+{
+	//复用了“对讲”结构体
+	ZCMsgMacro_beginfor(S_HostTalkInfo, pMsg, nMsgLen)
+		S_HostTalkInfo* pInfo = (S_HostTalkInfo*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
+		pInfo = 0;
+	ZCMsgMacro_endfor
+}
+
+//门禁主机关联对讲设备
+void CSelfServiceBankClientApp::ZCMsgACSHostLinkTalkInfo(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
+{
+	ZCMsgMacro_beginfor(S_HostTalkInfo, pMsg, nMsgLen)
+		S_HostTalkInfo* pInfo = (S_HostTalkInfo*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
+		pInfo = 0;
+	ZCMsgMacro_endfor
+}
+
+//所有处置人信息
+void CSelfServiceBankClientApp::ZCMsgHandlerInfo(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
+{
+	//根据姓名再请求详细信息
+	int iCount = (nMsgLen - ZCMsgHeaderLen) / 64;
+	for (int i = 0; i < iCount; ++i) {
+		char* pInfo = (char*)(&pMsg[ZCMsgHeaderLen + i * 64]);
+		
+		//请求用户的详细信息
+		CZCMsgManager::Instance()->RequestMsgWithMsgID(ZC_MODULE_APP, ZC_MSG_APP_USERALLINFO,
+			i, (PBYTE)pInfo, 64);
 	}
 
 }
 
+//用户门禁摄像头关联信息
+void CSelfServiceBankClientApp::ZCMsgDoorRelationInfo(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
+{
+	ZCMsgMacro_beginfor(USERDOORCAMERARELATION_CLIENT_GET_S, pMsg, nMsgLen)
+		USERDOORCAMERARELATION_CLIENT_GET_S* pInfo = (USERDOORCAMERARELATION_CLIENT_GET_S*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
+		pInfo = 0;
+	ZCMsgMacro_endfor
+	
+}
 
 //写日志
 void _cdecl CSelfServiceBankClientApp::WriteLog(severity_level level, const TCHAR* szMsg, ...)

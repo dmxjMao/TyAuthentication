@@ -481,3 +481,37 @@ void CSelfServiceBankClientDlg::DisplayDetail(const std::shared_ptr<stApplyInfo>
 	dlg.Update();
 }
 
+
+
+/*ZCMsg*/
+void CSelfServiceBankClientDlg::Update(bool bOK, DWORD dwType, DWORD dwMsgID, PBYTE pMsg, INT nMsgLen)
+{
+	if (bOK) {
+		auto it = m_mapZCMsgHandler.find(dwType);
+		if (m_mapZCMsgHandler.end() != it) {
+			auto& pfun = it->second;
+			(this->*pfun)(pMsg, dwMsgID, nMsgLen);
+		}
+	}
+	//else {
+	//	extern std::map<DWORD, TCHAR*> g_mapZCMsgErrInfo;
+	//	theApp.WriteLog(error, g_mapZCMsgErrInfo[dwType]);
+	//}
+}
+
+
+
+void CSelfServiceBankClientDlg::InitZCMsgHandler()
+{
+	//注册自己感兴趣的消息，其他不处理
+	m_mapZCMsgHandler = { /*<反馈， 处理方法>*/
+		{ ZC_MSG_ALARM_NEWALARMINFO_EX, &CSelfServiceBankClientDlg::ZCMsgAuthentication }//刷卡认证信息
+	};
+}
+
+void CSelfServiceBankClientDlg::ZCMsgAuthentication(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
+{
+	theApp.WriteLog(trace, _T("收到刷卡认证信息，用户名："));
+
+
+}

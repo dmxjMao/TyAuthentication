@@ -20,7 +20,7 @@
 class CZCMsgObserver {
 public:
 	//通知
-	virtual void Update(bool bOK, DWORD/*消息类型*/, DWORD/*消息ID*/, PBYTE/*消息内容*/) = 0;
+	virtual void Update(bool bOK, DWORD/*消息类型*/, DWORD/*消息ID*/, PBYTE/*消息内容*/, INT nMsgLen) = 0;
 	//异常通知  接口尽可能少，不然子类实现很麻烦
 	//virtual void Abnormal() = 0;
 };
@@ -43,7 +43,7 @@ public:
 	//写日志
 	void _cdecl WriteLog(severity_level level, const TCHAR* szMsg, ...);
 	//消息通知
-	virtual void Update(bool, DWORD, DWORD, PBYTE);
+	virtual void Update(bool, DWORD, DWORD, PBYTE, INT);
 	//virtual void Abnormal();
 
 	DECLARE_MESSAGE_MAP()
@@ -56,28 +56,48 @@ private:
 	//初始化ZCMsgManager消息处理函数
 	void InitZCMsgHandler();
 	//当前用户信息
-	void ZCMsgCurrentUserInfo(PBYTE, DWORD);
+	void ZCMsgCurrentUserInfo(PBYTE, DWORD, INT);
 	//创建或获取用户信息
 	std::shared_ptr<stUserInfo>& CreateOrGetUserInfo(const CString& str);
 	//用户详细信息
-	void ZCMsgUserDetailInfo(PBYTE, DWORD);
+	void ZCMsgUserDetailInfo(PBYTE, DWORD, INT);
 	//用户权限信息
-	void ZCMsgDisposalInfo(PBYTE, DWORD);
+	void ZCMsgDisposalInfo(PBYTE, DWORD, INT);
+	//区域信息
+	void ZCMsgAreaInfo(PBYTE, DWORD, INT);
 	//管辖人员信息
-	void ZCMsgControledPersonInfo(PBYTE, DWORD);
+	void ZCMsgControledPersonInfo(PBYTE, DWORD, INT);
 	//管辖人员头像
-	void ZCMsgControledHeadPic(PBYTE, DWORD);
+	void ZCMsgControledHeadPic(PBYTE, DWORD, INT);
 	//部门信息
-	void ZCMsgDepartmentInfo(PBYTE, DWORD);
+	void ZCMsgDepartmentInfo(PBYTE, DWORD, INT);
+	//门禁主从关系
+	void ZCMsgEntranceRelation(PBYTE, DWORD, INT);
+	//所有门禁主机信息
+	void ZCMsgACSHostInfo(PBYTE, DWORD, INT);
+	//管控等级信息
+	void ZCMsgCtrlLevelInfo(PBYTE, DWORD, INT);
+	//管控策略信息
+	void ZCMsgCtrlPlanInfo(PBYTE, DWORD, INT);
+	//部位信息
+	void ZCMsgKeypartInfo(PBYTE, DWORD, INT);
+	//门禁主机关联摄像头设备
+	void ZCMsgACSHostLinkCameraInfo(PBYTE, DWORD, INT);
+	//门禁主机关联对讲设备
+	void ZCMsgACSHostLinkTalkInfo(PBYTE, DWORD, INT);
+	//所有处置人信息
+	void ZCMsgHandlerInfo(PBYTE, DWORD, INT);
+	//用户门禁摄像头关联信息
+	void ZCMsgDoorRelationInfo(PBYTE, DWORD, INT);
 
 	//std::shared_ptr<CLogDialog> m_oLogDlg = 0;//日志对话框
 
 private:
-	std::map<DWORD, void(CSelfServiceBankClientApp::*)(PBYTE, DWORD)> m_mapZCMsgHandler;//ZCMsgManager消息处理函数
+	std::map<DWORD, void(CSelfServiceBankClientApp::*)(PBYTE, DWORD, INT)> m_mapZCMsgHandler;//ZCMsgManager消息处理函数
 	std::map<CString, std::shared_ptr<stUserInfo>> m_mapUserInfo;//用户详情信息
 	CString m_strCurUserName; //当前用户名
 	std::vector<std::shared_ptr<stControledPersonInfo>> m_vecControledPersonInfo;//管辖人员信息
-	//std::vector<std::shared_ptr<TAGDOADEPARTMENTINFO_S>>
+	std::vector<std::shared_ptr<TAGDOADEPARTMENTINFO_S>> m_vecDepartmentInfo;//部门信息
 
 };
 
@@ -111,4 +131,3 @@ public:
 	const CString& GetExePath() const { return m_strExePath; }
 };
 extern CGobalVariable g_GobalVariable; //全局变量
-

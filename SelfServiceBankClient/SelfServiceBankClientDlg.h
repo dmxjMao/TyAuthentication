@@ -11,7 +11,7 @@
 //class CLogDialog;
 
 // CSelfServiceBankClientDlg dialog
-class CSelfServiceBankClientDlg : public CDialogEx
+class CSelfServiceBankClientDlg : public CDialogEx, public CZCMsgObserver
 {
 // Construction
 public:
@@ -19,7 +19,10 @@ public:
 	//中介方法
 	//点击左侧，显示右侧
 	void DisplayDetail(const std::shared_ptr<stApplyInfo>& st);
-	//申请消息到达
+	//消息通知
+	virtual void Update(bool, DWORD, DWORD, PBYTE, INT);
+	//刷卡认证信息
+	
 	//插入申请记录
 	void MyInsertRecord(const std::shared_ptr<stApplyInfo>& st);
 	//申请授权回复，开关门，日志
@@ -64,4 +67,9 @@ private:
 	void _DebugInsertApplyInfo(stApplyInfo&& st);//插入申请消息
 #endif
 	
+	//初始化ZCMsgManager消息处理函数
+	void InitZCMsgHandler();
+	std::map<DWORD, void(CSelfServiceBankClientDlg::*)(PBYTE, DWORD, INT)> m_mapZCMsgHandler;//ZCMsgManager消息处理函数
+	//刷卡认证信息
+	void ZCMsgAuthentication(PBYTE, DWORD, INT);
 };
