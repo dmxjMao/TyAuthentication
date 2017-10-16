@@ -1,0 +1,46 @@
+4，自绘控件使用正则，仿照h5
+好处：1）提供自定义属性值
+短板：一般自绘针对专门用途，不可能适配所有
+正则能改变的 就是简单的属性值，如字体大小，颜色值，对齐等， 至于画什么，仍是随实际业务不同的
+
+#include <boost\regex.hpp>
+
+class CUICfg {
+public:
+	//设置ui属性
+	void SetUICfg(std::string s);
+
+private:
+	//ui正则回调
+	virtual bool OnMatchUICfg(const boost::smatch& what) = 0;
+
+protected:
+	std::shared_ptr<std::string>			m_uicfg;//ui配置
+	boost::regex							m_uiregex;//ui正则
+};
+
+class CXXCtrl : public CCtrl, public CUICfg
+{
+protected:
+	属性名 = 默认值，对应上正则字符串
+
+};
+
+
+使用：
+初始化：m_ctrl.SetUICfg("fontsize,15;fontsize:15; textcolor,rGb0,255,0)");
+动态改变：m_ctrl.SetUICfg("fontsize,20;textcolor,rgb(1,2,3)");
+
+CUICfg::SetUICfg
+	以分号分割字符串，放入vector
+	匹配正则，调用模板方法 OnMatchUICfg
+	子类重载 OnMatchUICfg
+
+子类::OnMatchUICfg
+	枚举enum 对应属性顺序
+	switch(enum){
+	case XX:
+		//保存
+		//如果要重绘，OnPaint
+	break;
+	}

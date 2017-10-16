@@ -8,15 +8,18 @@
 #include "afxdialogex.h"
 
 #include "LogDialog.h"
+#include "ZCMsgManager.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
+#include "MyButton1.h"
 #endif
 
 
 namespace {
 	using std::vector;
-
+	using std::shared_ptr;
+	using std::placeholders::_1;
 	const UINT cstnApplyRecordCnt = 3; //申请记录详情行数
 
 };
@@ -100,8 +103,8 @@ BOOL CSelfServiceBankClientDlg::OnInitDialog()
 	if (pSysMenu != NULL)
 	{
 		vector<std::tuple<int, CString>> vecMenu = { 
-			{ IDM_ABOUTBOX,_T("关于")},
-			{ IDM_Log,_T("日志") } };
+			{ IDM_ABOUTBOX,_T("关于")}/*,
+			{ IDM_Log,_T("日志") }*/ };
 		//vector<int> vecMenu = { IDM_ABOUTBOX , IDM_Log };
 
 		//BOOL bNameValid;
@@ -157,6 +160,14 @@ BOOL CSelfServiceBankClientDlg::OnInitDialog()
 #ifdef  _DEBUG
 	//CMyListBox1::ItemData d1 = { _T("大华abc"), 2, CTime(2017,10,3,1,1,1) };
 	//m_oApplyList.MyInsertString(d1);
+	btn1 = std::make_shared<CMyButton1>();
+	btn1->Create(_T("BTN1"), WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
+		CRect(0, 0, 0, 0), this, 123);
+	//enum emCfg { emUnderline = 1, emFontsize, emBgcolor, emTextcolor, emMousetrack,
+	btn1->SetUICfg("underline,0;emfontsize,16;emmousetrack=1;");
+	btn1->SetWindowPos(nullptr, m_rcList.left + 200, m_rcList.top + 100, 80, 50, SWP_NOZORDER);
+
+	btn1->ShowWindow(SW_NORMAL);
 #endif //  _DEBUG
 
 	//申请认证详情对话框
@@ -185,7 +196,7 @@ BOOL CSelfServiceBankClientDlg::OnInitDialog()
 	暂时用全部申请人员；
 	//左：haoyun->测试->大华-》大华-》数码  //右：数码-》haoyun-》测试
 	*/
-	_DebugInsertApplyInfo(stApplyInfo(_T("数码"), 0, CTime(CTime::GetCurrentTime()),
+	/*_DebugInsertApplyInfo(stApplyInfo(_T("数码"), 0, CTime(CTime::GetCurrentTime()),
 	{ stApplyPersonInfo(_T("person1.jpg"), _T("person1"), _T("张江地铁站"), _T("内部人员")),
 	stApplyPersonInfo(_T("person2.jpg"),_T("person2"), _T("张江地铁站"),_T("内部人员")),
 	stApplyPersonInfo(_T("person3.jpg"),_T("person3"), _T("张江地铁站"),_T("内部人员")),
@@ -209,8 +220,12 @@ BOOL CSelfServiceBankClientDlg::OnInitDialog()
 	_DebugInsertApplyInfo(stApplyInfo(_T("大华"), 3, CTime(2017, 10, 9, 10, 34, 34),
 	{ stApplyPersonInfo(_T("person1.jpg"), _T("person1"), _T("张江地铁站"), _T("内部人员")),
 		stApplyPersonInfo(_T("person3.jpg"),_T("person3"), _T("张江地铁站"),_T("内部人员"))
-	}));
+	}));*/
 #endif //  _DEBUG
+
+	//初始化消息服务，因为界面元素可能是一个观察者
+	if (!CZCMsgManager::Instance()->Init(0))
+		return FALSE;
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -273,6 +288,17 @@ void CSelfServiceBankClientDlg::OnPaint()
 	gh.DrawString(_T("现在没有申请认证信息！"), -1, &fontTip1, rcGdiF, &sf, &sbrText);
 
 
+#ifdef _DEBUG
+
+	CMyButton1 btn1;
+	btn1.Create(_T("BTN1"), WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
+		CRect(0, 0, 0, 0), this, 123);
+	btn1.SetUICfg("underline,0");
+	btn1.SetWindowPos(nullptr, m_rcList.left, m_rcList.top, m_rcList.Width(), m_rcList.Width(), SWP_NOZORDER);
+
+	btn1.ShowWindow(SW_NORMAL);
+#endif // _DEBUG
+
 	//if (IsIconic())
 	//{
 	//	CPaintDC dc(this); // device context for painting
@@ -304,7 +330,6 @@ void CSelfServiceBankClientDlg::OnPaint()
 //}
 
 
-
 void CSelfServiceBankClientDlg::OnStnClickedClosewindow()
 {
 	PostQuitMessage(0);
@@ -325,13 +350,11 @@ void CSelfServiceBankClientDlg::OnLButtonDown(UINT nFlags, CPoint point)
 
 
 
-#ifdef _DEBUG
-void CSelfServiceBankClientDlg::_DebugInsertApplyInfo(stApplyInfo&& st)
+void CSelfServiceBankClientDlg::InsertApplyInfo(const shared_ptr<stApplyInfo>& sp)
 {
-	//如果消息是一个人一个人来的，先查找是否有该申请通道
 
 	//sp引用1，m_vecApplyInfo引用2，MyInsertString参数是引用不算
-	auto& sp = std::make_shared<stApplyInfo>(st);
+	//auto& sp = std::make_shared<stApplyInfo>(st);
 	m_vecApplyInfo.push_back(sp);
 
 	//插入到左侧申请列表
@@ -340,10 +363,10 @@ void CSelfServiceBankClientDlg::_DebugInsertApplyInfo(stApplyInfo&& st)
 	//插入到右侧申请详情
 	MyInsertRecord(sp);
 }
-#endif //_DEBUG
+
 
 //查找申请时间
-bool Lambda_InsertRecord(/*CApplyRecordDlg& dlg*/const std::shared_ptr<stApplyInfo>& sp, const std::shared_ptr<stApplyInfo>& st)
+bool Lambda_InsertRecord(/*CApplyRecordDlg& dlg*/const shared_ptr<stApplyInfo>& sp, const shared_ptr<stApplyInfo>& st)
 {
 	//auto& sp = dlg.GetApplyInfo();
 	return nullptr == sp || st->tmApply < sp->tmApply;
@@ -383,12 +406,11 @@ bool Lambda_SortRecordVector(const std::shared_ptr<stApplyInfo>& sp1,
 
 //（对话框程序对数据发生变化的更新显示贼烦！）
 //仿Doc-View，右侧用一个类CView类管理vector<CRecord>
-void CSelfServiceBankClientDlg::MyInsertRecord(const std::shared_ptr<stApplyInfo>& st)
+void CSelfServiceBankClientDlg::MyInsertRecord(const shared_ptr<stApplyInfo>& st)
 {
 	//找st比哪个时间早，排序m_liApplyRecordDlg把坐标都换了
-	using std::placeholders::_1;
 
-	vector<std::shared_ptr<stApplyInfo>> vec;
+	vector<shared_ptr<stApplyInfo>> vec;
 	for (auto& st : m_vecApplyRecordDlg)
 		vec.push_back(st.GetApplyInfo());
 
@@ -483,7 +505,6 @@ void CSelfServiceBankClientDlg::DisplayDetail(const std::shared_ptr<stApplyInfo>
 
 
 
-/*ZCMsg*/
 void CSelfServiceBankClientDlg::Update(bool bOK, DWORD dwType, DWORD dwMsgID, PBYTE pMsg, INT nMsgLen)
 {
 	if (bOK) {
@@ -509,9 +530,80 @@ void CSelfServiceBankClientDlg::InitZCMsgHandler()
 	};
 }
 
+
+bool lambda_FindACSHostByDevNo(const std::pair<CString, shared_ptr<stACSHostInfo>>& p, const int nDevNo) {
+	return p.second->stBaseInfo.nID == nDevNo;
+}
+bool lambda_FindCtrlInfoByID(const shared_ptr<stCtrlPersonInfo>& st, const CString& chID) {
+	return CString(st->stBaseInfo.chId) == chID;
+}
+//刷卡认证申请
 void CSelfServiceBankClientDlg::ZCMsgAuthentication(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
 {
-	theApp.WriteLog(trace, _T("收到刷卡认证信息，用户名："));
+	int nStructLen = sizeof(T_TRANSMITALARMINFO_EX);
+	if (nMsgLen != nStructLen) {
+		theApp.WriteLog(error, _T("刷卡信息长度有误！"));
+		return;
+	}
+	//构造申请信息：1）根据身份证查找用户信息，2）
+	auto& spApplyInfo = std::make_shared<stApplyInfo>();
+	spApplyInfo->stPersonInfo = std::make_shared<stApplyPersonInfo>();
+	auto& spApplyPInfo = spApplyInfo->stPersonInfo;
+	
+	//if(0 == spApplyInfo->stPersonInfo
+
+	T_TRANSMITALARMINFO_EX* pAuthInfo = (T_TRANSMITALARMINFO_EX*)pMsg;
+	//传过来的刷卡信息
+	CString strAuthMemo(pAuthInfo->tTransmitAlarmInfo.tAlarmInfo.chMemo);
+	theApp.WriteLog(trace, _T("收到刷卡认证信息：%s"), strAuthMemo);
+	
+	//解析刷卡信息：字串分段：是否合法 | 卡号 | 身份证      "0"--非法，"1"--合法，“2”--无权限
+	vector<CString> vecMemo;
+	SplitString(strAuthMemo, _T('|'), vecMemo);
+	assert(vecMemo.size() != 3);
+
+	//卡的类别
+	spApplyPInfo->nCardType = _ttoi(vecMemo[0]);
+
+	//管辖人员信息（和用户信息不是一个）
+	const auto& vecCtrlPInfo = theApp.m_vecCtrlPersonInfo;
+	auto itCtrlPInfo = std::find_if(vecCtrlPInfo.begin(), vecCtrlPInfo.end(),
+		std::bind(lambda_FindCtrlInfoByID, _1, vecMemo[2]));
+	if (vecCtrlPInfo.end() == itCtrlPInfo) {
+		theApp.WriteLog(error, _T("没有找到该管辖人员信息！"));
+		return;
+	}
+	const auto& stCtrlPInfo = *itCtrlPInfo;//管控人员信息
+
+	spApplyPInfo->stPersonInfo = stCtrlPInfo;//刷卡人员信息
+	spApplyInfo->strWebSiteName = pAuthInfo->tTransmitAlarmInfo.chArea;//网点
+	spApplyInfo->tmApply = ZCMsgHelper_ParseTime(pAuthInfo->tTransmitAlarmInfo.chAlarmDateTime);
+
+	//管控等级
+	int nDevNo = pAuthInfo->tTransmitAlarmInfo.nDevNumber; //设备id
+	//CString nDevName = pAuthInfo->tTransmitAlarmInfo 没有设备名
+	
+	//门禁信息
+	const auto& mapACSHostInfo = theApp.m_mapACSHostInfo;
+	auto itACSHost = std::find_if(mapACSHostInfo.begin(), mapACSHostInfo.end(),
+		std::bind(lambda_FindACSHostByDevNo, _1, nDevNo)); //itACSHost是一个pair
+	if (mapACSHostInfo.end() == itACSHost) {
+		theApp.WriteLog(error, _T("没有找到门禁主机！"));
+		return;
+	}
+	const auto& pHostInfo = (itACSHost->second);//门禁信息
+	spApplyInfo->nImportance = pHostInfo->nCtrlLevel;//管控等级
+
+	//赋值各控件
+	InsertApplyInfo(spApplyInfo);
+}
 
 
+
+CTime CSelfServiceBankClientDlg::ZCMsgHelper_ParseTime(const char* szTime)
+{
+	//CString strTime(szTime);
+	int nYear, nMonth, nDate, nHour, nMin, nSec;
+	sscanf_s(szTime, "%d-%d-%d %d:%d:%d", &nYear, &nMonth, &nDate, &nHour, &nMin, &nSec);
+	return CTime(nYear, nMonth, nDate, nHour, nMin, nSec);
 }

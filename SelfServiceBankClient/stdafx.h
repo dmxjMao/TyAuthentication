@@ -85,3 +85,6 @@ using namespace Gdiplus;
 #include <boost\log\trivial.hpp>//宏
 using namespace boost::log::trivial;
 //void WriteLog(boost::log::trivial::severity_level, const TCHAR* szMsg, ...);//写日志
+
+//boost正则
+#include <boost\regex.hpp>

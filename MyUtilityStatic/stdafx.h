@@ -22,3 +22,6 @@
 
 // TODO: reference additional headers your program requires here
 #include <memory>
+#include <vector>
+
+//#include <boost\regex.hpp>

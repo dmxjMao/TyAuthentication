@@ -21,12 +21,17 @@ CZCMsgManager* CZCMsgManager::m_pZcInst = NULL;
 ///*typedef std::map<DWORD, vector<CString> > STRNG2VECTOR;*/
 //typedef std::map<DWORD, vector<CString > > STRING2VECTOR;
 
+/*
+消息的反馈并不是按顺序来的，所以要存下来，然后用时查找，
+或者 做同步处理（等待必需的数据获取到）
+*/
+
 //消息描述
 //请求描述
 std::map<DWORD, TCHAR*> g_mapZCMsgReqInfo = {
 	{ ZC_MSG_APP_CURUSERINFOEX, _T("请求当前用户信息...") },
-	{ ZC_MSG_APP_OPENDOOR_DISPOSALINFO, _T("请求当前用户权限...") },
-	{ ZC_MSG_COMMON_ALLAREAINFO, _T("请求区域信息...") },
+	{ ZC_MSG_APP_OPENDOOR_DISPOSALINFO, _T("请求当前用户权限...") }, 
+	{ ZC_MSG_APP_ALLAREAINFO, _T("请求区域信息...") },
 	{ ZC_MSG_APP_OPENDOOR_GETALLPEPOLEINFO, _T("请求所有需管辖的出入人员信息...") },
 	{ ZC_MSG_APP_OPENDOOR_DEPARTMENTINFO, _T("请求部门信息...") },
 	{ ZC_MSG_APP_OPENDOOR_ACCESSRELATION, _T("请求门禁主从关系...") },
@@ -37,7 +42,8 @@ std::map<DWORD, TCHAR*> g_mapZCMsgReqInfo = {
 	{ ZC_MSG_APP_OPENDOOR_GETACSHOSTLINKINFO, _T("请求门禁主机关联摄像头设备...") },
 	{ ZC_MSG_APP_OPENDOOR_GETACSHOSTLINKTALKINFO, _T("请求门禁主机关联对讲设备...") },
 	{ ZC_MSG_APP_ALLUSERINFO, _T("请求所有处置人姓名...") },
-	{ ZC_MSG_APP_OPENDOOR_USERDOORCAMERARELATION, _T("请求获取用户门禁摄像头关联信息...") }
+	{ ZC_MSG_APP_OPENDOOR_USERDOORCAMERARELATION, _T("请求获取用户门禁摄像头关联信息...") },
+	{ ZC_MSG_APP_PLANINFO, _T("请求所有预案信息...") }
 	
 	
 };
@@ -57,8 +63,8 @@ std::map<DWORD, TCHAR*> g_mapZCMsgErrInfo = {
 	{ ZC_MSG_OPENDOOR_GETACSHOSTLINKINFO, _T("获取门禁主机关联摄像头设备失败！") },
 	{ ZC_MSG_OPENDOOR_GETACSHOSTLINKTALKINFO, _T("获取门禁主机关联对讲设备失败！") },
 	{ ZC_MSG_COMMON_ALLUSERINFO, _T("获取所有处置人姓名失败！") },
-	{ ZC_MSG_OPENDOOR_USERDOORCAMERARELATION, _T("获取用户门禁摄像头关联信息失败！") }
-	
+	{ ZC_MSG_OPENDOOR_USERDOORCAMERARELATION, _T("获取用户门禁摄像头关联信息失败！") },
+	{ ZC_MSG_COMMON_PLANINFO, _T("获取所有预案信息失败！") }
 	
 };
 
@@ -303,7 +309,8 @@ void CZCMsgManager::RequestInitMsg()
 		ZC_MSG_APP_OPENDOOR_GETACSHOSTLINKINFO, //门禁主机关联摄像头设备
 		ZC_MSG_APP_OPENDOOR_GETACSHOSTLINKTALKINFO,//门禁主机关联对讲设备
 		ZC_MSG_APP_ALLUSERINFO,//所有处置人姓名
-		ZC_MSG_APP_OPENDOOR_USERDOORCAMERARELATION //用户门禁摄像头关联信息
+		ZC_MSG_APP_OPENDOOR_USERDOORCAMERARELATION, //用户门禁摄像头关联信息
+		ZC_MSG_APP_PLANINFO//请求所有预案信息
 	};
 
 	for (auto id : vecMsgID) {

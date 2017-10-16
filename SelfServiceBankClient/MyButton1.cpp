@@ -7,13 +7,35 @@
 
 
 // CMyButton1
+namespace {
+	enum emCfg { emUnderline = 1, emFontsize, emBgcolor, emTextcolor, emMousetrack,
+		emCfgBuff};//配置项
+};
 
 IMPLEMENT_DYNAMIC(CMyButton1, CButton)
 
 CMyButton1::CMyButton1()
 {
+	//ui属性
+	m_vecUICfg = { "underline","fontsize","bgcolor","textcolor","mousetrack" };
+	//ui正则
+	try {
+		//1）\\s*任意空白；2）[-:,]名和值分隔符；
+		std::string s = "\\s*[-:,=]\\s*";
+		//char ch = '|';
+		std::string pattern = "underline" + s + "(0|1)|" + //下划线
+			"fontsize" + s + "([0-9]+)|" + //字体大小
+			"bgcolor" + s + "(rgb[^;]+)|" + //背景色
+			"textcolor" + s + "(rgb[^;]+)|" + //字体颜色	
+			"mousetrack" + s + "(0|1)"//鼠标追踪
+			;
+		m_uiregex.assign(pattern, boost::regex_constants::icase);
+	}
+	catch (boost::regex_error e) {
 
+	}
 }
+
 
 CMyButton1::~CMyButton1()
 {
@@ -50,7 +72,7 @@ void CMyButton1::OnPaint()
 	CRect rc;
 	GetClientRect(&rc);
 	Rect rcGdi(rc.left, rc.top, rc.right, rc.bottom);
-	SolidBrush sbr(/*Color(0, 0, 0, 0)*/m_clrBG);
+	SolidBrush sbr(Color(123, 123, 0)/*m_clrBG*/);
 	gh.FillRectangle(&sbr, rcGdi);
 
 	//写文字
@@ -91,8 +113,6 @@ void CMyButton1::OnPaint()
 
 //void CMyButton1::PreSubclassWindow()
 //{
-//	// TODO: Add your specialized code here and/or call the base class
-//
 //	CButton::PreSubclassWindow();
 //}
 
@@ -137,4 +157,27 @@ void CMyButton1::OnMouseLeave()
 	Invalidate();
 
 	CButton::OnMouseLeave();
+}
+
+
+bool CMyButton1::OnMatchUICfg(const boost::smatch& sm)
+{
+	//static int nCfgCnt = (int)m_vecUICfg.size();
+	int i = 1; //sm[0]代表整个匹配
+	for (; i < emCfgBuff; ++i) {
+		if (sm[i].matched)
+			break;
+	}
+
+	//emUnderline = 1, emFontsize, emBgcolor, emTextcolor, emMousetrack,
+	const std::string str = sm[i].str();
+	switch (i) {
+	case emUnderline:
+		m_bUnderLine = stoi(str) ? true : false; break;
+	case emFontsize:
+		m_nFontSize = stoi(str); break;
+	case emBgcolor:
+		break;
+	}
+	return true;
 }

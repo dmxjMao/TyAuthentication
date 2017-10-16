@@ -2,20 +2,19 @@
 
 
 // CMyButton1
-/*下划线文字
-*/
 
-class CMyButton1 : public CButton
+
+class CMyButton1 : public CButton, public CUICfg
 {
 	DECLARE_DYNAMIC(CMyButton1)
 
 public:
 	CMyButton1();
 	virtual ~CMyButton1();
-	inline void Set(bool bUnderLine, int nFontSize, Color clrBG, Color clrText){
-		m_bUnderLine = bUnderLine; m_nFontSize = nFontSize;  
-		m_clrBG = clrBG; m_clrText = clrText;
-	}
+	//inline void Set(bool bUnderLine, int nFontSize, Color clrBG, Color clrText){
+	//	m_bUnderLine = bUnderLine; m_nFontSize = nFontSize;  
+	//	m_clrBG = clrBG; m_clrText = clrText;
+	//}
 
 protected:
 	bool m_bUnderLine = true;//下划线
@@ -25,6 +24,7 @@ protected:
 
 	bool m_bMouseTrack = true, m_bHover = false;
 	DECLARE_MESSAGE_MAP()
+
 public:
 	//afx_msg void OnBnClicked();
 	afx_msg void OnPaint();
@@ -33,6 +33,9 @@ public:
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	afx_msg void OnMouseHover(UINT nFlags, CPoint point);
 	afx_msg void OnMouseLeave();
+
+private:
+	virtual bool OnMatchUICfg(const boost::smatch& what);
 };
 
 

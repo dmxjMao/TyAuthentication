@@ -18,7 +18,7 @@ public:
 
 protected:
 	//CMyScrollBar1 m_oScrollBar;
-	std::vector<stApplyPersonInfo> m_vecPersonInfo;//申请认证人员信息
+	std::vector<std::shared_ptr<stApplyPersonInfo>> m_vecPersonInfo;//申请认证人员信息
 	DECLARE_MESSAGE_MAP()
 
 public:
@@ -26,7 +26,7 @@ public:
 	//afx_msg void OnNMCustomdraw(NMHDR *pNMHDR, LRESULT *pResult);
 	//decltype(m_vecStPersonInfo)不是引用类型
 	//decltype((m_vecSpPersonInfo)) GetInfoVec() { return m_vecSpPersonInfo; }
-	void MyInsertSubItem(std::vector<stApplyPersonInfo>&/*std::shared_ptr<stApplyPersonInfo>*/); //插入人员信息
+	void MyInsertSubItem(const std::shared_ptr<stApplyPersonInfo>&/*std::shared_ptr<stApplyPersonInfo>*/); //插入人员信息
 	bool Update();//显示
 	
 	//afx_msg void OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStruct);

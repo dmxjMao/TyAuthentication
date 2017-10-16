@@ -36,23 +36,30 @@ class CSelfServiceBankClientApp : public CWinApp, public CZCMsgObserver
 public:
 	//using ZCMsgHandler = void(CSelfServiceBankClientApp::*)(PBYTE);
 	CSelfServiceBankClientApp();
-
-public:
 	virtual BOOL InitInstance();
+	virtual int ExitInstance();
 	//inline const std::shared_ptr<CLogDialog>& GetLogDlg() const { return m_oLogDlg; }
 	//写日志
 	void _cdecl WriteLog(severity_level level, const TCHAR* szMsg, ...);
 	//消息通知
 	virtual void Update(bool, DWORD, DWORD, PBYTE, INT);
-	//virtual void Abnormal();
 
 	DECLARE_MESSAGE_MAP()
-	virtual int ExitInstance();
+	
+public:
+	//使用vector是为了减少内存；使用map是1）消息机制无法整合相关信息
+	CString m_strCurUserName; //当前用户名
+	std::map<CString, std::shared_ptr<stUserInfo>> m_mapUserInfo;//用户详情信息，改为vector
+	std::vector<std::shared_ptr<stCtrlPersonInfo>> m_vecCtrlPersonInfo;//管辖人员信息
+	std::vector<std::shared_ptr<TAGDOADEPARTMENTINFO_S>> m_vecDepartmentInfo;//部门信息
+	std::map<UINT8, std::shared_ptr<stCtrlPlanInfo>> m_mapCtrlPlan;//策略信息<管控等级,策略结构>，由于消息来得恶心，为了方便起见使用了map
+	//std::vector<std::shared_ptr<stACSHostInfo>> m_vecACSHostInfo;//门禁主机信息，要整合管控等级，消息谁先到又不确定
+	std::map<CString, std::shared_ptr<stACSHostInfo>> m_mapACSHostInfo;//门禁主机信息，主机名字不重复
+	std::vector<std::shared_ptr<S_NEW_SHOWPLANLIB>> m_vecEMPlanInfo;//预案信息
 
 private:
 	//初始化日志
-	bool InitLog();
-	
+	bool InitLog();	
 	//初始化ZCMsgManager消息处理函数
 	void InitZCMsgHandler();
 	//当前用户信息
@@ -66,9 +73,9 @@ private:
 	//区域信息
 	void ZCMsgAreaInfo(PBYTE, DWORD, INT);
 	//管辖人员信息
-	void ZCMsgControledPersonInfo(PBYTE, DWORD, INT);
+	void ZCMsgCtrlPersonInfo(PBYTE, DWORD, INT);
 	//管辖人员头像
-	void ZCMsgControledHeadPic(PBYTE, DWORD, INT);
+	void ZCMsgCtrlHeadPic(PBYTE, DWORD, INT);
 	//部门信息
 	void ZCMsgDepartmentInfo(PBYTE, DWORD, INT);
 	//门禁主从关系
@@ -89,15 +96,12 @@ private:
 	void ZCMsgHandlerInfo(PBYTE, DWORD, INT);
 	//用户门禁摄像头关联信息
 	void ZCMsgDoorRelationInfo(PBYTE, DWORD, INT);
-
+	//所有预案信息
+	void ZCMsgEMPlanInfo(PBYTE, DWORD, INT);
 	//std::shared_ptr<CLogDialog> m_oLogDlg = 0;//日志对话框
 
 private:
 	std::map<DWORD, void(CSelfServiceBankClientApp::*)(PBYTE, DWORD, INT)> m_mapZCMsgHandler;//ZCMsgManager消息处理函数
-	std::map<CString, std::shared_ptr<stUserInfo>> m_mapUserInfo;//用户详情信息
-	CString m_strCurUserName; //当前用户名
-	std::vector<std::shared_ptr<stControledPersonInfo>> m_vecControledPersonInfo;//管辖人员信息
-	std::vector<std::shared_ptr<TAGDOADEPARTMENTINFO_S>> m_vecDepartmentInfo;//部门信息
 
 };
 
@@ -131,3 +135,26 @@ public:
 	const CString& GetExePath() const { return m_strExePath; }
 };
 extern CGobalVariable g_GobalVariable; //全局变量
+
+
+
+/*UI配置类
+*/
+class CUICfg {
+public:
+	//设置ui属性
+	void SetUICfg(std::string s);
+
+private:
+	//匹配到ui属性
+	virtual bool OnMatchUICfg(const boost::smatch& what) = 0;
+	//是否有ui属性
+	bool HasUICfg(const std::string& str);
+
+protected:
+	//构造函数初始化
+	std::vector<std::string> m_vecUICfg;//ui配置
+	boost::regex m_uiregex;//ui正则
+};
+
+

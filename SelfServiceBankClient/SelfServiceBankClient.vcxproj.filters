@@ -22,6 +22,9 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
+    <Text Include="自绘说明.txt">
+      <Filter>MyOwnDraw</Filter>
+    </Text>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SelfServiceBankClient.h">

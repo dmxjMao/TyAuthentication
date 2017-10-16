@@ -134,6 +134,7 @@ BOOL CEmergencyPlanDialog::OnInitDialog()
 	GetClientRect(&rc);
 	rc.SetRect(rc.right - 5 - rc.Width()/4, cstnCaptionH + 5, rc.right - 5, 2 * cstnCaptionH + 5);
 	m_oOther->Create(_T("其他预案"), WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, rc, this, IDC_OtherEMPlan);
+	m_oOther->SetUICfg("underline,0");
 	//m_oOther->SetWindowPos(0, rc.left, rc.top, rc.Width(), rc.Height(), SWP_NOZORDER);
 
 	//“预案步骤”
@@ -145,7 +146,7 @@ BOOL CEmergencyPlanDialog::OnInitDialog()
 	w = 40; h = 20; x = rc.right - w - 10; y = rc.bottom - h - 10;
 	rc.SetRect(x, y, x + w, y + h);
 	m_oSubmit->Create(_T("提交"), WS_CHILD | WS_VISIBLE | BS_OWNERDRAW, rc, this, IDC_Submit);
-	m_oSubmit->Set(false, 16, cstClrTitle, Color(255, 255, 255));
+	//m_oSubmit->Set(false, 16, cstClrTitle, Color(255, 255, 255));
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // EXCEPTION: OCX Property Pages should return FALSE

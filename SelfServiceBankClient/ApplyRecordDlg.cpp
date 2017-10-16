@@ -188,22 +188,40 @@ void CApplyRecordDlg::Update()
 		//点击、初始时，计算剩余时间
 		CTimeSpan tmLeft = CTime::GetCurrentTime() - m_stApplyInfo->tmApply;
 		if (tmLeft.GetTotalSeconds() < 30) {//小于10s
-			EnableButton({ GrantBtn ,OpenDoorBtn ,LockDoorBtn ,RefuseOpenBtn }, true); //
+			//EnableButton({ GrantBtn ,OpenDoorBtn ,LockDoorBtn ,RefuseOpenBtn }, true);
 			SetTimer(IDT_Valid, (30 - (int)tmLeft.GetTotalSeconds()) * 1000, 0);
 		}
 		else {
 			//OnTimer(IDT_Valid);  //窗口还没创建好，崩溃
 			SetTimer(IDT_Valid, 0, 0);
 		}
-		
 
 		//网点名称
 		GetDlgItem(IDC_title)->SetWindowText(m_stApplyInfo->strWebSiteName);
 
 		//申请人员列表
-		m_oPersonInfo.MyInsertSubItem(m_stApplyInfo->vecPersonInfo);
+		m_oPersonInfo.MyInsertSubItem(m_stApplyInfo->stPersonInfo);
 		//m_oPersonInfo.Update();  //导致多了垂直滚动条
 		//UpdateWindow();
+
+		//远程认证，未设置上级授权，灰化“申请授权”
+		//设置了上级授权，灰化“开门”，“锁门”，“拒绝开门”
+		//策略配置
+		const auto& stPlan = theApp.m_mapCtrlPlan[m_stApplyInfo->nImportance];
+		vector<emButton> vecDisable;
+		if (1 == stPlan->nAuthType) {
+			if (stPlan->nSuperGrantType > 0) {
+				vecDisable = { OpenDoorBtn , LockDoorBtn, RefuseOpenBtn };
+			}
+			else {
+				vecDisable = { GrantBtn };
+			}
+		}
+		else { //本地认证
+			vecDisable = { GrantBtn ,OpenDoorBtn,LockDoorBtn,RefuseOpenBtn,ConfirmBtn };
+		}
+		EnableButton(vecDisable, false);
+
 		Invalidate();
 		ShowWindow(SW_NORMAL);
 	}
@@ -251,12 +269,7 @@ void CApplyRecordDlg::OnTimer(UINT_PTR nIDEvent)
 		gh.DrawImage(&img, x, y, w, h);
 
 		//灰化按钮
-		//vector<emButton> vec = { GrantBtn ,OpenDoorBtn ,LockDoorBtn ,RefuseOpenBtn };
-		//for (auto em : vec) {
-			//m_oGrant.Set(false);
-			//m_oGrant.Invalidate();
 		EnableButton({ GrantBtn ,OpenDoorBtn ,LockDoorBtn ,RefuseOpenBtn }, false);
-		//}
 
 		break;
 	}	
@@ -269,13 +282,14 @@ void CApplyRecordDlg::OnTimer(UINT_PTR nIDEvent)
 void CApplyRecordDlg::OnClickedEmergency()
 {
 	
-	static vector<stEmergPlan> vecPlan = { 
+	/*static vector<stEmergPlan> vecPlan = { 
 		{stEmergPlan(_T("医院洪水预案"), { stEmergPlanStep(1,_T("开门")), stEmergPlanStep(2,_T("关警报，查看停尸间是否有人在睡觉，然后回机房拿消防斧回来砍断水管，最后关门")) })},
 		{ stEmergPlan(_T("火山喷发预案"),{ stEmergPlanStep(1,_T("扯下窗帘")), stEmergPlanStep(2,_T("裹在头上祈祷")) }) }
 	};
 
-	static auto sp = std::make_shared<vector<stEmergPlan>>(vecPlan);
+	static auto sp = std::make_shared<vector<stEmergPlan>>(vecPlan);*/
 
-	CEmergencyPlanDialog dlg(sp, this);
-	dlg.DoModal();
+
+	//CEmergencyPlanDialog dlg(sp, this);
+	//dlg.DoModal();
 }

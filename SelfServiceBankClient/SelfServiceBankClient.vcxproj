@@ -186,6 +186,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
+    <Text Include="自绘说明.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ApplyRecordDlg.h" />

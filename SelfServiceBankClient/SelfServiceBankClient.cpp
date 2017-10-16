@@ -10,14 +10,6 @@
 #include <boost/date_time/posix_time/posix_time_types.hpp> //时间格式
 #include <boost/log/support/date_time.hpp>
 #include <boost/locale/generator.hpp>
-
-//#include <boost/smart_ptr/shared_ptr.hpp>
-//#include <boost/smart_ptr/make_shared_object.hpp>
-//#include <boost/log/sinks/sync_frontend.hpp>
-//#include <boost/log/sinks/text_ostream_backend.hpp>
-//#include <boost/log/sources/record_ostream.hpp>
-//#include <boost/core/null_deleter.hpp>
-
 #include <boost/log/sources/severity_logger.hpp> //级别 源
 #include <boost/log/utility/setup/common_attributes.hpp> //公共属性
 #include <boost/log/utility/setup/file.hpp> //sink 文件
@@ -36,6 +28,10 @@ namespace sinks = logging::sinks;
 namespace keywords = logging::keywords;
 namespace expr = boost::log::expressions;
 using namespace logging::trivial;
+
+using std::shared_ptr;
+using std::make_shared;
+using std::placeholders::_1;
 
 src::wseverity_logger< severity_level > g_slog;//级别日志器
 //BOOST_LOG_INLINE_GLOBAL_LOGGER_DEFAULT(my_logger, src::logger_mt)
@@ -90,10 +86,6 @@ BOOL CSelfServiceBankClientApp::InitInstance()
 
 	//初始化消息处理函数
 	InitZCMsgHandler();
-
-	//初始化消息服务
-	if (! CZCMsgManager::Instance()->Init(0))
-		return FALSE;
 
 	// Create the shell manager, in case the dialog contains
 	// any shell tree view or shell list view controls.
@@ -217,8 +209,8 @@ void CSelfServiceBankClientApp::InitZCMsgHandler()
 		{ ZC_MSG_COMMON_USERALLINFO, &CSelfServiceBankClientApp::ZCMsgUserDetailInfo },//用户详情
 		{ ZC_MSG_OPENDOOR_DISPOSALINFO, &CSelfServiceBankClientApp::ZCMsgDisposalInfo },//权限信息
 		{ ZC_MSG_COMMON_ALLAREAINFO, &CSelfServiceBankClientApp::ZCMsgAreaInfo },//权限信息
-		{ ZC_MSG_OPENDOOR_GETALLPEPOLEINFO, &CSelfServiceBankClientApp::ZCMsgControledPersonInfo },//管辖人员信息
-		{ ZC_MSG_COMMON_DOWNLOADPIC, &CSelfServiceBankClientApp::ZCMsgControledHeadPic },//管辖人员头像 
+		{ ZC_MSG_OPENDOOR_GETALLPEPOLEINFO, &CSelfServiceBankClientApp::ZCMsgCtrlPersonInfo },//管辖人员信息
+		{ ZC_MSG_COMMON_DOWNLOADPIC, &CSelfServiceBankClientApp::ZCMsgCtrlHeadPic },//管辖人员头像 
 		{ ZC_MSG_OPENDOOR_DEPARTMENTINFO, &CSelfServiceBankClientApp::ZCMsgDepartmentInfo },//部门信息
 		{ ZC_MSG_OPENDOOR_ACCESSRELATION, &CSelfServiceBankClientApp::ZCMsgEntranceRelation },//门禁主从关系
 		{ ZC_MSG_OPENDOOR_GETALLACSHOSTINFO, &CSelfServiceBankClientApp::ZCMsgACSHostInfo },//所有门禁主机信息
@@ -228,7 +220,8 @@ void CSelfServiceBankClientApp::InitZCMsgHandler()
 		{ ZC_MSG_OPENDOOR_GETACSHOSTLINKINFO, &CSelfServiceBankClientApp::ZCMsgACSHostLinkCameraInfo },//门禁主机关联摄像头设备
 		{ ZC_MSG_OPENDOOR_GETACSHOSTLINKTALKINFO, &CSelfServiceBankClientApp::ZCMsgACSHostLinkTalkInfo },//门禁主机关联对讲设备
 		{ ZC_MSG_COMMON_ALLUSERINFO, &CSelfServiceBankClientApp::ZCMsgHandlerInfo },//所有处置人姓名
-		{ ZC_MSG_OPENDOOR_USERDOORCAMERARELATION, &CSelfServiceBankClientApp::ZCMsgDoorRelationInfo }//用户门禁摄像头关联信息
+		{ ZC_MSG_OPENDOOR_USERDOORCAMERARELATION, &CSelfServiceBankClientApp::ZCMsgDoorRelationInfo },//用户门禁摄像头关联信息
+		{ ZC_MSG_COMMON_PLANINFO, &CSelfServiceBankClientApp::ZCMsgEMPlanInfo }//所有预案信息
 	};
 }
 
@@ -307,31 +300,32 @@ void CSelfServiceBankClientApp::ZCMsgAreaInfo(PBYTE pMsg, DWORD dwMsgID, INT nMs
 }
 
 //管辖人员信息
-void CSelfServiceBankClientApp::ZCMsgControledPersonInfo(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
+void CSelfServiceBankClientApp::ZCMsgCtrlPersonInfo(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
 {
-	const int nStructLen = sizeof(TAGDOAPERSONINFO_S);
-	int iCount = (nMsgLen - ZCMsgHeaderLen) / nStructLen;
-	auto pZCMsg = CZCMsgManager::Instance();
-	for (int i = 0; i < iCount; ++i){
-		TAGDOAPERSONINFO_S* pInfo = (TAGDOAPERSONINFO_S*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
-		
-		auto sp = std::make_shared<stControledPersonInfo>();
-		sp->stBaseInfo = std::move(*pInfo);
-		m_vecControledPersonInfo.push_back(sp);
-		//获取照片信息
-		PBYTE pImage = 
-			(TRUE == IsBadReadPtr(pInfo->chHeadImage, sizeof(int))) ? (PBYTE)"" : (PBYTE)pInfo->chHeadImage;
-		
-		pZCMsg->RequestMsgWithMsgID(ZC_MODULE_BCBCLIENT, ZC_MSG_BCBCLIENT_DOWNLOADPIC, i, pImage, 512);
-	}
+	ZCMsgMacro_beginfor(TAGDOAPERSONINFO_S, pMsg, nMsgLen)
+	
+	TAGDOAPERSONINFO_S* pInfo = (TAGDOAPERSONINFO_S*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
+
+	auto sp = std::make_shared<stCtrlPersonInfo>();
+	sp->stBaseInfo = std::move(*pInfo);
+	m_vecCtrlPersonInfo.push_back(sp);
+	//获取照片信息
+	PBYTE pImage =
+		(TRUE == IsBadReadPtr(pInfo->chHeadImage, sizeof(int))) ? (PBYTE)"" : (PBYTE)pInfo->chHeadImage;
+
+	CZCMsgManager::Instance()->RequestMsgWithMsgID(ZC_MODULE_BCBCLIENT, ZC_MSG_BCBCLIENT_DOWNLOADPIC, i, pImage, 512);
+	
+	pInfo = 0;
+	
+	ZCMsgMacro_endfor
 }
 
 //管辖人员头像：一条一条
-void CSelfServiceBankClientApp::ZCMsgControledHeadPic(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
+void CSelfServiceBankClientApp::ZCMsgCtrlHeadPic(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
 {
-	assert(dwMsgID < 0 || dwMsgID > m_vecControledPersonInfo.size());
+	assert(dwMsgID < 0 || dwMsgID > m_vecCtrlPersonInfo.size());
 
-	auto& sp = m_vecControledPersonInfo[dwMsgID];
+	auto& sp = m_vecCtrlPersonInfo[dwMsgID];
 	PBYTE pImgPath = &pMsg[ZCMsgHeaderLen];
 	memcpy(sp->szHeadPic, pImgPath, MAX_PATH);
 }
@@ -342,7 +336,6 @@ void CSelfServiceBankClientApp::ZCMsgDepartmentInfo(PBYTE pMsg, DWORD dwMsgID, I
 	ZCMsgMacro_beginfor(TAGDOADEPARTMENTINFO_S, pMsg, nMsgLen)
 		TAGDOADEPARTMENTINFO_S* pInfo = (TAGDOADEPARTMENTINFO_S*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
 		pInfo = 0;
-		m_vecDepartmentInfo.push_back(std::make_shared<TAGDOADEPARTMENTINFO_S>(*pInfo));
 	ZCMsgMacro_endfor
 }
 
@@ -356,30 +349,137 @@ void CSelfServiceBankClientApp::ZCMsgEntranceRelation(PBYTE pMsg, DWORD dwMsgID,
 	ZCMsgMacro_endfor
 }
 
-//所有门禁主机信息
+//所有门禁主机信息 access control system
 void CSelfServiceBankClientApp::ZCMsgACSHostInfo(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
 {
 	ZCMsgMacro_beginfor(TAGDOAACCESSINFO_S, pMsg, nMsgLen)
-		TAGDOAACCESSINFO_S* pInfo = (TAGDOAACCESSINFO_S*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
-		pInfo = 0;
+
+	TAGDOAACCESSINFO_S* pInfo = (TAGDOAACCESSINFO_S*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
+	CString strName(pInfo->chDevName);
+	auto& sp = m_mapACSHostInfo[strName];
+	if (0 == sp) {
+		sp = make_shared<stACSHostInfo>();
+	}
+	sp->stBaseInfo = std::move(*pInfo);
+
+	pInfo = 0;
+
 	ZCMsgMacro_endfor
 }
 
-//管控等级信息：针对设备，设备所在的场所和部位，它的管控等级
+//管控等级信息：针对设备，设备所在的场所和部位，它的管控等级名称
+//bool lambda_FindACSHostByName(const shared_ptr<stACSHostInfo>& st, const char* name) {
+//	return (0 == strcmp(st->stBaseInfo.chDevName, name));
+//}
+bool lambda_GetCtrlLevel(const std::tuple<CString, UINT8>& tpl, const CString& strLevel) {
+	return std::get<0>(tpl) == strLevel;
+}
 void CSelfServiceBankClientApp::ZCMsgCtrlLevelInfo(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
 {
 	ZCMsgMacro_beginfor(S_NEW_CTRLLEVELINFO, pMsg, nMsgLen)
-		S_NEW_CTRLLEVELINFO* pInfo = (S_NEW_CTRLLEVELINFO*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
-		pInfo = 0;
+	
+	S_NEW_CTRLLEVELINFO* pInfo = (S_NEW_CTRLLEVELINFO*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
+	//auto it = std::find_if(m_mapACSHostInfo.begin(), m_mapACSHostInfo.end(),
+	//	std::bind(lambda_FindACSHostByName, _1, pInfo->chDeviceName));
+	CString strName(pInfo->chDeviceName);
+	auto itHostInfo = m_mapACSHostInfo.find(strName);
+	//shared_ptr<stACSHostInfo> sp = 0;
+	if (m_mapACSHostInfo.end() == itHostInfo) {
+		m_mapACSHostInfo[strName] = make_shared<stACSHostInfo>();
+	}
+	auto& sp = m_mapACSHostInfo[strName];
+	
+	//赋值管控等级、管控场所名称、部位名称
+	static std::vector<std::tuple<CString, UINT8>> vecLevel = {
+		{_T("一级"),1},{ _T("二级"),2 },{ _T("三级"),3 },{ _T("四级"),4 }
+	};
+	CString strLevel(pInfo->chLevelName);
+	auto itLevel = std::find_if(vecLevel.begin(), vecLevel.end(),
+		std::bind(lambda_GetCtrlLevel, _1, strLevel));
+	sp->nCtrlLevel = (vecLevel.end() == itLevel) ? 0 : std::get<1>(*itLevel);
+	//场所
+	mbstowcs_s(0, sp->szPlaceName, pInfo->chPlaceName, _countof(sp->szPlaceName));
+	//部位
+	mbstowcs_s(0, sp->szPartName, pInfo->chKeyPartName, _countof(sp->szPartName));
+	
+	pInfo = 0;
+
 	ZCMsgMacro_endfor
 }
 
 //管控策略信息
 void CSelfServiceBankClientApp::ZCMsgCtrlPlanInfo(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
 {
+	/*一条消息：对应一个配置项，来得真是恶心
+	<级别levelID[1-4]-> 对应“管控等级”
+	 配置项planID[1-n]-> 对应“策略设置”，1是基础设置
+	 配置子项methodID[1-n]-> 对应“配置详情”
+	 值-> nSetItem1-3 按顺序 >
+	 methodID：
+	 1  //认证时效
+	 2  //认证方式    1-远程、  2-本地
+	 3  //认证识别一  1-指纹、  2-刷卡
+	 4  //认证识别二  1-指纹、  2-刷卡
+	 5  //录像        1-主通道、2-全通道
+	 6  //抓图        1-主通道、2-全通道
+	 7  //预案处置    1-预案ID
+	 8  //按步执行    1-是      2-否
+	 9  //开门授权    1-刷卡    2-密码
+	 10 //上级授权    1-刷卡    2-密码
+	 11 //排版核对    1-是      2-否
+	 12 //允许特批    1-是      2-否
+	 13 //首卡授权    1-是      2-否
+	 */
 	ZCMsgMacro_beginfor(TAGCTRLEVELPLAN_S, pMsg, nMsgLen)
-		TAGCTRLEVELPLAN_S* pInfo = (TAGCTRLEVELPLAN_S*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
-		pInfo = 0;
+	
+	TAGCTRLEVELPLAN_S* pInfo = (TAGCTRLEVELPLAN_S*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
+	UINT8 nItem1 = static_cast<UINT8>(pInfo->nSetItem1);
+	UINT8 nItem2 = static_cast<UINT8>(pInfo->nSetItem2);
+	UINT8 nItem3 = static_cast<UINT8>(pInfo->nSetItem3);
+
+	auto& sp = m_mapCtrlPlan[pInfo->nLevelId];
+	if (nullptr == sp) {
+		sp = make_shared<stCtrlPlanInfo>();
+	}
+	switch (pInfo->nMethodId)
+	{
+	case 1:
+		sp->nAuthTimeLimit = nItem1; break;
+	case 2:
+		sp->nAuthType = nItem1; break;
+	case 3:
+		sp->nDoor1Type = nItem1;
+		sp->nDoor1Type = nItem2; break;
+	case 4:
+		sp->nDoor2Type = nItem1;
+		sp->nDoor2Type = nItem2; break;
+	case 5:
+		sp->nRecType = nItem1;
+		sp->nPreRecTime = nItem2;
+		sp->nRecTime = nItem3; break;
+	case 6:
+		sp->nCapType = nItem1;
+		sp->nCapDur = nItem2;
+		sp->nCapTime = nItem3; break;
+	case 7:
+		sp->nEMPlanID = nItem1;
+		mbstowcs_s(0, sp->szEMPlanName, pInfo->chSetItem4, _countof(sp->szEMPlanName)); break;
+	case 8:
+		sp->bEMPlanStep = nItem1; break;
+	case 9:
+		sp->nOpenGrantType = nItem1; break;
+	case 10:
+		sp->nSuperGrantType = nItem1; break;
+	case 12:
+		sp->bApproval = nItem1;
+		break;
+	case 13:
+		sp->bFCGrant = nItem1; break;
+	default: break;
+	}
+
+	pInfo = 0;
+
 	ZCMsgMacro_endfor
 }
 
@@ -436,6 +536,17 @@ void CSelfServiceBankClientApp::ZCMsgDoorRelationInfo(PBYTE pMsg, DWORD dwMsgID,
 	
 }
 
+//所有预案信息
+void CSelfServiceBankClientApp::ZCMsgEMPlanInfo(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
+{
+	ZCMsgMacro_beginfor(S_NEW_SHOWPLANLIB, pMsg, nMsgLen)
+	
+	S_NEW_SHOWPLANLIB* pInfo = (S_NEW_SHOWPLANLIB*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
+	m_vecEMPlanInfo.push_back(make_shared<S_NEW_SHOWPLANLIB>(*pInfo));
+
+	ZCMsgMacro_endfor
+}
+
 //写日志
 void _cdecl CSelfServiceBankClientApp::WriteLog(severity_level level, const TCHAR* szMsg, ...)
 {
@@ -487,4 +598,25 @@ bool CGobalVariable::Init()
 	//CloseHandle(hThread); hThread = nullptr;
 
 	return bRet;
+}
+
+
+
+void CUICfg::SetUICfg(std::string s)
+{
+	boost::sregex_iterator it(s.begin(), s.end(), m_uiregex), itend;
+	for (; it != itend; ++it) {
+		OnMatchUICfg(*it);
+	}
+}
+
+
+bool lambda_FindUICfg(const std::string& s1, const std::string& s2) {
+	return s1 == s2;
+}
+bool CUICfg::HasUICfg(const std::string& str)
+{
+	auto it = std::find_if(m_vecUICfg.begin(), m_vecUICfg.end(),
+		std::bind(lambda_FindUICfg, _1, str));
+	return m_vecUICfg.end() != it;
 }

@@ -11,6 +11,9 @@
 //class CLogDialog;
 
 // CSelfServiceBankClientDlg dialog
+#ifdef _DEBUG
+class CMyButton1;
+#endif
 class CSelfServiceBankClientDlg : public CDialogEx, public CZCMsgObserver
 {
 // Construction
@@ -43,6 +46,10 @@ protected:
 	CRect m_rcClient, m_rcCaption, m_rcList, m_rcRecord; //客户区、标题区，列表区，记录区
 	CMyStatic1 m_oCloseWindow;//关闭按钮
 	
+#ifdef DEBUG
+	std::shared_ptr<CMyButton1> btn1;
+#endif // DEBUG
+
 	CMyListBox1 m_oApplyList;//申请列表
 	//std::list<CApplyRecordDlg> m_liApplyRecordDlg; //申请记录详细对话框
 	std::vector<CApplyRecordDlg> m_vecApplyRecordDlg; //申请记录详细对话框
@@ -63,13 +70,15 @@ protected:
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 
 private:
-#ifdef _DEBUG
-	void _DebugInsertApplyInfo(stApplyInfo&& st);//插入申请消息
-#endif
+	void InsertApplyInfo(const std::shared_ptr<stApplyInfo>&);//插入申请消息
 	
 	//初始化ZCMsgManager消息处理函数
 	void InitZCMsgHandler();
 	std::map<DWORD, void(CSelfServiceBankClientDlg::*)(PBYTE, DWORD, INT)> m_mapZCMsgHandler;//ZCMsgManager消息处理函数
 	//刷卡认证信息
 	void ZCMsgAuthentication(PBYTE, DWORD, INT);
+	//解析刷卡信息
+	//bool ZCMsgHelper_ParseMemo(CString&, std::vector<CString>&);
+	//解析触发时间
+	CTime ZCMsgHelper_ParseTime(const char*);
 };

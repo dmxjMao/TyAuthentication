@@ -143,13 +143,13 @@ void CMyListCtrl1::DrawItem(LPDRAWITEMSTRUCT lpDis/*lpDrawItemStruct*/)
 		gh.DrawImage(&pic, rcPic);
 		//姓名标签 & 姓名
 		PointF pf(x + nPicWidth * 1.0f, y * 1.0f);
-		str.Format(_T("姓名：%s"), st.strName);
+		str.Format(_T("姓名：%s"), _T("")/*st.strName*/);
 		gh.DrawString(str, -1, &font, pf, &sbrText);   pf.Y += nLineHeight;
 		//单位标签 & 单位
-		str.Format(_T("单位：%s"), st.strOffice);
+		str.Format(_T("单位：%s"), _T("")/*st.strOffice*/);
 		gh.DrawString(str, -1, &font, pf, &sbrText);	pf.Y += nLineHeight;
 		//分类标签 & 分类
-		str.Format(_T("分类：%s"), st.strCategory);
+		str.Format(_T("分类：%s"), _T("")/*st.strCategory*/);
 		gh.DrawString(str, -1, &font, pf, &sbrText);	pf.Y += nLineHeight;
 		//认证时间标签 & 认证时间
 		/*str.Format(_T("认证 时间：%s"), st.tmApply.Format(_T("%Y-%M-%d %H:%m:%s")));
@@ -160,12 +160,12 @@ void CMyListCtrl1::DrawItem(LPDRAWITEMSTRUCT lpDis/*lpDrawItemStruct*/)
 	//SetRedraw();
 }
 
-void CMyListCtrl1::MyInsertSubItem(std::vector<stApplyPersonInfo>& vec/*std::shared_ptr<stApplyPersonInfo> st*/)
+void CMyListCtrl1::MyInsertSubItem(const std::shared_ptr<stApplyPersonInfo>& st/*std::shared_ptr<stApplyPersonInfo> st*/)
 {
 	//m_vecPersonInfo.push_back(st);
 	//Update();
 
-	m_vecPersonInfo = vec;
+	m_vecPersonInfo.push_back(st);
 	Update();
 
 	//m_vecPersonInfo.clear();
