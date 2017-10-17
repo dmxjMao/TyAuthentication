@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "SelfServiceBankClient.h"
 #include "MyButton1.h"
-
+#include "CommonDefine.h"
 
 // CMyButton1
 namespace {
@@ -92,7 +92,7 @@ void CMyButton1::OnPaint()
 
 	if (m_bUnderLine) {
 		//下划线
-		Pen pen(cstClrTitle);
+		Pen pen(theApp.m_oGobal->cstClrTitle);
 		//RectF boundRect; //是边界，就是控件客户区
 		//gh.MeasureString(str, -1, &font, rcGdiF, &boundRect);
 		auto nTextH = font.GetHeight(0.0);//一行高度

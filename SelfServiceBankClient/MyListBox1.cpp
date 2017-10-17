@@ -4,9 +4,9 @@
 #include "stdafx.h"
 #include "SelfServiceBankClient.h"
 #include "MyListBox1.h"
-//#include <tuple>
 
 #include "SelfServiceBankClientDlg.h" //ÖÐ½é
+#include "CommonDefine.h"
 
 //using std::get;
 

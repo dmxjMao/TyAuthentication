@@ -1,11 +1,11 @@
 #pragma once
-#include "CommonDefine.h"  //struct
-#include "afxwin.h"
-#include "MyListCtrl1.h" //申请认证人员
-#include "MyStatic1.h" //门
-#include "MyStatic2.h" //按钮
 
 // CApplyRecordDlg dialog
+enum emButton;
+struct stApplyInfo;
+class CMyListCtrl1;
+class CMyStatic1;
+class CMyStatic2;
 
 class CApplyRecordDlg : public CDialogEx
 {
@@ -31,17 +31,18 @@ protected:
 
 	CStatic m_oVideo1;//视频
 	CStatic m_oVideo2;
-	CMyListCtrl1 m_oPersonInfo;  //申请认证人员信息
+	
+	std::shared_ptr<CMyListCtrl1> m_oPersonInfo = 0;  //申请认证人员信息
 
-	CMyStatic1 m_oPicDoor;//门
+	std::shared_ptr<CMyStatic1> m_oPicDoor = 0;//门
 
-	CMyStatic2 m_oEmergency;//应急处置
-	CMyStatic2 m_oGrant;//申请授权
-	CMyStatic2 m_oOpen;//开门
-	CMyStatic2 m_oEnterMapLayer;//进入图层
-	CMyStatic2 m_oLock;//锁门
-	CMyStatic2 m_oRefuseOpen;//拒绝开门
-	CMyStatic2 m_oConfirm;//确认并关闭
+	std::shared_ptr<CMyStatic2> m_oEmergency = 0;//应急处置
+	std::shared_ptr<CMyStatic2> m_oGrant = 0;//申请授权
+	std::shared_ptr<CMyStatic2> m_oOpen = 0;//开门
+	std::shared_ptr<CMyStatic2> m_oEnterMapLayer = 0;//进入图层
+	std::shared_ptr<CMyStatic2> m_oLock = 0;//锁门
+	std::shared_ptr<CMyStatic2> m_oRefuseOpen = 0;//拒绝开门
+	std::shared_ptr<CMyStatic2> m_oConfirm = 0;//确认并关闭
 
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 
@@ -50,11 +51,10 @@ protected:
 
 public:
 	//获取成员m_stApplyInfo
-	inline /*decltype(m_stApplyInfo)*/const std::shared_ptr<stApplyInfo>& 
+	inline const std::shared_ptr<stApplyInfo>& 
 		GetApplyInfo() const { return m_stApplyInfo; }
 	inline void SetApplyInfo(const std::shared_ptr<stApplyInfo>& st) {
 		m_stApplyInfo = st; 
-		//Update();
 	}
 	//设置对话框在父窗口中的区域，因为Create->OnInitDialog->SetWindowPos
 	inline void SetRectInParent(const CRect& rc) { m_rcInParent = rc; }
@@ -63,7 +63,7 @@ public:
 	//按钮灰化/可用处理，改为按钮
 	void EnableButton(std::vector<emButton> em, bool b);
 
-private:
+
 public:
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnClickedEmergency();

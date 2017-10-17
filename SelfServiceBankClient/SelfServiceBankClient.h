@@ -9,7 +9,7 @@
 #endif
 
 #include "resource.h"		// main symbols
-#include "CommonDefine.h"
+#include "ConnectAppProtocol.h" //结构体
 
 // CSelfServiceBankClientApp:
 // See SelfServiceBankClient.cpp for the implementation of this class
@@ -29,7 +29,12 @@ public:
 class CLogDialog;
 //struct S_New_UserInfo; //有typedef，造成重定义
 //typedef struct S_New_UserInfo S_New_UserInfo;
-
+struct stUserInfo;
+struct stCtrlPersonInfo;
+struct stCtrlPlanInfo;
+struct stACSHostInfo;
+struct stEmergPlan;
+class CGobalVariable;
 
 class CSelfServiceBankClientApp : public CWinApp, public CZCMsgObserver
 {
@@ -49,13 +54,14 @@ public:
 public:
 	//使用vector是为了减少内存；使用map是1）消息机制无法整合相关信息
 	CString m_strCurUserName; //当前用户名
-	std::map<CString, std::shared_ptr<stUserInfo>> m_mapUserInfo;//用户详情信息，改为vector
+	std::map<CString, std::shared_ptr<stUserInfo>> m_mapUserInfo;//用户详情信息
 	std::vector<std::shared_ptr<stCtrlPersonInfo>> m_vecCtrlPersonInfo;//管辖人员信息
 	std::vector<std::shared_ptr<TAGDOADEPARTMENTINFO_S>> m_vecDepartmentInfo;//部门信息
 	std::map<UINT8, std::shared_ptr<stCtrlPlanInfo>> m_mapCtrlPlan;//策略信息<管控等级,策略结构>，由于消息来得恶心，为了方便起见使用了map
 	//std::vector<std::shared_ptr<stACSHostInfo>> m_vecACSHostInfo;//门禁主机信息，要整合管控等级，消息谁先到又不确定
 	std::map<CString, std::shared_ptr<stACSHostInfo>> m_mapACSHostInfo;//门禁主机信息，主机名字不重复
-	std::vector<std::shared_ptr<S_NEW_SHOWPLANLIB>> m_vecEMPlanInfo;//预案信息
+	std::vector<std::shared_ptr<stEmergPlan>> m_vecEMPlanInfo;//预案信息
+	std::shared_ptr<CGobalVariable> m_oGobal;//全局变量
 
 private:
 	//初始化日志
@@ -92,6 +98,8 @@ private:
 	void ZCMsgACSHostLinkCameraInfo(PBYTE, DWORD, INT);
 	//门禁主机关联对讲设备
 	void ZCMsgACSHostLinkTalkInfo(PBYTE, DWORD, INT);
+	//赋值关联设备
+	//shared_ptr<stACSHostInfo>& ZCMsgHelper_SetACSHostRelDeviceInfo(const int nDevID);
 	//所有处置人信息
 	void ZCMsgHandlerInfo(PBYTE, DWORD, INT);
 	//用户门禁摄像头关联信息
@@ -109,32 +117,42 @@ extern CSelfServiceBankClientApp theApp;
 
 
 
-//全局类，后期作为theApp成员
-struct StgCfg;
+//全局变量
 class CGobalVariable {
 private:
 	//GDI+初始化
 	ULONG_PTR gdiplusToken;
 	GdiplusStartupInput gdiplusStartupInput;
 
-	CString m_strExePath;//exe路径
+	//boost::log::sources::wseverity_logger< severity_level > m_slog;//级别日志器
 	//CString m_strStgCfgPath;//配置文档路径
 	//std::vector<StgCfg*> m_vecCfg;//配置
 	//HANDLE m_hEventReadStgCfg;//读取配置线程完成事件
 	
-	//const
-	//字体
-	//const FontFamily cstFontFamily = _T("微软雅黑");
-	//const Gdiplus::Font cstFont = Gdiplus::Font(&cstFontFamily, 12, FontStyleRegular, UnitPixel);
-	//const SolidBrush cstSolidBrushText = Color(125, 125, 125);
+public:
+	CString strExePath;//exe路径
+	/*UI部分，后期作为配置项
+	*/
+	const Color cstClrTitle = Color(54, 132, 215);//标题颜色
+	const int cstnTitleHeight = 30;//标题高度
+
+	//默认字体  不成功，因为GDI+还没有初始化
+	//std::shared_ptr<FontFamily> cstFontFamily;
+	//std::shared_ptr<Gdiplus::Font> cstFont = 0; //字体大小，构造私有
+	//Gdiplus::Font* cstFont = 0;//字体大小
+
+	//std::shared_ptr<SolidBrush> cstSolidBrushText = 0;//文本颜色
+	//SolidBrush* cstSolidBrushText = 0;  Clone返回的是Brush*
+	//static FontFamily cstFontFamily = (_T("微软雅黑"));
 
 public:
 	CGobalVariable();
 	~CGobalVariable();
 	bool Init();
-	const CString& GetExePath() const { return m_strExePath; }
+	inline const CString& GetExePath() const { return strExePath; }
+	//inline decltype(m_slog)& GetLog() { return m_slog; }
 };
-extern CGobalVariable g_GobalVariable; //全局变量
+
 
 
 

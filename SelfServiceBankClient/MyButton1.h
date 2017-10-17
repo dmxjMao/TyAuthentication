@@ -20,7 +20,7 @@ protected:
 	bool m_bUnderLine = true;//下划线
 	int m_nFontSize = 12;//字体大小
 	Color m_clrBG = Color(0, 0, 0, 0);//背景色
-	Color m_clrText = cstClrTitle;//文本颜色
+	Color m_clrText = Color(54, 132, 215);//文本颜色
 
 	bool m_bMouseTrack = true, m_bHover = false;
 	DECLARE_MESSAGE_MAP()

@@ -5,6 +5,7 @@
 #include "SelfServiceBankClient.h"
 #include "MyListCtrl1.h"
 #include <tuple>
+#include "CommonDefine.h"
 
 using std::tuple;
 

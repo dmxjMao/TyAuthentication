@@ -3,17 +3,17 @@
 //
 
 #pragma once
-#include "MyStatic1.h"
-//#include "MyListCtrl1.h"
-#include "MyListBox1.h"
 #include "ApplyRecordDlg.h"
 
 //class CLogDialog;
 
 // CSelfServiceBankClientDlg dialog
 #ifdef _DEBUG
-class CMyButton1;
+
 #endif
+class CMyStatic1;
+class CMyListBox1;
+
 class CSelfServiceBankClientDlg : public CDialogEx, public CZCMsgObserver
 {
 // Construction
@@ -44,13 +44,13 @@ protected:
 protected:
 	HICON m_hIcon;
 	CRect m_rcClient, m_rcCaption, m_rcList, m_rcRecord; //客户区、标题区，列表区，记录区
-	CMyStatic1 m_oCloseWindow;//关闭按钮
+	std::shared_ptr<CMyStatic1> m_oCloseWindow = 0;//关闭按钮
 	
 #ifdef DEBUG
-	std::shared_ptr<CMyButton1> btn1;
+
 #endif // DEBUG
 
-	CMyListBox1 m_oApplyList;//申请列表
+	std::shared_ptr<CMyListBox1> m_oApplyList = 0;//申请列表
 	//std::list<CApplyRecordDlg> m_liApplyRecordDlg; //申请记录详细对话框
 	std::vector<CApplyRecordDlg> m_vecApplyRecordDlg; //申请记录详细对话框
 	std::vector<std::shared_ptr<stApplyInfo>> m_vecApplyInfo;//申请消息

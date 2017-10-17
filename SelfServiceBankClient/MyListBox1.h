@@ -2,11 +2,10 @@
 
 // CMyListBox1
 /*
-遗留问题：
-1，多项选择 与 悬停冲突，m_curItem变为数组
-2，鼠标移出控件，还是有高亮，追踪悬停消息
 */
 class CSelfServiceBankClientDlg;
+struct stApplyInfo;
+
 class CMyListBox1 : public CListBox
 {
 	DECLARE_DYNAMIC(CMyListBox1)

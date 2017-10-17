@@ -7,12 +7,14 @@
 #include "SelfServiceBankClientDlg.h"
 #include "afxdialogex.h"
 
+#include "CommonDefine.h"
 #include "LogDialog.h"
 #include "ZCMsgManager.h"
+#include "MyStatic1.h"
+#include "MyListBox1.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
-#include "MyButton1.h"
 #endif
 
 
@@ -68,12 +70,15 @@ CSelfServiceBankClientDlg::CSelfServiceBankClientDlg(CWnd* pParent /*=NULL*/)
 
 	m_vecApplyRecordDlg.resize(cstnApplyRecordCnt);
 	m_oLogDlg = std::make_shared<CLogDialog>();
+
+	m_oCloseWindow = std::make_shared<CMyStatic1>();
+	m_oApplyList = std::make_shared<CMyListBox1>();
 }
 
 void CSelfServiceBankClientDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_CloseWindow, m_oCloseWindow);
+	DDX_Control(pDX, IDC_CloseWindow, *m_oCloseWindow);
 	//  DDX_Control(pDX, IDC_ApplyList, m_oApplyList);
 	//DDX_Control(pDX, IDC_ApplyList, m_oApplyList);
 }
@@ -135,39 +140,40 @@ BOOL CSelfServiceBankClientDlg::OnInitDialog()
 
 	//标题栏、客户、列表、申请认证记录区，SetRect参数是坐标值
 	ScreenToClient(&rc);
-	m_rcCaption.SetRect(rc.left, rc.top, rc.Width(), cstnTitleHeight);
-	m_rcClient.SetRect(rc.left, rc.top + cstnTitleHeight, rc.Width(), rc.Height());
+	m_rcCaption.SetRect(rc.left, rc.top, rc.Width(), theApp.m_oGobal->cstnTitleHeight);
+	m_rcClient.SetRect(rc.left, rc.top + theApp.m_oGobal->cstnTitleHeight, rc.Width(), rc.Height());
 	m_rcList.SetRect(m_rcClient.left + 1, m_rcClient.top + 1, m_rcClient.Width() / 6, m_rcClient.bottom);
 	m_rcRecord.SetRect(m_rcList.right + 5, m_rcList.top, m_rcClient.right, m_rcList.bottom);
 	//GetClientRect(&m_rcClient);
 
 	//移动关闭按钮
 	/*对话框与控件的调用顺序：1）控件子类化；2）OnInitDialog；3）对话框OnPaint；4）控件OnPaint*/
-	m_oCloseWindow.Set(_T("res\\标题栏关闭常态.png"), _T("res\\标题栏关闭悬停.png"), false);
+	m_oCloseWindow->Set(_T("res\\标题栏关闭常态.png"), _T("res\\标题栏关闭悬停.png"), false);
 	rc.SetRect(rc.right - 24, rc.top, 0, 0);
-	m_oCloseWindow.SetWindowPos(nullptr, rc.left, rc.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER);//要客户区坐标
+	m_oCloseWindow->SetWindowPos(nullptr, rc.left, rc.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER);//要客户区坐标
 
 
 	//申请列表
-	m_oApplyList.Create(LBS_OWNERDRAWFIXED | LBS_HASSTRINGS | LBS_NOTIFY 
+	m_oApplyList->Create(LBS_OWNERDRAWFIXED | LBS_HASSTRINGS | LBS_NOTIFY 
 		| /*LBS_EXTENDEDSEL |*/ WS_CHILD | WS_VISIBLE /*| LBS_SORT*/, 
 		CRect(0, 0, 0, 0), this, 1);
 	//在笔记本上实际高度并不是m_rcList.Height()，？
-	m_oApplyList.SetWindowPos(nullptr, m_rcList.left, m_rcList.top, m_rcList.Width(), m_rcList.Height(), SWP_NOZORDER);
+	m_oApplyList->SetWindowPos(nullptr, m_rcList.left, m_rcList.top, m_rcList.Width(), m_rcList.Height(), SWP_NOZORDER);
 	//m_oApplyList.MySetItemData(m_vecApplyInfo); //
-	m_oApplyList.Set(this);
+	m_oApplyList->Set(this);
 
 #ifdef  _DEBUG
 	//CMyListBox1::ItemData d1 = { _T("大华abc"), 2, CTime(2017,10,3,1,1,1) };
 	//m_oApplyList.MyInsertString(d1);
-	btn1 = std::make_shared<CMyButton1>();
-	btn1->Create(_T("BTN1"), WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
-		CRect(0, 0, 0, 0), this, 123);
-	//enum emCfg { emUnderline = 1, emFontsize, emBgcolor, emTextcolor, emMousetrack,
-	btn1->SetUICfg("underline,0;emfontsize,16;emmousetrack=1;");
-	btn1->SetWindowPos(nullptr, m_rcList.left + 200, m_rcList.top + 100, 80, 50, SWP_NOZORDER);
 
-	btn1->ShowWindow(SW_NORMAL);
+	//btn1 = std::make_shared<CMyButton1>();
+	//btn1->Create(_T("BTN1"), WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
+	//	CRect(0, 0, 0, 0), this, 123);
+	////enum emCfg { emUnderline = 1, emFontsize, emBgcolor, emTextcolor, emMousetrack,
+	//btn1->SetUICfg("underline,0;emfontsize,16;emmousetrack=1;");
+	//btn1->SetWindowPos(nullptr, m_rcList.left + 200, m_rcList.top + 100, 80, 50, SWP_NOZORDER);
+
+	//btn1->ShowWindow(SW_NORMAL);
 #endif //  _DEBUG
 
 	//申请认证详情对话框
@@ -267,8 +273,8 @@ void CSelfServiceBankClientDlg::OnPaint()
 
 	//画标题栏
 	Graphics gh(dc.GetSafeHdc());
-	SolidBrush sbr(cstClrTitle);
-	gh.FillRectangle(&sbr, x, y, w, cstnTitleHeight);
+	SolidBrush sbr(theApp.m_oGobal->cstClrTitle);
+	gh.FillRectangle(&sbr, x, y, w, theApp.m_oGobal->cstnTitleHeight);
 
 	//写标题
 	FontFamily ff(_T("微软雅黑"));
@@ -290,13 +296,13 @@ void CSelfServiceBankClientDlg::OnPaint()
 
 #ifdef _DEBUG
 
-	CMyButton1 btn1;
-	btn1.Create(_T("BTN1"), WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
-		CRect(0, 0, 0, 0), this, 123);
-	btn1.SetUICfg("underline,0");
-	btn1.SetWindowPos(nullptr, m_rcList.left, m_rcList.top, m_rcList.Width(), m_rcList.Width(), SWP_NOZORDER);
+	//CMyButton1 btn1;
+	//btn1.Create(_T("BTN1"), WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
+	//	CRect(0, 0, 0, 0), this, 123);
+	//btn1.SetUICfg("underline,0");
+	//btn1.SetWindowPos(nullptr, m_rcList.left, m_rcList.top, m_rcList.Width(), m_rcList.Width(), SWP_NOZORDER);
 
-	btn1.ShowWindow(SW_NORMAL);
+	//btn1.ShowWindow(SW_NORMAL);
 #endif // _DEBUG
 
 	//if (IsIconic())
@@ -358,7 +364,7 @@ void CSelfServiceBankClientDlg::InsertApplyInfo(const shared_ptr<stApplyInfo>& s
 	m_vecApplyInfo.push_back(sp);
 
 	//插入到左侧申请列表
-	m_oApplyList.MyInsertString(sp);
+	m_oApplyList->MyInsertString(sp);
 	
 	//插入到右侧申请详情
 	MyInsertRecord(sp);

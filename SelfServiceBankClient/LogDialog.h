@@ -1,9 +1,9 @@
 #pragma once
-#include "MyLogListCtrl.h"
-#include "afxwin.h"
+
 
 
 // CLogDialog dialog
+class CMyLogListCtrl;
 
 class CLogDialog : public CDialogEx
 {
@@ -22,7 +22,7 @@ protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 
 	DECLARE_MESSAGE_MAP()
-	CMyLogListCtrl m_oLogList;
+	std::shared_ptr<CMyLogListCtrl> m_oLogList = 0;
 	CListBox m_oFileList;
 public:
 	virtual BOOL OnInitDialog();

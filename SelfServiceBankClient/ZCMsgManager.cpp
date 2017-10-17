@@ -1,9 +1,9 @@
 #include "stdafx.h"
 //#include <objbase.h >
 #include "ZCMsgManager.h"
-#include "SelfServiceBankClient.h"
 
-#include "SelfServiceBankClientDlg.h"
+#include "SelfServiceBankClient.h" //观察者1
+#include "SelfServiceBankClientDlg.h" //观察者2
 
 #pragma comment(lib,"..\\ZCMsgManager\\TjtyTcpClientModule.lib")
 CZCMsgManager* CZCMsgManager::m_pZcInst = NULL;
@@ -59,6 +59,7 @@ std::map<DWORD, TCHAR*> g_mapZCMsgErrInfo = {
 	{ ZC_MSG_OPENDOOR_ACCESSRELATION, _T("获取门禁主从关系失败！") },
 	{ ZC_MSG_OPENDOOR_GETALLACSHOSTINFO, _T("获取所有门禁主机信息失败！") },
 	{ ZC_MSG_OPENDOOR_CTRLLEVELMULINFO, _T("获取所有管控信息失败！") },
+	{ ZC_MSG_OPENDOOR_CTRLLEVELPLAN, _T("获取所有管控策略信息失败！") },
 	{ ZC_MSG_COMMON_ALLKEYPARTINFO, _T("获取所有部位信息失败！") },
 	{ ZC_MSG_OPENDOOR_GETACSHOSTLINKINFO, _T("获取门禁主机关联摄像头设备失败！") },
 	{ ZC_MSG_OPENDOOR_GETACSHOSTLINKTALKINFO, _T("获取门禁主机关联对讲设备失败！") },
@@ -166,7 +167,7 @@ CZCMsgManager::~CZCMsgManager(void)
 bool CZCMsgManager::Init(DWORD dwUser)
 {
 	//exe目录
-	auto str = g_GobalVariable.GetExePath();
+	CString str = theApp.m_oGobal->GetExePath();
 
 	//配置
 	int iPort = 5555, iFlag = 0;
@@ -300,12 +301,12 @@ void CZCMsgManager::RequestInitMsg()
 		ZC_MSG_APP_OPENDOOR_DISPOSALINFO,//权限信息
 		ZC_MSG_APP_ALLAREAINFO,//区域信息
 		ZC_MSG_APP_OPENDOOR_GETALLPEPOLEINFO,//所有需管辖的出入人员信息
-		ZC_MSG_APP_OPENDOOR_DEPARTMENTINFO,//部门信息
+		//ZC_MSG_APP_OPENDOOR_DEPARTMENTINFO,//部门信息
 		ZC_MSG_APP_OPENDOOR_ACCESSRELATION,//门禁主从关系
 		ZC_MSG_APP_OPENDOOR_GETALLACSHOSTINFO,//所有门禁主机信息
 		ZC_MSG_APP_OPENDOOR_CTRLLEVELMULINFO,//管控信息
 		ZC_MSG_APP_OPENDOOR_CTRLLEVELPLAN,//管控策略信息
-		ZC_MSG_APP_ALLKEYPARTINFO,//部位信息
+		//ZC_MSG_APP_ALLKEYPARTINFO,//部位信息
 		ZC_MSG_APP_OPENDOOR_GETACSHOSTLINKINFO, //门禁主机关联摄像头设备
 		ZC_MSG_APP_OPENDOOR_GETACSHOSTLINKTALKINFO,//门禁主机关联对讲设备
 		ZC_MSG_APP_ALLUSERINFO,//所有处置人姓名

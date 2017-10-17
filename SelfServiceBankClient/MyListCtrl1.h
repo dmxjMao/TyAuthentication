@@ -6,7 +6,9 @@
 自定义的“项”，显示申请人员信息
 自绘滚动条
 */
-#include "MyScrollBar1.h"
+//#include "MyScrollBar1.h"
+
+struct stApplyPersonInfo;
 
 class CMyListCtrl1 : public CListCtrl
 {

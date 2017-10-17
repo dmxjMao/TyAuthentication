@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "SelfServiceBankClient.h"
 #include "MyListBox2.h"
-
+#include "CommonDefine.h"
 
 // CMyListBox2
 
@@ -62,7 +62,7 @@ void CMyListBox2::DrawItem(LPDRAWITEMSTRUCT lpDis/*lpDrawItemStruct*/)
 
 		FontFamily ff(_T("Î¢ÈíÑÅºÚ"));
 		Gdiplus::Font font(&ff, 12, FontStyleRegular, UnitPixel);
-		SolidBrush sbrText(cstClrTitle);
+		SolidBrush sbrText(theApp.m_oGobal->cstClrTitle);
 		PointF pF(rcGdi.X * 1.0f, rcGdi.Y * 1.0f);
 
 		CString str;

@@ -6,6 +6,7 @@
 
 //ZCMsg消息头大小
 #define ZCMsgHeaderLen sizeof(ZC_MSG_RESP_RESULT)
+
 //消息处理公共代码提取宏
 #define ZCMsgMacro_beginfor(T, pMsg, nMsgLen)	\
 const int nStructLen = sizeof(T);	\
@@ -14,19 +15,6 @@ for (int i = 0; i < iCount; ++i) {	\
 	//T* pInfo = (T*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);	
 
 #define ZCMsgMacro_endfor	}
-
-/*界面标题栏
-标题颜色
-标题高度
-*/
-const Color cstClrTitle = Color(54, 132, 215);
-const int cstnTitleHeight = 30;
-
-
-//默认字体  不成功，因为GDI+还没有初始化，既然是全局变量，为什么不放在类里？
-//const FontFamily cstFontFamily(_T("微软雅黑"));
-//const Gdiplus::Font cstFont(&cstFontFamily, 12, FontStyleRegular, UnitPixel);
-//const SolidBrush cstSolidBrushText(Color(125, 125, 125));
 
 
 /*
@@ -53,19 +41,22 @@ enum emButton {
 */
 //预案步骤
 struct stEmergPlanStep {
-	int nNo;//编号
+	int nNo = -1;//编号
+	bool bMustDo = false;//是否必须执行
 	CString strName;//名称
 
-	stEmergPlanStep(int n, CString name)
-		: nNo(n), strName(name) {}
+	stEmergPlanStep(int no, bool bDo, CString name)
+		: nNo(no), bMustDo(bDo), strName(name) {}
 };
 //预案信息
 struct stEmergPlan {
-	CString strPlanName;//预案名
+	int nPlanID;//预案ID
+	CString strPlanName;//预案名称
+	CString strCreateMan;//创建人
 	std::vector<stEmergPlanStep> vecStep;//预案步骤
 
-	stEmergPlan(CString name, std::vector<stEmergPlanStep>&& vec)
-		: strPlanName(name), vecStep(vec) {}
+	//stEmergPlan(CString name, std::vector<stEmergPlanStep>&& vec)
+	//	: strPlanName(name), vecStep(vec) {}
 };
 
 
@@ -92,10 +83,10 @@ struct stCtrlPersonInfo {
 struct stCtrlPlanInfo {
 	UINT8 nAuthTimeLimit = 3;//认证时限
 	UINT8 nAuthType = 1;//认证方式 1-远程、2-本地
-	UINT8 nDoor1Type = -1;//认证识别一方式  1-指纹、  2-刷卡
-	UINT8 nDoor1Num = 2;//识别一  人数
-	UINT8 nDoor2Type = -1;//认证识别二  1-指纹、  2-刷卡
-	UINT8 nDoor2Num = 0;//识别二 人数
+	UINT8 nDoor1Type = 2;//认证识别一方式  1-指纹、  2-刷卡
+	UINT8 nDoor1Num = 1;//识别一  人数
+	UINT8 nDoor2Type = 2;//认证识别二  1-指纹、  2-刷卡
+	UINT8 nDoor2Num = 1;//识别二 人数
 	UINT8 nRecType = -1;//录像方式 1-主通道、2-全通道
 	UINT8 nPreRecTime = 30;//预录时长
 	UINT8 nRecTime = 60;//录像时长
@@ -110,16 +101,23 @@ struct stCtrlPlanInfo {
 	UINT8 bApproval = 2;//允许特批    1-是      2-否
 	UINT8 bFCGrant = 2;//首卡授权    1-是      2-否
 	
-	TCHAR szEMPlanName[64] = { 0 }; //预案名称
+	char szEMPlanName[128] = { 0 }; //预案名称
 };
 
 /*门禁主机信息
 */
 struct stACSHostInfo {
 	TAGDOAACCESSINFO_S stBaseInfo;//基础信息，对应配置“修改..."
+	bool bMaster = true; //是否是从门禁
+	union {
+		char szMasterName[128];//主门禁名
+		char szSlaveName[128];//从门禁名
+	}unMS;
 	UINT8 nCtrlLevel = -1;//管控等级
-	TCHAR szPlaceName[32] = { 0 };//所在场所名称
-	TCHAR szPartName[32] = { 0 };//所在部位名称
+	char szPlaceName[64] = { 0 };//所在场所名称
+	char szPartName[64] = { 0 };//所在部位名称
+	std::vector<int> vecRelChnl;//联动视频通道
+	std::vector<int> vecRelTalk;//关联对讲设备
 };
 
 
@@ -150,20 +148,3 @@ struct stApplyInfo {
 	//	stPersonInfo(st) {}
 };
 
-
-/*申请信息
-全部人一条申请信息
-*/
-//struct stApplyInfo {
-//
-//	CString strWebSiteName;//申请网点
-//	int nImportance;//重要程度，为0不管控
-//	CTime tmApply;//申请认证时间，CString不好转CTime
-//				  //两路视频
-//	//认证方式：远程认证、本地认证
-//	std::vector<stApplyPersonInfo> vecPersonInfo;//申请人员信息
-//
-//	stApplyInfo(CString wbName, int nImp, CTime tm, std::vector<stApplyPersonInfo>&& vec)
-//		: strWebSiteName(wbName), nImportance(nImp), tmApply(tm),
-//		vecPersonInfo(vec) {}
-//};

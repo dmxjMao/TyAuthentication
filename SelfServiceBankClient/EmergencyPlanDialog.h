@@ -7,6 +7,8 @@ class CMyButton1;
 class CMyButton2;
 class CMyStatic1;
 class CMyListBox2;
+struct stEmergPlan;
+
 class CEmergencyPlanDialog : public CDialogEx
 {
 	DECLARE_DYNAMIC(CEmergencyPlanDialog)

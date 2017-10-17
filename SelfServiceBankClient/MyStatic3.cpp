@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "SelfServiceBankClient.h"
 #include "MyStatic3.h"
-
+#include "CommonDefine.h"
 
 // CMyStatic3
 
@@ -42,7 +42,7 @@ void CMyStatic3::OnPaint()
 
 	//Ìî³ä±³¾°É«
 	//Color clrBG(54, 132, 215);
-	SolidBrush sbr(cstClrTitle);
+	SolidBrush sbr(theApp.m_oGobal->cstClrTitle);
 	gh.FillRectangle(&sbr, rcGdi);
 	
 

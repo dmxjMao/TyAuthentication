@@ -6,6 +6,7 @@
 #include "LogDialog.h"
 #include "afxdialogex.h"
 
+#include "MyLogListCtrl.h"
 
 // CLogDialog dialog
 
@@ -14,7 +15,7 @@ IMPLEMENT_DYNAMIC(CLogDialog, CDialogEx)
 CLogDialog::CLogDialog(CWnd* pParent /*=NULL*/)
 	: CDialogEx(IDD_Log, pParent)
 {
-
+	m_oLogList = std::make_shared<CMyLogListCtrl>();
 }
 
 CLogDialog::~CLogDialog()
@@ -24,7 +25,7 @@ CLogDialog::~CLogDialog()
 void CLogDialog::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_LIST1, m_oLogList);
+	DDX_Control(pDX, IDC_LIST1, *m_oLogList);
 	DDX_Control(pDX, IDC_LIST2, m_oFileList);
 }
 
@@ -44,10 +45,10 @@ BOOL CLogDialog::OnInitDialog()
 	GetClientRect(&rc);
 	int x = rc.left + 100;
 	int w = rc.right - x;
-	m_oLogList.SetWindowPos(0, x , rc.top, w, rc.Height(), SWP_NOZORDER);
+	m_oLogList->SetWindowPos(0, x , rc.top, w, rc.Height(), SWP_NOZORDER);
 	
 #ifdef _DEBUG
-	m_oLogList.Init();
+	m_oLogList->Init();
 #endif // _DEBUG
 	
 	m_oFileList.ShowWindow(SW_HIDE);

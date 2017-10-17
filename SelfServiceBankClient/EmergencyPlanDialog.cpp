@@ -6,7 +6,8 @@
 #include "EmergencyPlanDialog.h"
 #include "afxdialogex.h"
 
-#include "ApplyRecordDlg.h"
+#include "CommonDefine.h"
+//#include "ApplyRecordDlg.h"
 #include "MyStatic1.h"
 #include "MyStatic3.h"
 #include "MyButton1.h"
@@ -163,7 +164,7 @@ void CEmergencyPlanDialog::OnPaint()
 	int x = rc.left, y = rc.top;
 	int w = rc.Width(), h = cstnCaptionH;
 	//画标题栏
-	SolidBrush sbr(cstClrTitle);
+	SolidBrush sbr(theApp.m_oGobal->cstClrTitle);
 	gh.FillRectangle(&sbr, x, y, w, h);
 
 	//写标题

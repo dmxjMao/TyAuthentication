@@ -6,6 +6,10 @@
 #include "ApplyRecordDlg.h"
 #include "afxdialogex.h"
 
+#include "CommonDefine.h"  //struct
+#include "MyListCtrl1.h" //申请认证人员
+#include "MyStatic1.h" //门
+#include "MyStatic2.h" //按钮
 #include "EmergencyPlanDialog.h" //应急处置
 
 using std::vector;
@@ -18,7 +22,16 @@ IMPLEMENT_DYNAMIC(CApplyRecordDlg, CDialogEx)
 CApplyRecordDlg::CApplyRecordDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(IDD_ApplyRecordDlg, pParent)
 {
-
+	m_oPersonInfo = std::make_shared<CMyListCtrl1>();
+	m_oPicDoor = std::make_shared<CMyStatic1>();
+	
+	m_oEmergency = std::make_shared<CMyStatic2>();
+	m_oGrant = std::make_shared<CMyStatic2>();
+	m_oOpen = std::make_shared<CMyStatic2>();
+	m_oEnterMapLayer = std::make_shared<CMyStatic2>();
+	m_oLock = std::make_shared<CMyStatic2>();
+	m_oRefuseOpen = std::make_shared<CMyStatic2>();
+	m_oConfirm = std::make_shared<CMyStatic2>();
 }
 
 CApplyRecordDlg::~CApplyRecordDlg()
@@ -30,15 +43,15 @@ void CApplyRecordDlg::DoDataExchange(CDataExchange* pDX)
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_Video1, m_oVideo1);
 	DDX_Control(pDX, IDC_Video2, m_oVideo2);
-	DDX_Control(pDX, IDC_pic2Door, m_oPicDoor);
+	DDX_Control(pDX, IDC_pic2Door, *m_oPicDoor);
 	//DDX_Control(pDX, IDC_SCROLLBAR1, m_oSBar);
-	DDX_Control(pDX, IDC_Emergency, m_oEmergency);
-	DDX_Control(pDX, IDC_Grant, m_oGrant);
-	DDX_Control(pDX, IDC_Open, m_oOpen);
-	DDX_Control(pDX, IDC_EnterMapLayer, m_oEnterMapLayer);
-	DDX_Control(pDX, IDC_Lock, m_oLock);
-	DDX_Control(pDX, IDC_RefuseOpen, m_oRefuseOpen);
-	DDX_Control(pDX, IDC_Confirm, m_oConfirm);
+	DDX_Control(pDX, IDC_Emergency, *m_oEmergency);
+	DDX_Control(pDX, IDC_Grant, *m_oGrant);
+	DDX_Control(pDX, IDC_Open, *m_oOpen);
+	DDX_Control(pDX, IDC_EnterMapLayer, *m_oEnterMapLayer);
+	DDX_Control(pDX, IDC_Lock, *m_oLock);
+	DDX_Control(pDX, IDC_RefuseOpen, *m_oRefuseOpen);
+	DDX_Control(pDX, IDC_Confirm, *m_oConfirm);
 	//  DDX_Control(pDX, IDC_PersonInfo, m_oPersonInfo);
 }
 
@@ -89,7 +102,7 @@ BOOL CApplyRecordDlg::OnInitDialog()
 	GetDlgItem(IDC_Title2)->GetWindowRect(&rc);
 	y += rc.Height() + 6;
 	//LVS_EX_FLATSB  在InsertItem之后才有滚动条；LVS_NOCOLUMNHEADER占客户区
-	m_oPersonInfo.CreateEx(LVS_EX_FLATSB | LVS_EX_DOUBLEBUFFER, LVS_REPORT | LVS_NOCOLUMNHEADER | LVS_OWNERDRAWFIXED | WS_CHILD | WS_VISIBLE,
+	m_oPersonInfo->CreateEx(LVS_EX_FLATSB | LVS_EX_DOUBLEBUFFER, LVS_REPORT | LVS_NOCOLUMNHEADER | LVS_OWNERDRAWFIXED | WS_CHILD | WS_VISIBLE,
 		CRect(x, y, m_rcClient.right - 10, y + m_rcClient.Height() * 5 / 12 ), this, 1);
 	//m_oPersonInfo.ShowScrollBar(SB_VERT, FALSE);
 	//InitializeFlatSB(m_oPersonInfo.m_hWnd);
@@ -97,48 +110,48 @@ BOOL CApplyRecordDlg::OnInitDialog()
 	//FlatSB_ShowScrollBar(m_oPersonInfo.m_hWnd, SB_VERT, FALSE);
 
 	//门，图片从文档下载
-	m_oPersonInfo.GetClientRect(&rc);
+	m_oPersonInfo->GetClientRect(&rc);
 	y += rc.Height() + 20/*间距*/;
-	m_oPicDoor.SetWindowPos(0, x, y, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
-	m_oPicDoor.Set(_T("res\\closeddoor_32px.png"));
+	m_oPicDoor->SetWindowPos(0, x, y, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+	m_oPicDoor->Set(_T("res\\closeddoor_32px.png"));
 
 	//按钮，根据配置灰化处理
 	y -= 15;
 	w = rc.Width();//申请列表宽度
-	m_oPicDoor.GetClientRect(&rc);
+	m_oPicDoor->GetClientRect(&rc);
 	int nGap = 30;//按钮之间的间距
 	//应急处置
 	x += rc.Width() + 5; 
 	w = (w - (rc.Width() + 5)/*门*/) / 3/*3个按钮*/ - nGap;
-	m_oEmergency.SetWindowPos(0, x, y, w, 20, SWP_NOZORDER);
+	m_oEmergency->SetWindowPos(0, x, y, w, 20, SWP_NOZORDER);
 	//申请授权
 	x += w + nGap;
-	m_oGrant.SetWindowPos(0, x, y, w, 20, SWP_NOZORDER);
+	m_oGrant->SetWindowPos(0, x, y, w, 20, SWP_NOZORDER);
 	//开门
 	x += w + nGap;
-	m_oOpen.SetWindowPos(0, x, y, w, 20, SWP_NOZORDER);
+	m_oOpen->SetWindowPos(0, x, y, w, 20, SWP_NOZORDER);
 	//m_oOpen.Set(false);
 	//进入图层
 	x -= 2 * (w + nGap);
-	m_oEmergency.GetClientRect(&rc);
+	m_oEmergency->GetClientRect(&rc);
 	y += rc.Height() + 2;
-	m_oEnterMapLayer.SetWindowPos(0, x, y, w, 20, SWP_NOZORDER);
+	m_oEnterMapLayer->SetWindowPos(0, x, y, w, 20, SWP_NOZORDER);
 	//锁门
 	x += w + nGap;
-	m_oLock.SetWindowPos(0, x, y, w, 20, SWP_NOZORDER);
+	m_oLock->SetWindowPos(0, x, y, w, 20, SWP_NOZORDER);
 	//m_oLock.Set(false);
 	//拒绝开门
 	x += w + nGap;
-	m_oRefuseOpen.SetWindowPos(0, x, y, w, 20, SWP_NOZORDER);
+	m_oRefuseOpen->SetWindowPos(0, x, y, w, 20, SWP_NOZORDER);
 	//m_oRefuseOpen.Set(false);
 	//确认
-	m_oPersonInfo.GetWindowRect(&rc);
+	m_oPersonInfo->GetWindowRect(&rc);
 	ScreenToClient(&rc);
 	w = rc.Width() / 2;
 	x = rc.left + w / 2;
-	m_oEmergency.GetClientRect(&rc);
+	m_oEmergency->GetClientRect(&rc);
 	y += rc.Height() + 2;
-	m_oConfirm.SetWindowPos(0, x, y, w, 20, SWP_NOZORDER);
+	m_oConfirm->SetWindowPos(0, x, y, w, 20, SWP_NOZORDER);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // EXCEPTION: OCX Property Pages should return FALSE
@@ -200,7 +213,7 @@ void CApplyRecordDlg::Update()
 		GetDlgItem(IDC_title)->SetWindowText(m_stApplyInfo->strWebSiteName);
 
 		//申请人员列表
-		m_oPersonInfo.MyInsertSubItem(m_stApplyInfo->stPersonInfo);
+		m_oPersonInfo->MyInsertSubItem(m_stApplyInfo->stPersonInfo);
 		//m_oPersonInfo.Update();  //导致多了垂直滚动条
 		//UpdateWindow();
 
@@ -231,10 +244,10 @@ void CApplyRecordDlg::Update()
 void CApplyRecordDlg::EnableButton(std::vector<emButton> vec, bool b)
 {
 	//和枚举对应，不能用static
-	/*static*/ vector<CMyStatic2*> vecBtn = {
-		&m_oEmergency, &m_oGrant, &m_oOpen,
-		&m_oEnterMapLayer, &m_oLock, &m_oRefuseOpen,
-		&m_oConfirm
+	/*static*/ vector<std::shared_ptr<CMyStatic2>> vecBtn = {
+		m_oEmergency, m_oGrant, m_oOpen,
+		m_oEnterMapLayer, m_oLock, m_oRefuseOpen,
+		m_oConfirm
 	};
 
 	//static std::bitset<emButtonBuff> bs;
