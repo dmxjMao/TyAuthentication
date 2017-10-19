@@ -6,7 +6,7 @@
 #include "ApplyRecordDlg.h"
 #include "afxdialogex.h"
 
-#include "CommonDefine.h"  //struct
+#include "MyCommonDefine.h"  //struct
 #include "MyListCtrl1.h" //申请认证人员
 #include "MyStatic1.h" //门
 #include "MyStatic2.h" //按钮
@@ -198,22 +198,33 @@ void CApplyRecordDlg::Update()
 	if (m_stApplyInfo) {
 		//计时“已失效”，N秒，点击左侧就不能这样了
 		//SetTimer(IDT_Valid, 5 * 1000, 0);
-		//点击、初始时，计算剩余时间
+		//点击ListBox、初始化，计算剩余时间
 		CTimeSpan tmLeft = CTime::GetCurrentTime() - m_stApplyInfo->tmApply;
-		if (tmLeft.GetTotalSeconds() < 30) {//小于10s
+		int nLeftSecond = (int)tmLeft.GetTotalSeconds();
+		//认证处理有效时长
+		int nLimitSecond = 0; 
+		auto& spCtrlPlan = theApp.m_mapCtrlPlan[m_stApplyInfo->nImportance];
+		if (0 == spCtrlPlan) {//没有就用默认的
+			stCtrlPlanInfo st;
+			nLimitSecond = st.nAuthTimeLimit * 60;
+		}
+		else
+			nLimitSecond = spCtrlPlan->nAuthTimeLimit * 60;
+		if (nLeftSecond < nLimitSecond) {
 			//EnableButton({ GrantBtn ,OpenDoorBtn ,LockDoorBtn ,RefuseOpenBtn }, true);
-			SetTimer(IDT_Valid, (30 - (int)tmLeft.GetTotalSeconds()) * 1000, 0);
+			SetTimer(IDT_Valid, (nLimitSecond - nLeftSecond) * 1000, 0);
 		}
 		else {
 			//OnTimer(IDT_Valid);  //窗口还没创建好，崩溃
-			SetTimer(IDT_Valid, 0, 0);
+			SetTimer(IDT_Valid, 0, 0);//立即触发
 		}
 
 		//网点名称
 		GetDlgItem(IDC_title)->SetWindowText(m_stApplyInfo->strWebSiteName);
 
 		//申请人员列表
-		m_oPersonInfo->MyInsertSubItem(m_stApplyInfo->stPersonInfo);
+		//m_oPersonInfo->MyInsertSubItem(m_stApplyInfo->stPersonInfo);
+		m_oPersonInfo->Update();
 		//m_oPersonInfo.Update();  //导致多了垂直滚动条
 		//UpdateWindow();
 

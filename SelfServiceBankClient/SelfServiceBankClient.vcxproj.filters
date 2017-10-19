@@ -42,9 +42,6 @@
     <ClInclude Include="MyStatic1.h">
       <Filter>MyOwnDraw</Filter>
     </ClInclude>
-    <ClInclude Include="CommonDefine.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="MyListBox1.h">
       <Filter>MyOwnDraw</Filter>
     </ClInclude>
@@ -86,6 +83,9 @@
     </ClInclude>
     <ClInclude Include="MyLogListCtrl.h">
       <Filter>MyOwnDraw</Filter>
+    </ClInclude>
+    <ClInclude Include="MyCommonDefine.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

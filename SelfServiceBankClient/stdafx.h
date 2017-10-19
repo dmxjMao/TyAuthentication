@@ -71,6 +71,7 @@ using namespace Gdiplus;
 #include <list>
 #include <map>
 #include <tuple>
+#include <string>
 //#include <bitset>
 #include <memory> //shared_ptr
 #include <algorithm>

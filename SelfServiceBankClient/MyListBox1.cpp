@@ -6,9 +6,10 @@
 #include "MyListBox1.h"
 
 #include "SelfServiceBankClientDlg.h" //中介
-#include "CommonDefine.h"
+#include "MyCommonDefine.h"
 
 //using std::get;
+using std::placeholders::_1;
 
 /*
 自绘列表框
@@ -326,6 +327,7 @@ void CMyListBox1::DrawItem(LPDRAWITEMSTRUCT lpDis/*lpDrawItemStruct*/)
 //	}
 //}
 
+//按重要程度、申请时间排序
 bool Lambda_InsertString(const std::shared_ptr<stApplyInfo>& st1, 
 	const std::shared_ptr<stApplyInfo>& st2)
 {
@@ -340,10 +342,22 @@ bool Lambda_InsertString(const std::shared_ptr<stApplyInfo>& st1,
 	else
 		return false;
 }
+//查找申请信息
+bool Lambda_FindApplyInfo(const std::shared_ptr<stApplyInfo>& st, const CString& webName, const CString& partName) {
+	return (st->strWebSiteName == webName && st->strPartName == partName);
+}
 void CMyListBox1::MyInsertString(const std::shared_ptr<stApplyInfo>& st)
 {
-	//如果是辅助刷卡人，直接返回
-
+	
+	if (st->nSlave > -1) {//多人刷卡
+		//查找是否有该网点、部位的刷卡信息
+		auto it = std::find_if(m_vecApplyInfo.begin(), m_vecApplyInfo.end(),
+			std::bind(Lambda_FindApplyInfo, _1, st->strWebSiteName, st->strPartName));
+		if (m_vecApplyInfo.end() != it) {
+			return;
+		}
+	}
+		
 
 	//找到t应该在m_spVecItemData中的索引
 	//if(m_spVecItemData){

@@ -32,18 +32,21 @@ std::map<DWORD, TCHAR*> g_mapZCMsgReqInfo = {
 	{ ZC_MSG_APP_CURUSERINFOEX, _T("请求当前用户信息...") },
 	{ ZC_MSG_APP_OPENDOOR_DISPOSALINFO, _T("请求当前用户权限...") }, 
 	{ ZC_MSG_APP_ALLAREAINFO, _T("请求区域信息...") },
+	{ ZC_MSG_APP_ALLDEVICEINFO, _T("请求平台所有主机信息...") },
 	{ ZC_MSG_APP_OPENDOOR_GETALLPEPOLEINFO, _T("请求所有需管辖的出入人员信息...") },
-	{ ZC_MSG_APP_OPENDOOR_DEPARTMENTINFO, _T("请求部门信息...") },
+	//{ ZC_MSG_APP_OPENDOOR_DEPARTMENTINFO, _T("请求部门信息...") },
 	{ ZC_MSG_APP_OPENDOOR_ACCESSRELATION, _T("请求门禁主从关系...") },
 	{ ZC_MSG_APP_OPENDOOR_GETALLACSHOSTINFO, _T("请求所有门禁主机信息...") },
 	{ ZC_MSG_APP_OPENDOOR_CTRLLEVELMULINFO, _T("请求所有管控信息...") },
 	{ ZC_MSG_APP_OPENDOOR_CTRLLEVELPLAN, _T("请求所有管控策略信息...") },
-	{ ZC_MSG_APP_ALLKEYPARTINFO, _T("请求所有部位信息...") },
+	//{ ZC_MSG_APP_ALLKEYPARTINFO, _T("请求所有部位信息...") },
 	{ ZC_MSG_APP_OPENDOOR_GETACSHOSTLINKINFO, _T("请求门禁主机关联摄像头设备...") },
 	{ ZC_MSG_APP_OPENDOOR_GETACSHOSTLINKTALKINFO, _T("请求门禁主机关联对讲设备...") },
 	{ ZC_MSG_APP_ALLUSERINFO, _T("请求所有处置人姓名...") },
 	{ ZC_MSG_APP_OPENDOOR_USERDOORCAMERARELATION, _T("请求获取用户门禁摄像头关联信息...") },
 	{ ZC_MSG_APP_PLANINFO, _T("请求所有预案信息...") }
+	//{ ZC_MSG_APP_SYSDORCTOR_CAMERAINFO, _T("请求平台前端设备信息...") },
+	
 	
 	
 };
@@ -53,19 +56,22 @@ std::map<DWORD, TCHAR*> g_mapZCMsgErrInfo = {
 	{ ZC_MSG_COMMON_USERALLINFO, _T("获取用户详情信息失败！") },
 	{ ZC_MSG_OPENDOOR_DISPOSALINFO, _T("获取当前用户权限信息失败！") },
 	{ ZC_MSG_COMMON_ALLAREAINFO, _T("获取区域信息失败！") },
+	{ ZC_MSG_COMMON_ALLDEVICEINFO, _T("获取平台所有主机信息失败！") },
 	{ ZC_MSG_OPENDOOR_GETALLPEPOLEINFO, _T("获取管辖人员信息失败！") },
 	{ ZC_MSG_COMMON_DOWNLOADPIC, _T("获取头像信息失败！") },
-	{ ZC_MSG_OPENDOOR_DEPARTMENTINFO, _T("获取部门信息失败！") },
+	//{ ZC_MSG_OPENDOOR_DEPARTMENTINFO, _T("获取部门信息失败！") },
 	{ ZC_MSG_OPENDOOR_ACCESSRELATION, _T("获取门禁主从关系失败！") },
 	{ ZC_MSG_OPENDOOR_GETALLACSHOSTINFO, _T("获取所有门禁主机信息失败！") },
 	{ ZC_MSG_OPENDOOR_CTRLLEVELMULINFO, _T("获取所有管控信息失败！") },
 	{ ZC_MSG_OPENDOOR_CTRLLEVELPLAN, _T("获取所有管控策略信息失败！") },
-	{ ZC_MSG_COMMON_ALLKEYPARTINFO, _T("获取所有部位信息失败！") },
+	//{ ZC_MSG_COMMON_ALLKEYPARTINFO, _T("获取所有部位信息失败！") },
 	{ ZC_MSG_OPENDOOR_GETACSHOSTLINKINFO, _T("获取门禁主机关联摄像头设备失败！") },
 	{ ZC_MSG_OPENDOOR_GETACSHOSTLINKTALKINFO, _T("获取门禁主机关联对讲设备失败！") },
 	{ ZC_MSG_COMMON_ALLUSERINFO, _T("获取所有处置人姓名失败！") },
 	{ ZC_MSG_OPENDOOR_USERDOORCAMERARELATION, _T("获取用户门禁摄像头关联信息失败！") },
-	{ ZC_MSG_COMMON_PLANINFO, _T("获取所有预案信息失败！") }
+	{ ZC_MSG_COMMON_PLANINFO, _T("获取所有预案信息失败！") },
+	//{ ZC_MSG_SYSDORCTOR_CAMERAINFO, _T("获取平台前端设备信息失败！") }
+	
 	
 };
 
@@ -300,6 +306,7 @@ void CZCMsgManager::RequestInitMsg()
 		ZC_MSG_APP_CURUSERINFOEX ,//当前用户信息
 		ZC_MSG_APP_OPENDOOR_DISPOSALINFO,//权限信息
 		ZC_MSG_APP_ALLAREAINFO,//区域信息
+		ZC_MSG_APP_ALLDEVICEINFO,//请求平台所有主机信息
 		ZC_MSG_APP_OPENDOOR_GETALLPEPOLEINFO,//所有需管辖的出入人员信息
 		//ZC_MSG_APP_OPENDOOR_DEPARTMENTINFO,//部门信息
 		ZC_MSG_APP_OPENDOOR_ACCESSRELATION,//门禁主从关系
@@ -312,6 +319,7 @@ void CZCMsgManager::RequestInitMsg()
 		ZC_MSG_APP_ALLUSERINFO,//所有处置人姓名
 		ZC_MSG_APP_OPENDOOR_USERDOORCAMERARELATION, //用户门禁摄像头关联信息
 		ZC_MSG_APP_PLANINFO//请求所有预案信息
+		//ZC_MSG_APP_SYSDORCTOR_CAMERAINFO,//请求平台前端设备信息
 	};
 
 	for (auto id : vecMsgID) {

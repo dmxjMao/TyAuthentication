@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "SelfServiceBankClient.h"
 #include "MyStatic3.h"
-#include "CommonDefine.h"
+#include "MyCommonDefine.h"
 
 // CMyStatic3
 

@@ -13,7 +13,7 @@ class CApplyRecordDlg : public CDialogEx
 
 public:
 	CApplyRecordDlg(CWnd* pParent = NULL);   // standard constructor
-	CApplyRecordDlg(const CApplyRecordDlg&) {} //vector<CApplyRecordDlg>需要
+	//CApplyRecordDlg(const CApplyRecordDlg&) {} //vector<CApplyRecordDlg>需要
 	virtual ~CApplyRecordDlg();
 
 	virtual BOOL OnInitDialog();

@@ -4,8 +4,7 @@
 #include "stdafx.h"
 #include "SelfServiceBankClient.h"
 #include "MyListCtrl1.h"
-#include <tuple>
-#include "CommonDefine.h"
+#include "MyCommonDefine.h"
 
 using std::tuple;
 
@@ -115,7 +114,7 @@ void CMyListCtrl1::DrawItem(LPDRAWITEMSTRUCT lpDis/*lpDrawItemStruct*/)
 	//gh.FillRectangle(&sbr, rcGdi);
 
 	//照片，文字宽度，字体
-	int nPicWidth = w / 3, nOtherWidth = w - nPicWidth;
+	int nPicWidth = w / 3 - 5, nOtherWidth = w - nPicWidth;
 	static FontFamily ff(_T("微软雅黑"));
 	static Gdiplus::Font font(&ff, 12, FontStyleRegular, UnitPixel);
 	static SolidBrush sbrText(Color(0, 0, 0));
@@ -142,32 +141,34 @@ void CMyListCtrl1::DrawItem(LPDRAWITEMSTRUCT lpDis/*lpDrawItemStruct*/)
 		Rect rcPic(x, y, nPicWidth, h);
 		//画照片
 		gh.DrawImage(&pic, rcPic);
+
+		const auto& stBase = st->stPersonInfo->stBaseInfo;
 		//姓名标签 & 姓名
 		PointF pf(x + nPicWidth * 1.0f, y * 1.0f);
-		str.Format(_T("姓名：%s"), _T("")/*st.strName*/);
+		str.Format(_T("姓名：%s"), /*_T("")*/CString(stBase.chUserName));
 		gh.DrawString(str, -1, &font, pf, &sbrText);   pf.Y += nLineHeight;
 		//单位标签 & 单位
-		str.Format(_T("单位：%s"), _T("")/*st.strOffice*/);
+		str.Format(_T("单位：%s"), /*_T("")*/CString(stBase.chDepartmentName));
 		gh.DrawString(str, -1, &font, pf, &sbrText);	pf.Y += nLineHeight;
 		//分类标签 & 分类
-		str.Format(_T("分类：%s"), _T("")/*st.strCategory*/);
+		str.Format(_T("分类：%s"), /*_T("")*/CString(stBase.chUserType));
 		gh.DrawString(str, -1, &font, pf, &sbrText);	pf.Y += nLineHeight;
 		//认证时间标签 & 认证时间
-		/*str.Format(_T("认证 时间：%s"), st.tmApply.Format(_T("%Y-%M-%d %H:%m:%s")));
-		gh.DrawString(str, -1, &font, pf, &sbrText);	*//*pf.Y += nLineHeight;*/
+		str.Format(_T("认证 时间：%s"), st->tmApply.Format(_T("\n%Y-%m-%d %H:%M:%S")));
+		gh.DrawString(str, -1, &font, pf, &sbrText);
 	}
 	 
 	//
 	//SetRedraw();
 }
 
-void CMyListCtrl1::MyInsertSubItem(const std::shared_ptr<stApplyPersonInfo>& st/*std::shared_ptr<stApplyPersonInfo> st*/)
+void CMyListCtrl1::MyInsertSubItem(const std::shared_ptr<stApplyPersonInfo>& st)
 {
 	//m_vecPersonInfo.push_back(st);
 	//Update();
 
 	m_vecPersonInfo.push_back(st);
-	Update();
+	//Update();
 
 	//m_vecPersonInfo.clear();
 	//for (auto& st : vec) {
@@ -214,7 +215,7 @@ bool CMyListCtrl1::Update()
 
 
 	//m_oScrollBar.Create(0, WS_CHILD | SS_LEFT | SS_NOTIFY | WS_VISIBLE | WS_GROUP,
-	//	CRect(0, 0, 0, 0), /*this*/GetParent());//父窗口是对话框
+	//	CRect(0, 0, 0, 0), /*this*///父窗口是对话框
 	////m_oScrollBar.pList = this; //可以用模板
 	//m_oScrollBar.Set(this); 
 	////位置，因为是画在CListCtrl边上的，相对对话框客户区坐标

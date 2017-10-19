@@ -14,9 +14,13 @@
 #include <boost/log/utility/setup/common_attributes.hpp> //公共属性
 #include <boost/log/utility/setup/file.hpp> //sink 文件
 
-#include "CommonDefine.h"
+#include "MyCommonDefine.h"
 #include "ZCMsgManager.h"
 #include "LogDialog.h"
+
+//网络服务库
+#include "TYServerSDK.h"
+#pragma comment(lib,"..\\TYServerSDK\\TYServerSDK.lib")
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -137,6 +141,7 @@ int CSelfServiceBankClientApp::ExitInstance()
 {
 	//内存检查
 	_CrtDumpMemoryLeaks();
+	TY_Server_Cleanup();
 
 	return CWinApp::ExitInstance();
 }
@@ -206,6 +211,7 @@ void CSelfServiceBankClientApp::InitZCMsgHandler()
 		{ ZC_MSG_COMMON_USERALLINFO, &CSelfServiceBankClientApp::ZCMsgUserDetailInfo },//用户详情
 		{ ZC_MSG_OPENDOOR_DISPOSALINFO, &CSelfServiceBankClientApp::ZCMsgDisposalInfo },//权限信息
 		{ ZC_MSG_COMMON_ALLAREAINFO, &CSelfServiceBankClientApp::ZCMsgAreaInfo },//区域信息
+		{ ZC_MSG_COMMON_ALLDEVICEINFO, &CSelfServiceBankClientApp::ZCMsgDevHostInfo },//主机信息
 		{ ZC_MSG_OPENDOOR_GETALLPEPOLEINFO, &CSelfServiceBankClientApp::ZCMsgCtrlPersonInfo },//管辖人员信息
 		{ ZC_MSG_COMMON_DOWNLOADPIC, &CSelfServiceBankClientApp::ZCMsgCtrlHeadPic },//管辖人员头像 
 		{ ZC_MSG_OPENDOOR_DEPARTMENTINFO, &CSelfServiceBankClientApp::ZCMsgDepartmentInfo },//部门信息，未请求
@@ -218,7 +224,8 @@ void CSelfServiceBankClientApp::InitZCMsgHandler()
 		{ ZC_MSG_OPENDOOR_GETACSHOSTLINKTALKINFO, &CSelfServiceBankClientApp::ZCMsgACSHostLinkTalkInfo },//门禁主机关联对讲设备
 		{ ZC_MSG_COMMON_ALLUSERINFO, &CSelfServiceBankClientApp::ZCMsgHandlerInfo },//所有处置人姓名
 		{ ZC_MSG_OPENDOOR_USERDOORCAMERARELATION, &CSelfServiceBankClientApp::ZCMsgDoorRelationInfo },//用户门禁摄像头关联信息
-		{ ZC_MSG_COMMON_PLANINFO, &CSelfServiceBankClientApp::ZCMsgEMPlanInfo }//所有预案信息
+		{ ZC_MSG_COMMON_PLANINFO, &CSelfServiceBankClientApp::ZCMsgEMPlanInfo },//所有预案信息
+		//{ ZC_MSG_SYSDORCTOR_CAMERAINFO, &CSelfServiceBankClientApp::ZCMsgEMPlanInfo },//所有预案信息
 	};
 }
 
@@ -261,6 +268,19 @@ void CSelfServiceBankClientApp::ZCMsgCurrentUserInfo(PBYTE pMsg, DWORD dwMsgID, 
 	//请求当前用户的详细信息
 	CZCMsgManager::Instance()->RequestMsgWithMsgID(ZC_MODULE_APP, ZC_MSG_APP_USERALLINFO,
 		-1, (PBYTE)pInfo->chUserName, 64);
+
+	//服务库 TY_Server_GetLastError
+	if (TY_Server_InitSDK()) {//0成功
+		theApp.WriteLog(error, _T("TY_Server_InitSDK 失败！")); return;
+	}
+	//注册异常回调
+	if (TY_Server_SetExceptCallBack(ServerExcepCallBack, (DWORD)this)) {//0成功
+		theApp.WriteLog(error, _T("TY_Server_SetExceptCallBack 失败！")); return;
+	}
+	//注册消息回调
+	if (TY_Server_SetMsgCallBack(MsgCallBackFunc, (DWORD)this)) {
+		theApp.WriteLog(error, _T("TY_Server_SetMsgCallBack 失败！")); return;
+	}
 }
 
 
@@ -269,9 +289,19 @@ void CSelfServiceBankClientApp::ZCMsgUserDetailInfo(PBYTE pMsg, DWORD dwMsgID, I
 {
 	S_New_UserInfo* pInfo = (S_New_UserInfo*)(&pMsg[ZCMsgHeaderLen]);
 	CString strName(pInfo->chUserName);
-	//if (-1 == dwMsgID) {//dwMsgID = -1是当前登录用户
-	//	m_strCurUserName = strName;
-	//}
+	if (-1 == dwMsgID) {//dwMsgID = -1是当前登录用户
+		//获取操作句柄
+		TJTY_TIME stTjtyTime = { 0 };
+		T_CLIENT_USERINFO stCMSUseInfo = { 0 };
+		memcpy(stCMSUseInfo.chUserName, pInfo->chUserName, _countof(stCMSUseInfo.chUserName));
+		memcpy(stCMSUseInfo.chUserPwd, "ty123456", _countof(stCMSUseInfo.chUserPwd));
+		//memcpy(stCMSUseInfo.chUserPwd, pInfo->chPassword, _countof(stCMSUseInfo.chUserPwd));
+		stCMSUseInfo.nClientType = TJTY_SOFT_EMAP;//普通用户
+		m_oGobal->nCMSHander = TY_Server_LogInCMS("192.168.2.65", 4000, &stCMSUseInfo, &stTjtyTime);
+		if (-1 == m_oGobal->nCMSHander) {
+			theApp.WriteLog(error, _T("获取中心操作句柄失败，将无法预览视频！用户名：%s"), pInfo->chUserName);
+		}
+	}
 	//如何避免 pInfo无效时的m_mapUserInfo内存问题？
 	auto& spUserInfo = CreateOrGetUserInfo(strName);
 
@@ -289,12 +319,55 @@ void CSelfServiceBankClientApp::ZCMsgDisposalInfo(PBYTE pMsg, DWORD dwMsgID, INT
 //区域信息
 void CSelfServiceBankClientApp::ZCMsgAreaInfo(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
 {
+	auto& vecArea = m_mapNodeInfo[AreaNode];
+
 	ZCMsgMacro_beginfor(T_AREA_INFO, pMsg, nMsgLen)
-		T_AREA_INFO* pInfo = (T_AREA_INFO*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
-		pInfo = 0;
+	T_AREA_INFO* pInfo = (T_AREA_INFO*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
+
+	auto sp = make_shared<stArea>(pInfo->nAreaId, pInfo->chCode, pInfo->chFatherNo, pInfo->chName);
+	vecArea.push_back(std::move(sp));
+
+	pInfo = 0;
+	
 	ZCMsgMacro_endfor
 	
 }
+
+
+//主机信息
+void CSelfServiceBankClientApp::ZCMsgDevHostInfo(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
+{
+	auto& vecHost = m_mapNodeInfo[HostNode];
+
+	ZCMsgMacro_beginfor(S_DevNodeInfo, pMsg, nMsgLen)
+	S_DevNodeInfo* pInfo = (S_DevNodeInfo*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
+	
+	auto sp = make_shared<stArea>(pInfo->nID, pInfo->chDevCode, pInfo->chAreaCode, pInfo->chDevName);
+	vecHost.push_back(std::move(sp));
+
+	pInfo = 0;
+
+	ZCMsgMacro_endfor
+
+}
+
+//前端设备信息
+void CSelfServiceBankClientApp::ZCMsgDeviceInfo(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
+{
+	auto& vecDevice = m_mapNodeInfo[DeviceNode];
+
+	ZCMsgMacro_beginfor(CAMERA_NODE_INFO, pMsg, nMsgLen)
+		
+	CAMERA_NODE_INFO* pInfo = (CAMERA_NODE_INFO*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
+	//auto sp = make_shared<stDevice>(pInfo->nID, pInfo->chDevCode, pInfo->chAreaCode, pInfo->chDevName);
+	//vecDevice.push_back(std::move(sp));
+
+	pInfo = 0;
+	ZCMsgMacro_endfor
+
+	
+}
+
 
 //管辖人员信息
 void CSelfServiceBankClientApp::ZCMsgCtrlPersonInfo(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
@@ -349,7 +422,7 @@ void CSelfServiceBankClientApp::ZCMsgEntranceRelation(PBYTE pMsg, DWORD dwMsgID,
 	if (0 == spM) {
 		spM = make_shared<stACSHostInfo>();
 	}
-	spM->bMaster = true;
+	spM->nSlave = FALSE;
 	memcpy(spM->unMS.szSlaveName, pInfo->chSlaveName, _countof(spM->unMS.szSlaveName));
 
 	CString strS(pInfo->chSlaveName);
@@ -357,7 +430,7 @@ void CSelfServiceBankClientApp::ZCMsgEntranceRelation(PBYTE pMsg, DWORD dwMsgID,
 	if (0 == spS) {
 		spS = make_shared<stACSHostInfo>();
 	}
-	spS->bMaster = false;
+	spS->nSlave = TRUE;
 	memcpy(spS->unMS.szMasterName, pInfo->chMasterName, _countof(spS->unMS.szMasterName));
 
 	pInfo = 0;
@@ -383,9 +456,6 @@ void CSelfServiceBankClientApp::ZCMsgACSHostInfo(PBYTE pMsg, DWORD dwMsgID, INT 
 }
 
 //管控等级信息：针对设备，设备所在的场所和部位，它的管控等级名称
-//bool lambda_FindACSHostByName(const shared_ptr<stACSHostInfo>& st, const char* name) {
-//	return (0 == strcmp(st->stBaseInfo.chDevName, name));
-//}
 bool lambda_GetCtrlLevel(const std::tuple<CString, UINT8>& tpl, const CString& strLevel) {
 	return std::get<0>(tpl) == strLevel;
 }
@@ -424,7 +494,7 @@ void CSelfServiceBankClientApp::ZCMsgCtrlLevelInfo(PBYTE pMsg, DWORD dwMsgID, IN
 	ZCMsgMacro_endfor
 }
 
-//管控策略信息
+//管控策略信息：只有设置过才会返回
 void CSelfServiceBankClientApp::ZCMsgCtrlPlanInfo(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
 {
 	/*一条消息：对应一个配置项，来得真是恶心
@@ -614,6 +684,7 @@ void CSelfServiceBankClientApp::ZCMsgEMPlanInfo(PBYTE pMsg, DWORD dwMsgID, INT n
 	ZCMsgMacro_endfor
 }
 
+
 //写日志
 void _cdecl CSelfServiceBankClientApp::WriteLog(severity_level level, const TCHAR* szMsg, ...)
 {
@@ -695,4 +766,25 @@ bool CUICfg::HasUICfg(const std::string& str)
 	auto it = std::find_if(m_vecUICfg.begin(), m_vecUICfg.end(),
 		std::bind(lambda_FindUICfg, _1, str));
 	return m_vecUICfg.end() != it;
+}
+
+
+
+//ServerSDK异常回调函数
+void __stdcall CSelfServiceBankClientApp::ServerExcepCallBack(U_LONG_TY dwExceptMsg, LONG_TY lHandle, U_LONG_TY dwUser)
+{
+	if (USER_EXCHANGE_ERR == dwExceptMsg)
+	{
+		theApp.WriteLog(error, _T("ServerSDK异常回调：用户交互异常！"));
+	}
+	else if (REALPLAY_ERR == dwExceptMsg)
+	{
+		theApp.WriteLog(error, _T("ServerSDK异常回调：预览异常！"));
+	}
+}
+
+//ServerSDK消息回调函数
+void __stdcall CSelfServiceBankClientApp::MsgCallBackFunc(long lUserID, DWORD MsgType, BYTE *chMsgBuf, DWORD dwBufSize, unsigned int nMsgID, DWORD dwUser)
+{
+
 }

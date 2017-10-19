@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "SelfServiceBankClient.h"
 #include "MyButton1.h"
-#include "CommonDefine.h"
+#include "MyCommonDefine.h"
 
 // CMyButton1
 namespace {

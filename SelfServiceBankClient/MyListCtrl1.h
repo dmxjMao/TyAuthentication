@@ -28,7 +28,7 @@ public:
 	//afx_msg void OnNMCustomdraw(NMHDR *pNMHDR, LRESULT *pResult);
 	//decltype(m_vecStPersonInfo)不是引用类型
 	//decltype((m_vecSpPersonInfo)) GetInfoVec() { return m_vecSpPersonInfo; }
-	void MyInsertSubItem(const std::shared_ptr<stApplyPersonInfo>&/*std::shared_ptr<stApplyPersonInfo>*/); //插入人员信息
+	void MyInsertSubItem(const std::shared_ptr<stApplyPersonInfo>&); //插入人员信息
 	bool Update();//显示
 	
 	//afx_msg void OnMeasureItem(int nIDCtl, LPMEASUREITEMSTRUCT lpMeasureItemStruct);

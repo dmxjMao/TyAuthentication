@@ -6,7 +6,7 @@
 #include "EmergencyPlanDialog.h"
 #include "afxdialogex.h"
 
-#include "CommonDefine.h"
+#include "MyCommonDefine.h"
 //#include "ApplyRecordDlg.h"
 #include "MyStatic1.h"
 #include "MyStatic3.h"

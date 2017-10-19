@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "SelfServiceBankClient.h"
 #include "MyListBox2.h"
-#include "CommonDefine.h"
+#include "MyCommonDefine.h"
 
 // CMyListBox2
 

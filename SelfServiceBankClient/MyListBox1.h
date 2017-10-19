@@ -1,7 +1,7 @@
 #pragma once
 
 // CMyListBox1
-/*
+/*左边的网点信息
 */
 class CSelfServiceBankClientDlg;
 struct stApplyInfo;

@@ -34,6 +34,8 @@ struct stCtrlPersonInfo;
 struct stCtrlPlanInfo;
 struct stACSHostInfo;
 struct stEmergPlan;
+struct stNode;
+enum emNodeType;
 class CGobalVariable;
 
 class CSelfServiceBankClientApp : public CWinApp, public CZCMsgObserver
@@ -52,15 +54,16 @@ public:
 	DECLARE_MESSAGE_MAP()
 	
 public:
-	//使用vector是为了减少内存；使用map是1）消息机制无法整合相关信息
+	//使用vector是为了减少内存；使用map是1）消息机制整合相关信息较麻烦
 	CString m_strCurUserName; //当前用户名
 	std::map<CString, std::shared_ptr<stUserInfo>> m_mapUserInfo;//用户详情信息
 	std::vector<std::shared_ptr<stCtrlPersonInfo>> m_vecCtrlPersonInfo;//管辖人员信息
-	std::vector<std::shared_ptr<TAGDOADEPARTMENTINFO_S>> m_vecDepartmentInfo;//部门信息
-	std::map<UINT8, std::shared_ptr<stCtrlPlanInfo>> m_mapCtrlPlan;//策略信息<管控等级,策略结构>，由于消息来得恶心，为了方便起见使用了map
+	//std::vector<std::shared_ptr<TAGDOADEPARTMENTINFO_S>> m_vecDepartmentInfo;//部门信息
+	std::map<UINT8, std::shared_ptr<stCtrlPlanInfo>> m_mapCtrlPlan;//策略信息<管控等级,策略结构>，由于消息来得恶心，为了方便起见使用了map，并且没有设置过就不发
 	//std::vector<std::shared_ptr<stACSHostInfo>> m_vecACSHostInfo;//门禁主机信息，要整合管控等级，消息谁先到又不确定
 	std::map<CString, std::shared_ptr<stACSHostInfo>> m_mapACSHostInfo;//门禁主机信息，主机名字不重复
 	std::vector<std::shared_ptr<stEmergPlan>> m_vecEMPlanInfo;//预案信息
+	std::map<emNodeType, std::vector<std::shared_ptr<stNode>>> m_mapNodeInfo;//节点信息
 	std::shared_ptr<CGobalVariable> m_oGobal;//全局变量
 
 private:
@@ -78,6 +81,10 @@ private:
 	void ZCMsgDisposalInfo(PBYTE, DWORD, INT);
 	//区域信息
 	void ZCMsgAreaInfo(PBYTE, DWORD, INT);
+	//主机信息
+	void ZCMsgDevHostInfo(PBYTE, DWORD, INT);
+	//前端设备信息
+	void ZCMsgDeviceInfo(PBYTE, DWORD, INT);
 	//管辖人员信息
 	void ZCMsgCtrlPersonInfo(PBYTE, DWORD, INT);
 	//管辖人员头像
@@ -108,6 +115,12 @@ private:
 	void ZCMsgEMPlanInfo(PBYTE, DWORD, INT);
 	//std::shared_ptr<CLogDialog> m_oLogDlg = 0;//日志对话框
 
+
+	//服务库回调
+	static void __stdcall ServerExcepCallBack(unsigned long dwExceptMsg, long lHandle, unsigned long dwUser);
+	static void __stdcall MsgCallBackFunc(long lUserID, DWORD MsgType, BYTE *chMsgBuf, DWORD dwBufSize,
+		unsigned int nMsgID, DWORD dwUser);
+
 private:
 	std::map<DWORD, void(CSelfServiceBankClientApp::*)(PBYTE, DWORD, INT)> m_mapZCMsgHandler;//ZCMsgManager消息处理函数
 
@@ -123,14 +136,15 @@ private:
 	//GDI+初始化
 	ULONG_PTR gdiplusToken;
 	GdiplusStartupInput gdiplusStartupInput;
-
+	CString strExePath;//exe路径
+	
 	//boost::log::sources::wseverity_logger< severity_level > m_slog;//级别日志器
 	//CString m_strStgCfgPath;//配置文档路径
 	//std::vector<StgCfg*> m_vecCfg;//配置
 	//HANDLE m_hEventReadStgCfg;//读取配置线程完成事件
 	
 public:
-	CString strExePath;//exe路径
+	long nCMSHander = -1;//登录中心管理服务器成功返回的操作句柄
 	/*UI部分，后期作为配置项
 	*/
 	const Color cstClrTitle = Color(54, 132, 215);//标题颜色
@@ -150,6 +164,7 @@ public:
 	~CGobalVariable();
 	bool Init();
 	inline const CString& GetExePath() const { return strExePath; }
+	//inline const long GetCMSHander() const { return nCMSHander; }
 	//inline decltype(m_slog)& GetLog() { return m_slog; }
 };
 

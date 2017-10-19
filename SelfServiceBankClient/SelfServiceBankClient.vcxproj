@@ -91,7 +91,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\ZCMsgManager;E:\maoyinan\prj\boost_1_63_0</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\TYServerSDK;..\ZCMsgManager;E:\maoyinan\prj\boost_1_63_0</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -190,11 +190,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ApplyRecordDlg.h" />
-    <ClInclude Include="CommonDefine.h" />
     <ClInclude Include="EmergencyPlanDialog.h" />
     <ClInclude Include="LogDialog.h" />
     <ClInclude Include="MyButton1.h" />
     <ClInclude Include="MyButton2.h" />
+    <ClInclude Include="MyCommonDefine.h" />
     <ClInclude Include="MyListBox1.h" />
     <ClInclude Include="MyListBox2.h" />
     <ClInclude Include="MyListCtrl1.h" />

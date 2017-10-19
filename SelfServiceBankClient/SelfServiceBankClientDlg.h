@@ -3,22 +3,24 @@
 //
 
 #pragma once
-#include "ApplyRecordDlg.h"
 
 //class CLogDialog;
 
 // CSelfServiceBankClientDlg dialog
-#ifdef _DEBUG
-
-#endif
 class CMyStatic1;
 class CMyListBox1;
+struct stApplyInfo;
+class CApplyRecordDlg;
+
+using tplMultiApplyInfo = std::tuple<std::shared_ptr<stApplyInfo>, std::shared_ptr<stApplyInfo>,
+	std::shared_ptr<stApplyInfo>, std::shared_ptr<stApplyInfo>>; //多人刷卡信息结构
 
 class CSelfServiceBankClientDlg : public CDialogEx, public CZCMsgObserver
 {
 // Construction
 public:
 	CSelfServiceBankClientDlg(CWnd* pParent = NULL);
+	~CSelfServiceBankClientDlg();
 	//中介方法
 	//点击左侧，显示右侧
 	void DisplayDetail(const std::shared_ptr<stApplyInfo>& st);
@@ -44,16 +46,13 @@ protected:
 protected:
 	HICON m_hIcon;
 	CRect m_rcClient, m_rcCaption, m_rcList, m_rcRecord; //客户区、标题区，列表区，记录区
-	std::shared_ptr<CMyStatic1> m_oCloseWindow = 0;//关闭按钮
 	
-#ifdef DEBUG
-
-#endif // DEBUG
-
+	std::shared_ptr<CMyStatic1> m_oCloseWindow = 0;//关闭按钮
 	std::shared_ptr<CMyListBox1> m_oApplyList = 0;//申请列表
 	//std::list<CApplyRecordDlg> m_liApplyRecordDlg; //申请记录详细对话框
-	std::vector<CApplyRecordDlg> m_vecApplyRecordDlg; //申请记录详细对话框
-	std::vector<std::shared_ptr<stApplyInfo>> m_vecApplyInfo;//申请消息
+	std::vector<std::shared_ptr<CApplyRecordDlg>> m_vecApplyRecordDlg; //申请记录详细对话框
+	std::vector<std::shared_ptr<stApplyInfo>> m_vecApplyInfo;//单人刷卡申请消息
+	std::vector<tplMultiApplyInfo> m_vecMultiApplyInfo;//多人刷卡信息
 
 	std::shared_ptr<CLogDialog> m_oLogDlg = 0;//日志对话框
 
@@ -81,4 +80,13 @@ private:
 	//bool ZCMsgHelper_ParseMemo(CString&, std::vector<CString>&);
 	//解析触发时间
 	CTime ZCMsgHelper_ParseTime(const char*);
+	//是否处理申请
+	bool IfDealTheApplyMsg(const CString& strCardNum/*, const CTime& tmApply*/);
+
+#ifdef DEBUG
+
+#endif // DEBUG
+
+protected:
+	CStatic m_oDemoVideo;//demo获取视频
 };

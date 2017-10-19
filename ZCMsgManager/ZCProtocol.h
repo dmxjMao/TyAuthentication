@@ -13,7 +13,7 @@
 
 #include "ZCErrorCode.h"
 #include "ConnectAppProtocol.h"
-#include <windows.h>
+
 
 /************************************************************************/
 /*                          消息结构定义                                */
@@ -115,6 +115,7 @@ typedef enum
 	ZC_MSG_COMMON_PLANINFO,                    ///<(102)预案库信息
 	ZC_MSG_COMMON_USERIMAGEID,                 ///<(103)用户头像信息
 	ZC_MSG_COMMON_EVENTINFO,                   ///<(104)事件库信息
+	ZC_MSG_COMMON_OPENCAMERA,                  ///<(105)请求打开某个通道视频反馈
 	
 	ZC_MSG_COMMON_CURUSER = 2000,              ///<(2000)当前用户信息（1）
 	ZC_MSG_COMMON_DOWNLOADPIC,                 ///<(2001)头像路径
@@ -133,7 +134,8 @@ typedef enum
     ZC_MSG_COMMON_PLAYBACKALARMATTACHMENTFROMMS,      ///<(2021)从存储服务器回放报警联动视频附件反馈  @note 请求消息值:\ref ZC_MSG_BCBCLIENT_PLAYBACKALARMATTACHMENTFROMMS (30051)
 
 	ZC_MSG_COMMON_THIRDPART_EXCHANGEMESSAGE = 2025,      ///<(2025)跟第三方系统交换信息结果反馈  @note 请求消息值:\ref ZC_MSG_BCBCLIENT_THIRDPART_EXCHANGEMESSAGE (30090)
- 
+    ZC_MSG_COMMON_TRANSCOMMONMSGTOKOALA,                 ///<(2026)向考拉报警代理发送消息结果反馈  @note 请求消息值:\ref ZC_MSG_BCBCLIENT_TRANSCOMMONMSGTOKOALA (30091)
+
 	ZC_MSG_COMMON_ALLAREAINFO = 2050,          ///<(2050)所有区域信息反馈
 	ZC_MSG_COMMON_ALLALARMTYPEINFO,            ///<(2051)所有报警类型信息反馈
 	ZC_MSG_COMMON_ALLALARMLEVELINFO,           ///<(2052)所有报警等级信息反馈
@@ -141,6 +143,7 @@ typedef enum
 	ZC_MSG_COMMON_ALARMDEALTYPE,               ///<(2054)所有报警处置类型反馈
 	ZC_MSG_COMMON_ALARMDECIDETYPE,             ///<(2055)所有报警定性戳类型反馈
 	ZC_MSG_COMMON_ALLKEYPARTINFO,              ///<(2056)所有区域信息反馈
+	ZC_MSG_COMMON_ALLDEVICEINFO,               ///<(2057)所有主机详细信息反馈
 	
 	ZC_MSG_COMMON_SETDUTYSTATUS = 2100,        ///<(2100)请求设置用户状态反馈 
 	
@@ -149,8 +152,10 @@ typedef enum
 	ZC_MSG_COMMON_CLOSEALLVIDEO,               ///<(2202)关闭视频窗口结果反馈
     ZC_MSG_COMMON_DEVTALKBYID,                 ///<(2203)通过对讲设备ID进行对讲反馈
 	ZC_MSG_COMMON_CONTROLACSHOST,              ///<(2204)门禁主机控制结果反馈
-	
-	ZC_MSG_COMMON_REQUESTTRANSMSG = 2300,      ///<(2300)通过中心给其他客户端转发消息反馈
+    ZC_MSG_COMMON_FLASHNODE,              ///<(2205)节点闪烁结果反馈
+
+    ZC_MSG_COMMON_REQUESTTRANSMSG_EX = 2299,   ///<(2299)通过中心给其他客户端转发消息反馈 @note 请求消息值:\ref ZC_MSG_BCBCLIENT_REQUESTTRANSMSG_EX (30299)
+	ZC_MSG_COMMON_REQUESTTRANSMSG = 2300,      ///<(2300)通过中心给其他电子地图客户端转发消息反馈 @note 请求消息值:\ref ZC_MSG_BCBCLIENT_REQUESTTRANSMSG (30300)
 	ZC_MSG_COMMON_TRANSMSG,                    ///<(2301)请求执行转发任务 @note 此为其他客户端主动推送的消息请求，任务模块暂不反馈结果
     ZC_MSG_COMMON_TRANSDEVICETROUBLEMSGTOKOALA,///<(2302)向考拉平台提交设备报修信息结果反馈  @note 请求消息值:\ref ZC_MSG_BCBCLIENT_TRANSDEVICETROUBLEMSGTOKOALA (30301)
 }E_ZC_MSG_COMMON_REQ;
@@ -255,6 +260,77 @@ typedef enum
 	*/
 	ZC_MSG_APP_CHECKTASKLOCKINFO,
 
+	/**
+	 * @brief (20238)请求获取某条下发任务的执行信息Ex
+	 * 
+	 * @note 请求结构体:\ref int 下发任务ID
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref S_NEW_INSPECT_TODAYTASKALLINFOSHOW_EX * N
+	 * @note 反馈消息值:\ref ZC_MSG_TASK_TODAYTASKALLINFOSHOW_EX 
+	 * @note APP相关:\ref MSG_REG_NEW_INSPECT_TODAYTASKALLINFOSHOW (1275)
+	 */
+	ZC_MSG_APP_TODAYTASKALLINFOSHOW_EX,
+
+	/**
+	 * @brief (20239)请求获取任务执行情况Ex
+	 * 
+	 * @note 请求结构体:\ref int 下发任务ID
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref S_NEW_INSPECT_TODAYTASKDOINFOSHOW_EX * N
+	 * @note 反馈消息值:\ref ZC_MSG_TASK_TODAYTASKDOINFOSHOW_EX
+	 * @note APP相关:\ref MSG_REG_NEW_INSPECT_TODAYTASKALLINFOSHOW (1275)
+	 */
+	ZC_MSG_APP_TODAYTASKDOINFOSHOW_EX,
+
+    /**
+	 * @brief (20240)请求根据场所ID和部位ID获取检查项目所有信息
+	 * 
+	 * @note 请求结构体:\ref P_EXCEPTION_CHECK_ITEM
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref S_EXCEPTION_CHECK_ITEM * N
+	 * @note 反馈消息值:\ref ZC_MSG_TASK_AKIDCONFIGUREINFO
+	 * @note APP相关:\ref MSG_REG_NEW_AKIDCONFIGUREINFO_GET （320）
+	 */
+	ZC_MSG_APP_AKIDCONFIGUREINFO,
+
+    /**
+	 * @brief (20241)请求获取主动巡查检查项目的时间段信息
+	 * 
+	 * @note 请求结构体:\ref NULL
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref S_GetConfigureTimeInfo * N
+	 * @note 反馈消息值:\ref ZC_MSG_TASK_CONFIGURETIMEINFO
+	 * @note APP相关:\ref MSG_REG_NEW_CONFIGURETIME_INFO （311）
+	 */
+	ZC_MSG_APP_TASK_CONFIGURETIMEINFO,
+
+	/**
+	 * @brief (20242)请求根据时间段名称获取主动巡查检查项目的时间段信息
+	 * 
+	 * @note 请求结构体:\ref P_ConfigureTimeNameInfo
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref S_GetConfigureTimeOnlyInfo * N
+	 * @note 反馈消息值:\ref ZC_MSG_TASK_CONFIGURETIMEONLYINFO
+	 * @note APP相关:\ref MSG_REG_NEW_CONFIGURETIMENAME_GET （312）
+	 */
+	ZC_MSG_APP_TASK_CONFIGURETIMEONLYINFO,
+
+	/**
+	 * @brief (20243)请求查询任务信息（检索条件包含是否关注）
+	 * 
+	 * @note 请求结构体:\ref P_NEW_INSPECT_CHECKTASKINFOWITHLOCK_NEW
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref S_NEW_INSPECT_CHECKTASKINFOSHOW * N
+	 * @note 反馈消息值:\ref ZC_MSG_TASK_CHECKTASKINFOWITHLOCK_NEW
+	 * @note APP相关:\ref MSG_REG_NEW_INSPECT_CHECKTASKINFOWITHLOCK_NEW （343）
+	 */
+	ZC_MSG_APP_TASK_CHECKTASKINFOWITHLOCK_NEW,
+
+	/**
+	 * @brief (20244)请求查询巡检覆盖率_New
+	 *
+	 * @note 请求结构体:\ref P_NEW_INSPECT_COVERRATENEWINFO
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref S_NEW_INSPECT_COVERRATENEWINFO * N
+	 *
+	 * @note 反馈消息值:\ref ZC_MSG_TASK_COVERRATENEWINFO_NEW (42044)
+	 * @note APP相关:\ref MSG_REG_NEW_INSPECT_COVERRATENEWINFO (347)
+	 */
+    ZC_MSG_APP_TASK_COVERRATENEWINFO_NEW,
+
 	ZC_MSG_APP_ALARM_QUERYINFO = 20300,    ///<(20300)报警查询结果，反馈ZC_MSG_ALARM_QUERYINFO
 	ZC_MSG_APP_ALARM_STATICINFO,           ///<(20301)报警统计结果，反馈ZC_MSG_ALARM_STATICINFO
 	ZC_MSG_APP_ALARM_TOPINFO,              ///<(20302)报警排行结果，反馈ZC_MSG_ALARM_TOPINFO
@@ -272,10 +348,32 @@ typedef enum
 	* 
 	* @note 请求结构体:\ref P_NEW_JH_COMPLEXCHECKWITHLOCK
 	* @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref S_NEW_JH_COMPLEXCHECK * N
-	* @note 反馈消息值:\ref ZC_MSG_ALARM_QUERYLOCKINFO
+	* @note 反馈消息值:\ref ZC_MSG_ALARM_QUERYLOCKINFO （50010）
 	* @note APP相关:\ref MSG_REG_NEW_JH_COMPLEXCHECKWITHLOCK (295)
 	*/
     ZC_MSG_APP_ALARM_QUERYLOCKINFO,
+
+	/**
+	 * @brief (20311)根据报警ID或报警GUID获取报警详细信息
+	 *
+	 * 20170602新增接口，补全获取报警所有信息
+	 * 
+	 * @note 请求结构体:\ref P_NEW_DETAILALARMINFO_GET
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref S_NEW_DETAILALARMINFO_GET
+	 * @note 反馈消息值:\ref ZC_MSG_ALARM_DETAILALARMINFO_GET （50011）
+	 * @note APP相关:\ref MSG_REG_NEW_ALARMDETAILINFO_NEW_SHOW (353)
+	 */
+    ZC_MSG_APP_ALARM_DETAILALARMINFO_GET,
+
+	/**
+  	 * @brief (20312)警情类型获取_分上下级
+	 * 
+	 * @note 请求结构体:\ref NULL
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref S_NEW_ALARMACATEGORY_SHOW * N
+	 * @note 反馈消息值:\ref ZC_MSG_ALARM_NEW_ALARMACATEGORY_SHOW （50012）
+	 * @note APP相关:\ref MSG_REG_NEW_ALARMACATEGORY_SHOW (354)
+	 */
+    ZC_MSG_APP_ALARM_NEW_ALARMACATEGORY_SHOW,
 	
 	ZC_MSG_APP_ALARM_DISPOSALINFO = 20320,      ///<(20320)请求获取用户报警处置权限，反馈ZC_MSG_ALARM_DISPOSALINFO
     ZC_MSG_APP_ALARM_LEVELPLOYINFO, 	        ///<(20321)请求获取报警等级处置策略，反馈ZC_MSG_ALARM_LEVELPLOYINFO
@@ -311,8 +409,57 @@ typedef enum
 	* @note APP相关:\ref MSG_REG_ALARMSTORAGEFILELOCKED_SET (601)
 	*/
 	ZC_MSG_APP_ALARM_LOCKMSATTACHMENT,
-	
 
+	/**
+	 * @brief (20339)报警插入_手动报警
+	 * 
+	 * @note 请求结构体:\ref P_ALARMDISPOSAL_ALARMCATEGORY_SET_NEW 
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT
+	 * @note 反馈消息值:\ref ZC_MSG_ALARM_MANUALENTRY(50089)
+	 * @note APP相关:\ref MSG_REG_ALARMDISPOSAL_ALARMCATEGORY_SET_NEW (616)
+	 */
+    ZC_MSG_APP_ALARM_MANUALENTRY,
+
+	/**
+	 * @brief (20340)获取第四交流屏交流内容
+	 * 
+	 * @note 请求结构体:\ref P_NEW_PARAM_EXCHANGEINFO 
+	 * @note 返回结构体:\ref S_NEW_PARAM_EXCHANGEINFO
+	 * @note 反馈消息值:\ref ZC_MSG_ALARM_EXCHANGEINFO_NEW(50067)
+	 * @note APP相关:\ref MSG_REG_NEW_EXCHANGEINFO_NEW (349)
+	 */
+    ZC_MSG_APP_ALARM_EXCHANGEINFO_NEW,
+
+	/**
+	 * @brief (20341)第四交流屏交流内容操作
+	 * 
+	 * @note 请求结构体:\ref P_NEW_EXCHANGEINFO_OPERATION 
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT
+	 * @note 反馈消息值:\ref ZC_MSG_ALARM_EXCHANGEINFO_OPERATION(50068)
+	 * @note APP相关:\ref MSG_REG_NEW_EXCHANGEINFO_OPERATION (350)
+	 */
+    ZC_MSG_APP_ALARM_EXCHANGEINFO_OPERATION,
+
+   /**
+	 * @brief (20342)报警复核日志插入_New
+	 * 
+	 * @note 请求结构体:\ref P_NEW_ALARMDISPOSALNEW_SET 
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT
+	 * @note 反馈消息值:\ref ZC_MSG_ALARM_REG_NEW_ALARMDISPOSALNEW_SET(50069)
+	 * @note APP相关:\ref MSG_REG_NEW_ALARMDISPOSALNEW_SET (351)
+	 */
+    ZC_MSG_APP_ALARM_REG_NEW_ALARMDISPOSALNEW_SET,
+
+	/**
+	 * @brief (20343)根据报警ID或报警GUID获取操作记录信息
+	 * 
+	 * @note 请求结构体:\ref P_NEW_ALARMDISPOSALNEW_SHOW 
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref S_NEW_ALARMDISPOSALNEW_SHOW * N
+	 * @note 反馈消息值:\ref ZC_MSG_ALARM_REG_NEW_ALARMDISPOSALNEW_SHOW(50070)
+	 * @note APP相关:\ref MSG_REG_NEW_ALARMDISPOSALNEW_SHOW (352)
+	 */
+    ZC_MSG_APP_ALARM_REG_NEW_ALARMDISPOSALNEW_SHOW,
+	
     /**
 	 * @brief (20350)报警处置考拉信息写入
 	 * 
@@ -362,6 +509,36 @@ typedef enum
 	 * @note APP相关:\ref MSG_REG_GETALARMATTACHMENT_KOALA (707)
 	 */
 	ZC_MSG_APP_ALARM_GETALARMATTACHMENT_KOALA,
+
+	/**
+	 * @brief (20355)设置报警复核_警情类型值
+	 * 
+	 * @note 请求结构体:\ref P_NEW_ALARMDISPOSALADDCATEGORYID_AC_SET
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT
+	 * @note 反馈消息值:\ref ZC_MSG_ALARM_DISPOSALADDCATEGORYID_AC_SET (50205)
+	 * @note APP相关:\ref MSG_REG_NEW_ALARMDISPOSALADDCATEGORYID_AC_SET (356)
+	 */
+	ZC_MSG_APP_ALARM_DISPOSALADDCATEGORYID_AC_SET,
+
+    /**
+	 * @brief (20356)报警处理信息的综合查询WITHLOCK_NEW
+	 * 
+	 * @note 请求结构体:\ref P_NEW_COMPLEXCHECKWITHLOCK
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref S_NEW_COMPLEXCHECKWITHLOCK * N
+	 * @note 反馈消息值:\ref ZC_MSG_ALARM_JH_COMPLEXCHECKWITHLOCK_NEW (50206)
+	 * @note APP相关:\ref MSG_REG_NEW_JH_COMPLEXCHECKWITHLOCK_NEW (357)
+	 */
+	ZC_MSG_APP_ALARM_JH_COMPLEXCHECKWITHLOCK_NEW,
+
+	/**
+     * @brief (20357)根据报警GUID获取报警主机布撤防状态
+     * 
+     * @note 请求结构体:\ref P_AlarmDeviceStateByGuid
+     * @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref S_AlarmDeviceStateByGuid * N
+     * @note 反馈消息值:\ref ZC_MSG_ALARM_ALARMDEVICESTATEINTO_NEW (50207)
+     * @note APP相关:\ref MSG_REG_NEW_ALARMDEVICESTATEBYGUID_SHOW (367)
+     */
+	ZC_MSG_APP_ALARM_ALARMDEVICESTATEINTO_NEW,
 
 	ZC_MSG_APP_OPENDOOR_ADDREQUEST = 20400,     ///<(20400)请求关联刷卡认证记录（403），反馈ZC_MSG_OPENDOOR_ADDREQUEST
 	ZC_MSG_APP_OPENDOOR_ADDDEALPLANINFO,        ///<(20401)请求提交预案执行信息（404），反馈ZC_MSG_OPENDOOR_ADDDEALPLANINFO
@@ -869,6 +1046,18 @@ typedef enum
 	*/
 	ZC_MSG_APP_SYSDORCTOR_SOFTSETCHANNELRECORDDAYS,
 
+    /**
+	 * @brief (20536)请求获取一键运维信息
+	 * 
+	 * 消息服务不做缓存处理，该接口返回APP获取到的最新数据
+	 * 
+	 * @note 请求结构体:\ref NULL 
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref S_GetIOMOperationInfo *N
+	 * @note 反馈消息值:\ref ZC_MSG_SYSDORCTOR_IOMOPERATIONINFO（52036）
+	 * @note APP相关:\ref MSG_REG_NEW_IOMOPERATIONINFO_GET（547）
+	 */
+	ZC_MSG_APP_SYSDORCTOR_IOMOPERATIONINFO,
+
 	/**
 	* @brief (20540)请求获取所有故障现象信息
 	* 
@@ -964,7 +1153,343 @@ typedef enum
 	* @note APP相关:\ref MSG_REG_NEW_DEVICEBASEINFOBYID_CLIENT_GET（526）
 	*/
 	ZC_MSG_APP_SYSDORCTOR_DEVICEBASEINFOBYCAPITALCODE,
-	
+
+	/**
+	 * @brief (20548)获取设备基础信息_NEW
+	 * 
+	 * 消息服务不做缓存处理，该接口返回APP获取到的最新数据
+	 * 
+	 * @note 请求结构体:\ref DEVICEBASEINFOGET_NEW_IN_P
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref DEVICEBASEINFOGET_NEW_OUT_S *N
+	 * @note 反馈消息值:\ref ZC_MSG_SYSDORCTOR_DEVICEBASEINFOGET_NEW（52048）
+	 * @note APP相关:\ref MSG_REG_NEW_DEVICEBASEINFO_GET_NEW（550）
+	 */
+	ZC_MSG_APP_SYSDORCTOR_DEVICEBASEINFOGET_NEW,
+
+	/**
+	 * @brief (20549)报修记录信息查询_NEW
+	 * 
+	 * 消息服务不做缓存处理，该接口返回APP获取到的最新数据
+	 * 
+	 * @note 请求结构体:\ref MALFUNCTIONINFOGET_NEW_IN_P 
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref MALFUNCTIONINFOGET_NEW_OUT_S *N
+	 * @note 反馈消息值:\ref ZC_MSG_SYSDORCTOR_MALFUNCTIONINFO_GET_NEW（52049）
+	 * @note APP相关:\ref MSG_REG_NEW_MALFUNCTIONINFO_GET_NEW（551）
+	 */
+	ZC_MSG_APP_SYSDORCTOR_MALFUNCTIONINFO_GET_NEW,
+
+    /**
+	 * @brief (20550)通道检查模板相关操作
+	 * 
+	 * 20170601新增接口，消息服务不做缓存处理，该接口返回APP获取到的最新数据
+	 * 
+	 * @note 请求结构体:\ref P_CHANNELDETECTMODULEOPERATION_NEW 
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT
+	 * @note 反馈消息值:\ref ZC_MSG_SYSDORCTOR_CHANNELDETECTMODULE_OPERATION_NEW （52083）
+	 * @note APP相关:\ref MSG_REG_NEW_CHANNELDETECTMODULE_OPERATION_NEW（563）
+	 */
+    ZC_MSG_APP_SYSDORCTOR_CHANNELDETECTMODULE_OPERATION_NEW,
+
+    /**
+	 * @brief (20551)智能运维获取录像天数模板
+	 * 
+	 * 20170601新增接口，消息服务不做缓存处理，该接口返回APP获取到的最新数据
+	 * 
+	 * @note 请求结构体:\ref NULL 
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref S_OMRECORDDAYSMODULEGET_NEW * N
+	 * @note 反馈消息值:\ref ZC_MSG_SYSDORCTOR_OMRECORDDAYSMODULE_GET_NEW （52084）
+	 * @note APP相关:\ref MSG_REG_NEW_OMRECORDDAYSMODULE_GET_NEW（564）
+	 */
+    ZC_MSG_APP_SYSDORCTOR_OMRECORDDAYSMODULE_GET_NEW,
+
+    /**
+	 * @brief (20552)报修管理数据项获取
+	 * 
+	 * 20170601新增接口，消息服务不做缓存处理，该接口返回APP获取到的最新数据
+	 * 
+	 * @note 请求结构体:\ref P_MalfuctionInfoGet 
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref S_MalfuctionInfoGet * N
+	 * @note 反馈消息值:\ref ZC_MSG_SYSDORCTOR_MALFUNCTION_NEW_GET （52085）
+	 * @note APP相关:\ref MSG_REG_NEW_MALFUNCTION_NEW_GET（565）
+	 */
+    ZC_MSG_APP_SYSDORCTOR_MALFUNCTION_NEW_GET,
+
+	/**
+	 * @brief (20553)智能运维故障处理记录
+	 * 
+	 * 20170601新增接口，消息服务不做缓存处理，该接口返回APP获取到的最新数据
+	 * 
+	 * @note 请求结构体:\ref P_FaultTreatment 
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref S_FaultTreatment * N
+	 * @note 反馈消息值:\ref ZC_MSG_SYSDORCTOR_FAULTTREATMENT_GET （52086）
+	 * @note APP相关:\ref MSG_REG_NEW_FAULTTREATMENT_GET（566）
+	 */
+    ZC_MSG_APP_SYSDORCTOR_FAULTTREATMENT_GET,
+
+    /**
+	 * @brief (20554)智能运维维修记录
+	 * 
+	 * 20170601新增接口，消息服务不做缓存处理，该接口返回APP获取到的最新数据
+	 * 
+	 * @note 请求结构体:\ref P_MaintenanceRecord 
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref S_MaintenanceRecord * N
+	 * @note 反馈消息值:\ref ZC_MSG_SYSDORCTOR_MAINTENANCERECORD_GET （52087）
+	 * @note APP相关:\ref MSG_REG_NEW_MAINTENANCERECORD_GET（567）
+	 */
+    ZC_MSG_APP_SYSDORCTOR_MAINTENANCERECORD_GET,
+
+    /**
+	 * @brief (20555)智能运维复核与评价记录
+	 * 
+	 * 20170601新增接口，消息服务不做缓存处理，该接口返回APP获取到的最新数据
+	 * 
+	 * @note 请求结构体:\ref P_ReviewAndEvaluation 
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref S_ReviewAndEvaluation * N
+	 * @note 反馈消息值:\ref ZC_MSG_SYSDORCTOR_REVIEWANDEVALUTION_GET （52088）
+	 * @note APP相关:\ref MSG_REG_NEW_REVIEWANDEVALUTION_GET（568）
+	 */
+    ZC_MSG_APP_SYSDORCTOR_REVIEWANDEVALUTION_GET,
+
+    /**
+	 * @brief (20556)智能运维故障记录写入
+	 * 
+	 * 20170601新增接口，消息服务不做缓存处理，该接口返回APP获取到的最新数据
+	 * 
+	 * @note 请求结构体:\ref P_FaultDeviceInfoIns 
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT
+	 * @note 反馈消息值:\ref ZC_MSG_SYSDORCTOR_FAULTDEVICEINFO_ADD （52089）
+	 * @note APP相关:\ref MSG_REG_NEW_FAULTDEVICEINFO_ADD（569）
+	 */
+    ZC_MSG_APP_SYSDORCTOR_FAULTDEVICEINFO_ADD,
+
+    /**
+	 * @brief (20557)智能运维故障处理记录写入
+	 * 
+	 * 20170601新增接口，消息服务不做缓存处理，该接口返回APP获取到的最新数据
+	 * 
+	 * @note 请求结构体:\ref P_FaultDeviceHandleInfoIns 
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT
+	 * @note 反馈消息值:\ref ZC_MSG_SYSDORCTOR_FAULTDEVICEHANDLEINFO_ADD （52090）
+	 * @note APP相关:\ref MSG_REG_NEW_FAULTDEVICEHANDLEINFO_ADD（570）
+	 */
+    ZC_MSG_APP_SYSDORCTOR_FAULTDEVICEHANDLEINFO_ADD,
+
+	/**
+	 * @brief (20558)智能运维报修记录写入
+	 * 
+	 * 20170601新增接口，消息服务不做缓存处理，该接口返回APP获取到的最新数据
+	 * 
+	 * @note 请求结构体:\ref P_MalfuctionInfo_Ins 
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT
+	 * @note 反馈消息值:\ref ZC_MSG_SYSDORCTOR_MALFUNCTIONINFO_ADD （52091）
+	 * @note APP相关:\ref MSG_REG_NEW_MALFUNCTIONINFO_ADD（571）
+	 */
+    ZC_MSG_APP_SYSDORCTOR_MALFUNCTIONINFO_ADD,
+
+	/**
+	 * @brief (20559)智能运维维修记录写入
+	 * 
+	 * 20170601新增接口，消息服务不做缓存处理，该接口返回APP获取到的最新数据
+	 * 
+	 * @note 请求结构体:\ref P_MaintenanceInfo_Ins 
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT
+	 * @note 反馈消息值:\ref ZC_MSG_SYSDORCTOR_MAINTENCEINFO_ADD （52092）
+	 * @note APP相关:\ref MSG_REG_NEW_MAINTENCEINFO_ADD（572）
+	 */
+    ZC_MSG_APP_SYSDORCTOR_MAINTENCEINFO_ADD,
+
+    /**
+	 * @brief (20560)智能运维复核记录写入
+	 * 
+	 * 20170601新增接口，消息服务不做缓存处理，该接口返回APP获取到的最新数据
+	 * 
+	 * @note 请求结构体:\ref P_CheckInfo_Ins 
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT
+	 * @note 反馈消息值:\ref ZC_MSG_SYSDORCTOR_CHECKINFO_ADD （52093）
+	 * @note APP相关:\ref MSG_REG_NEW_CHECKINFO_ADD（573）
+	 */
+    ZC_MSG_APP_SYSDORCTOR_CHECKINFO_ADD,
+
+	/**
+	 * @brief (20561)设备历史故障检索
+	 * 
+	 * 20170601新增接口，消息服务不做缓存处理，该接口返回APP获取到的最新数据
+	 * 
+	 * @note 请求结构体:\ref P_DeviceFaultGet 
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref S_DeviceHistoryFaultGet
+	 * @note 反馈消息值:\ref ZC_MSG_SYSDORCTOR_DEVICEFAULTINFO_SET （52094）
+	 * @note APP相关:\ref MSG_REG_NEW_DEVICEFAULTINFO_SET（574）
+	 */
+    ZC_MSG_APP_SYSDORCTOR_DEVICEFAULTINFO_SET,
+
+    /**
+	 * @brief (20562)获取故障异常详情
+	 * 
+	 * 20170607新增接口，消息服务不做缓存处理，该接口返回APP获取到的最新数据
+	 * 
+	 * @note 请求结构体:\ref P_FaultExtremelyInfoGet 
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref S_FaultExtremelyInfoGet
+	 * @note 反馈消息值:\ref ZC_MSG_SYSDORCTOR_NEW_FAULTEXTREMELYINFO_GET （52095）
+	 * @note APP相关:\ref MSG_REG_NEW_FAULTEXTREMELYINFO_GET（575）
+	 */
+    ZC_MSG_APP_SYSDORCTOR_NEW_FAULTEXTREMELYINFO_GET,
+
+	/**
+	 * @brief (20563)IOM区分具体故障类型故障记录写入
+	 * 
+	 * 20170607新增接口，消息服务不做缓存处理，该接口返回APP获取到的最新数据
+	 * 
+	 * @note 请求结构体:\ref P_FaultDeviceInfoAdditionalIns 
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT
+	 * @note 反馈消息值:\ref ZC_MSG_SYSDORCTOR_NEWFAULTDEVICEADDITIONAL_ADD （52096）
+	 * @note APP相关:\ref MSG_REG_NEWFAULTDEVICEADDITIONAL_ADD（576）
+	 */
+    ZC_MSG_APP_SYSDORCTOR_NEWFAULTDEVICEADDITIONAL_ADD,
+
+	/**
+	 * @brief (20564)厂商信息操作
+	 * 
+	 * 20170609新增接口，消息服务不做缓存处理，该接口返回APP获取到的最新数据
+	 * 
+	 * @note 请求结构体:\ref P_SupplierMaintenanceOperation 
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT
+	 * @note 反馈消息值:\ref ZC_MSG_SYSDORCTOR_NEW_SUPPLIERMAINTENANCE_OPERATION （52097）
+	 * @note APP相关:\ref MSG_REG_NEW_SUPPLIERMAINTENANCE_OPERATION（559）
+	 */
+    ZC_MSG_APP_SYSDORCTOR_NEW_SUPPLIERMAINTENANCE_OPERATION,
+
+	/**
+	 * @brief (20565)厂商信息获取
+	 * 
+	 * 20170609新增接口，消息服务不做缓存处理，该接口返回APP获取到的最新数据
+	 * 
+	 * @note 请求结构体:\ref P_SupplierMaintenanceInfo 
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref S_SupplierMaintenanceInfo * N
+	 * @note 反馈消息值:\ref ZC_MSG_SYSDORCTOR_NEW_SUPPLIERMAINTENANCEINFO_GET （52098）
+	 * @note APP相关:\ref MSG_REG_NEW_SUPPLIERMAINTENANCEINFO_GET（560）
+	 */
+    ZC_MSG_APP_SYSDORCTOR_NEW_SUPPLIERMAINTENANCEINFO_GET,
+
+    /**
+	 * @brief (20566)资产信息操作
+	 * 
+	 * 20170609新增接口，消息服务不做缓存处理，该接口返回APP获取到的最新数据
+	 * 
+	 * @note 请求结构体:\ref P_CapticalInfoNewOperation 
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT
+	 * @note 反馈消息值:\ref ZC_MSG_SYSDORCTOR_NEW_CAPTICALINFONEW_OPERATION （52099）
+	 * @note APP相关:\ref MSG_REG_NEW_CAPTICALINFONEW_OPERATION（561）
+	 */
+    ZC_MSG_APP_SYSDORCTOR_NEW_CAPTICALINFONEW_OPERATION,
+
+    /**
+	 * @brief (20567)资产信息获取
+	 * 
+	 * 20170609新增接口，消息服务不做缓存处理，该接口返回APP获取到的最新数据
+	 * 
+	 * @note 请求结构体:\ref P_CapticalInfoNewGet 
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref S_CapticalInfoNewGet * N
+	 * @note 反馈消息值:\ref ZC_MSG_SYSDORCTOR_NEW_CAPTICALINFO_NEW_GET （52100）
+	 * @note APP相关:\ref MSG_REG_NEW_CAPTICALINFO_NEW_GET（562）
+	 */
+    ZC_MSG_APP_SYSDORCTOR_NEW_CAPTICALINFO_NEW_GET,
+
+	/**
+	 * @brief (20568)获取巡检计划
+	 * 
+	 * 20170614新增接口，消息服务不做缓存处理，该接口返回APP获取到的最新数据
+	 * 
+	 * @note 请求结构体:\ref NULL 
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref DETECTSCHEDULEGET_S * N
+	 * @note 反馈消息值:\ref ZC_MSG_SYSDORCTOR_NEW_DETECTSCHEDULE_GET （52101）
+	 * @note APP相关:\ref MSG_REG_NEW_DETECTSCHEDULE_GET（524）
+	 */
+    ZC_MSG_APP_SYSDORCTOR_NEW_DETECTSCHEDULE_GET,
+
+	/**
+	 * @brief (20569)资产状态统计_Additional
+	 * 
+	 * 20170620新增接口，消息服务不做缓存处理，该接口返回APP获取到的最新数据
+	 * 
+	 * @note 请求结构体:\ref P_CapticalAdditionalInfoGet 
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref S_CapticalAdditionalInfoGet * N
+	 * @note 反馈消息值:\ref ZC_MSG_SYSDORCTOR_CAPTICALADDITIONALINFO_GET （52102）
+	 * @note APP相关:\ref MSG_REG_CAPTICALADDITIONALINFO_GET（579）
+	 */
+    ZC_MSG_APP_SYSDORCTOR_CAPTICALADDITIONALINFO_GET,
+
+	/**
+	 * @brief (20570)资产状态统计
+	 * 
+	 * 20170620新增接口，消息服务不做缓存处理，该接口返回APP获取到的最新数据
+	 * 
+	 * @note 请求结构体:\ref P_CapticalStatisticsInfoGet 
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref S_CapticalStatisticsInfoGet * N
+	 * @note 反馈消息值:\ref ZC_MSG_SYSDORCTOR_CAPTICALSTATISTICSINFO_GET （52103）
+	 * @note APP相关:\ref MSG_REG_CAPTICALSTATISTICSINFO_GET（580）
+	 */
+    ZC_MSG_APP_SYSDORCTOR_CAPTICALSTATISTICSINFO_GET,
+
+	/**
+	 * @brief (20571)故障统计
+	 * 
+	 * 20170620新增接口，消息服务不做缓存处理，该接口返回APP获取到的最新数据
+	 * 
+	 * @note 请求结构体:\ref P_FaultTypeStatisticsInfoGet 
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref S_FaultTypeStatisticsInfoGet * N
+	 * @note 反馈消息值:\ref ZC_MSG_SYSDORCTOR_FAULTSTATISTICSINFO_GET （52104）
+	 * @note APP相关:\ref MSG_REG_FAULTSTATISTICSINFO_GET（581）
+	 */
+    ZC_MSG_APP_SYSDORCTOR_FAULTSTATISTICSINFO_GET,
+
+	/**
+	 * @brief (20572)维保服务统计
+	 * 
+	 * 20170620新增接口，消息服务不做缓存处理，该接口返回APP获取到的最新数据
+	 * 
+	 * @note 请求结构体:\ref P_MaintenanceStatisticsInfoGet 
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref S_MaintenanceStatisticsInfoGet * N
+	 * @note 反馈消息值:\ref ZC_MSG_SYSDORCTOR_MAINTENANCESTATISTICSINFO_GET （52105）
+	 * @note APP相关:\ref MSG_REG_MAINTENANCESTATISTICSINFO_GET（582）
+	 */
+    ZC_MSG_APP_SYSDORCTOR_MAINTENANCESTATISTICSINFO_GET,
+
+	/**
+	 * @brief (20573)网点异常资产统计
+	 * 
+	 * 20170719新增接口，消息服务不做缓存处理，该接口返回APP获取到的最新数据
+	 * 
+	 * @note 请求结构体:\ref P_GetCapticalAreaExceptionInfo 
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref S_GetCapticalAreaExceptionInfo * N
+	 * @note 反馈消息值:\ref ZC_MSG_SYSDORCTOR_CAPTICALAREAEXCEPTIONINFO_GET （52106）
+	 * @note APP相关:\ref MSG_REG_GETCAPTICALAREAEXCEPTIONINFO_GET（583）
+	 */
+    ZC_MSG_APP_SYSDORCTOR_CAPTICALAREAEXCEPTIONINFO_GET,
+
+	/**
+	 * @brief (20574)IOM批量报修处理
+	 * 
+	 * 20170725新增接口，消息服务不做缓存处理，该接口返回APP获取到的最新数据
+	 * 
+	 * @note 请求结构体:\ref P_BatchMalfunctionInfo 
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT
+	 * @note 反馈消息值:\ref ZC_MSG_SYSDORCTOR_BATCHMALFUNCTIONINFO_SET （52107）
+	 * @note APP相关:\ref MSG_REG_BATCHMALFUNCTIONINFO_SET（584）
+	 */
+    ZC_MSG_APP_SYSDORCTOR_BATCHMALFUNCTIONINFO_SET,
+
+	/**
+	 * @brief (20575)根据设备信息获取故障ID
+	 * 
+	 * 20170815新增接口，消息服务不做缓存处理，该接口返回APP获取到的最新数据
+	 * 
+	 * @note 请求结构体:\ref P_GetFaultIdByDeviceDetailInfo 
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref S_GetFaultIdByDeviceDetailInfo * N
+	 * @note 反馈消息值:\ref ZC_MSG_SYSDORCTOR_FAULTIDBYDEVICEDETAILINFO_GET （52108）
+	 * @note APP相关:\ref MSG_REG_FAULTIDBYDEVICEDETAILINFO_GET（585）
+	 */
+    ZC_MSG_APP_SYSDORCTOR_FAULTIDBYDEVICEDETAILINFO_GET,
+
 	ZC_MSG_APP_ROLEINFO = 29000,        ///<(29000)请求系统中角色信息，反馈ZC_MSG_COMMON_ROLEINFO
 	ZC_MSG_APP_CHILDROLEINFO,           ///<(29001)请求获取某角色的下属角色信息，反馈ZC_MSG_COMMON_CHILDROLEINFO
 	ZC_MSG_APP_PLANINFO,                ///<(29002)请求预案库信息，反馈ZC_MSG_COMMON_PLANINFO 
@@ -986,6 +1511,7 @@ typedef enum
 	ZC_MSG_APP_ALARMDEALTYPE,           ///<(29054)请求所有报警处置类型，反馈ZC_MSG_COMMON_ALARMDEALTYPE
 	ZC_MSG_APP_ALARMDECIDETYPE,         ///<(29055)请求所有报警定性戳类型，反馈ZC_MSG_COMMON_ALARMDECIDETYPE
 	ZC_MSG_APP_ALLKEYPARTINFO,          ///<(29056)请求所有部位信息，反馈ZC_MSG_COMMON_ALLKEYPARTINFO
+    ZC_MSG_APP_ALLDEVICEINFO,           ///<(29057)请求所有主机详细信息，反馈ZC_MSG_COMMON_ALLDEVICEINFO
 	            
 	ZC_MSG_APP_DUTYSTATUSSET = 29100,     ///<(29100)请求设置用户状态，反馈ZC_MSG_COMMON_SETDUTYSTATUS
 }E_ZC_MSG_APP;
@@ -1002,6 +1528,17 @@ typedef enum
 	ZC_MSG_BCBCLIENT_DOWNLOADPIC,            ///<(30002)请求下载图片，反馈ZC_MSG_COMMON_DOWNLOADPIC
 	ZC_MSG_BCBCLIENT_ONLINEUSER,             ///<(30003)请求在线用户信息，反馈ZC_MSG_COMMON_ONLINEUSER
 	ZC_MSG_BCBCLIENT_UPLOADATTACHMENT,       ///<(30004)请求上传附件，反馈ZC_MSG_COMMON_UPLOADATTACHMENT
+
+    /**
+	 * @brief (30005)请求打开某个通道视频
+     *
+     * 支持批量操作
+	 *
+	 * @note 请求结构体:\ref char chCameraName[64] * N  通道名称组
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT
+	 * @note 反馈消息值:\ref ZC_MSG_COMMON_OPENCAMERA (105)
+	 */
+    ZC_MSG_BCBCLIENT_OPENCAMREA,
 
     /**
 	* @brief (30050)请求从存储服务器下载报警联动附件
@@ -1072,6 +1609,15 @@ typedef enum
 	 */
 	ZC_MSG_BCBCLIENT_THIRDPART_EXCHANGEMESSAGE = 30090,
 
+    /**
+	 * @brief (30091)请求向考拉报警代理发送消息
+	 *
+	 * @note 请求结构体:\ref 平台考拉报警代理定义的各种结构体
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT
+	 * @note 反馈消息值:\ref ZC_MSG_COMMON_TRANSCOMMONMSGTOKOALA (50105）
+	 */
+    ZC_MSG_BCBCLIENT_TRANSCOMMONMSGTOKOALA,
+
 	ZC_MSG_BCBCLIENT_STARTTASKCHECK  = 30100,     ///<(30100)请求开始执行任务（9），反馈ZC_MSG_TASK_STARTTASKCHECK
 	ZC_MSG_BCBCLIENT_STOPTASKCHECK,               ///<(30101)请求停止执行任务，反馈ZC_MSG_TASK_STOPTASKCHECK
 	
@@ -1103,7 +1649,16 @@ typedef enum
 	* @note 返回结构体:\ref ZC_MSG_RESP_RESULT
 	* @note 反馈消息值:\ref ZC_MSG_OPENDOOR_OPENLINKVIDEO (51104)
 	*/
-    ZC_MSG_BCBCLIENT_OPENDOORLINKVIDEO, 
+    ZC_MSG_BCBCLIENT_OPENDOORLINKVIDEO,
+
+    /**
+	* @brief (30213)请求节点闪烁
+	*
+	* @note 请求结构体:\ref T_OPENDOORLINKVIDEOPRARM
+	* @note 返回结构体:\ref ZC_MSG_RESP_RESULT
+	* @note 反馈消息值:\ref ZC_MSG_COMMON_FLASHNODE (51104)
+	*/
+    ZC_MSG_BCBCLIENT_FLASHNODE,
 	
 	ZC_MSG_BCBCLIENT_ADDEVENT = 30250,            ///<(30250)请求添加动态信息（17），反馈ZC_MSG_COMMON_ADDEVENT                 
     ZC_MSG_BCBCLIENT_SENDEMAIL,                   ///<(30251)请求发送邮件，反馈ZC_MSG_COMMON_SENDEMAIL
@@ -1114,8 +1669,19 @@ typedef enum
 	ZC_MSG_BCBCLIENT_STARTLISTENMANUALCAPTURE = 30280,    ///<(30280)请求开始监听手动抓图消息，反馈ZC_MSG_OPENDOOR_STARTLISTENMANUALCAPTURE
 	ZC_MSG_BCBCLIENT_STOPLISTENMANUALCAPTURE,             ///<(30281)请求停止监听手动抓图消息，反馈ZC_MSG_OPENDOOR_STOPLISTENMANUALCAPTURE
 	ZC_MSG_BCBCLIENT_CAPTUREWITHOUTOPEN,                  ///<(30282)请求在未打开视频时抓图（20），反馈ZC_MSG_OPENDOOR_CAPTUREWITHOUTOPEN  
-	
-	ZC_MSG_BCBCLIENT_REQUESTTRANSMSG = 30300, ///<(30300)请求通过中心给其他客户端转发消息（前4个字节表示接收的模块号），反馈ZC_MSG_COMMON_REQUESTTRANSMSG     
+
+    /**
+	 * @brief (30299)请求通过中心给其他客户端转发消息
+     *
+     * 该接口比\ref ZC_MSG_BCBCLIENT_REQUESTTRANSMSG (30300)多一个客户端类型参数
+	 *
+	 * @note 请求结构体:\ref T_TRANS_COMMONHEADINFO_EX + 其他自定义消息内容
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT
+	 * @note 反馈消息值:\ref ZC_MSG_COMMON_REQUESTTRANSMSG_EX  (2299)
+	 */
+    ZC_MSG_BCBCLIENT_REQUESTTRANSMSG_EX = 30299,
+
+	ZC_MSG_BCBCLIENT_REQUESTTRANSMSG = 30300, ///<(30300)请求通过中心给其他客户端转发消息（前4个字节表示接收的模块号），反馈\ref ZC_MSG_COMMON_REQUESTTRANSMSG (2300)
 
     /**
 	* @brief (30301)请求向考拉平台提交设备报修信息
@@ -1335,6 +1901,23 @@ typedef enum
 	* @note ③中心查询结果反馈超时，返回\ref BCBC_ERROR_TIMEOUT
 	*/
     ZC_MSG_BCBCLIENT_SYSDORCTOR_VIDEOQUALITY,
+
+	/**
+	 * @brief (30409)请求查询节点状态（服务器节点）结果
+	 *
+	 * BCB客户端同一时刻仅能处理一条该消息，超时时间为20s；若是批量处理，则根据设备数，返回多条反馈信息；
+	 *
+	 * @note 请求结构体:\ref T_GET_DEV_STATE * N
+	 * @note 返回结构体:\ref ZC_MSG_RESP_RESULT + \ref GETSTATE + ( \ref TPatrolResult + \ref TpatrolResultNodeState) * N
+	 * @note 反馈消息值:\ref ZC_MSG_SYSDORCTOR_NODESTATE（52069）
+	 * @note BCB消息处理类:CZCMsgDealNodeStateUnit
+	 *
+	 * @note 错误码说明：
+ 	 * @note ①请求参数为空或不能被T_GET_DEV_STATE整除，返回\ref BCBC_ERROR_PARAMERROR
+	 * @note ②正在处理该消息请求，返回\ref BCBC_ERROR_BUSY
+	 * @note ③中心查询结果反馈超时，返回\ref BCBC_ERROR_TIMEOUT
+	 */
+    ZC_MSG_BCBCLIENT_SYSDORCTOR_NODESTATE,
 }E_ZC_MSG_BCBCLIENT;
 /** @} */
 
@@ -1422,7 +2005,15 @@ typedef enum
 	ZC_MSG_TASK_STATICS_EMPLOYMANAGER,   ///<(42036)员工管理类统计信息反馈
 
 	ZC_MSG_TASK_CHECKTASKLOCKINFO,       ///<(42037)查询任务信息反馈 @note 请求消息值:\ref ZC_MSG_APP_CHECKTASKLOCKINFO (20237) 	
-	
+
+	ZC_MSG_TASK_TODAYTASKALLINFOSHOW_EX, ///<(42038)获取某条下发任务的执行信息Ex反馈 @note 请求消息值:\ref ZC_MSG_APP_TODAYTASKALLINFOSHOW_EX (20238)
+    ZC_MSG_TASK_TODAYTASKDOINFOSHOW_EX,  ///<(42039)获取任务执行情况Ex反馈 @note 请求消息值:\ref ZC_MSG_APP_TODAYTASKDOINFOSHOW_EX (20239)
+	ZC_MSG_TASK_AKIDCONFIGUREINFO,       ///<(42040)根据场所ID和部位ID获取检查项目所有信息反馈 @note 请求消息值:\ref ZC_MSG_APP_AKIDCONFIGUREINFO (20240)
+	ZC_MSG_TASK_CONFIGURETIMEINFO,       ///<(42041)获取主动巡查检查项目的时间段信息反馈 @note 请求消息值:\ref ZC_MSG_APP_TASK_CONFIGURETIMEINFO (20241)
+	ZC_MSG_TASK_CONFIGURETIMEONLYINFO,   ///<(42042)根据时间段名称获取主动巡查检查项目的时间段信息反馈 @note 请求消息值:\ref ZC_MSG_APP_TASK_CONFIGURETIMEONLYINFO (20242)
+	ZC_MSG_TASK_CHECKTASKINFOWITHLOCK_NEW, ///<(42043)请求查询任务信息（检索条件包含是否关注）反馈 @note 请求消息值:\ref ZC_MSG_APP_TASK_CHECKTASKINFOWITHLOCK_NEW (20243)
+    ZC_MSG_TASK_COVERRATENEWINFO_NEW,      ///<(42044)请求查询巡检覆盖率_New反馈 @note 请求消息值:\ref ZC_MSG_APP_TASK_COVERRATENEWINFO_NEW (20244)
+
 	ZC_MSG_TASK_STARTTASKCHECK = 42100,      ///<(42100)开始执行任务结果反馈
 	ZC_MSG_TASK_STOPTASKCHECK,               ///<(42101)停止执行任务结果反馈
 	
@@ -1455,6 +2046,8 @@ typedef enum
 	ZC_MSG_ALARM_OPUSERREPORT,         ///<(50008)增删改用户报告反馈
 	ZC_MSG_ALARM_USERREPORTBOOKINFO,   ///<(50009)获取用户报告订阅信息反馈
 	ZC_MSG_ALARM_QUERYLOCKINFO,        ///<(50010)报警查询结果反馈(是否锁定附件) @note 请求消息值:\ref ZC_MSG_APP_ALARM_QUERYLOCKINFO (20310)
+	ZC_MSG_ALARM_DETAILALARMINFO_GET,        ///<(50011)根据报警ID或报警GUID获取报警详细信息结果反馈 @note 请求消息值:\ref ZC_MSG_APP_ALARM_DETAILALARMINFO_GET (20311)
+	ZC_MSG_ALARM_NEW_ALARMACATEGORY_SHOW,    ///<(50012)警情类型获取_分上下级结果反馈 @note 请求消息值:\ref ZC_MSG_APP_ALARM_NEW_ALARMACATEGORY_SHOW (20312)
 
 	ZC_MSG_ALARM_ALARMPOSITION = 50040,       ///<(50040)进入所属图层反馈 
     ZC_MSG_ALARM_CONCEALALARM,                ///<(50041)屏蔽某报警源反馈
@@ -1475,6 +2068,11 @@ typedef enum
 	ZC_MSG_ALARM_POSTILINFO,                ///<(50063)获取报警批注信息反馈
 	ZC_MSG_ALARM_OPERATIONINFO,             ///<(50064)获取报警操作信息反馈
 	ZC_MSG_ALARM_NOTDEALINFO,               ///<(50065)获取未处理报警信息反馈
+    ZC_MSG_ALARM_MANUALENTRY,               ///<(50066)插入手动报警信息反馈
+    ZC_MSG_ALARM_EXCHANGEINFO_NEW,          ///<(50067)获取第四交流屏交流内容反馈
+    ZC_MSG_ALARM_EXCHANGEINFO_OPERATION,    ///<(50068)第四交流屏交流内容操作反馈
+	ZC_MSG_ALARM_REG_NEW_ALARMDISPOSALNEW_SET,    ///<(50069)报警复核日志插入_New反馈
+	ZC_MSG_ALARM_REG_NEW_ALARMDISPOSALNEW_SHOW,    ///<(50070)根据报警ID或报警GUID获取操作记录信息反馈
 	
 	ZC_MSG_ALARM_SETDUTYSTATUS = 50080,     ///<(50080)设置值班员状态反馈
     ZC_MSG_ALARM_DEALSTATUSSET,             ///<(50081)设置报警信息处置状态反馈
@@ -1638,7 +2236,9 @@ typedef enum
     ZC_MSG_ALARM_GETPREPLANLIB_KOALA,       ///<(50202)获取预案库_Koala结果反馈 @note 请求消息值:\ref ZC_MSG_APP_ALARM_GETPREPLANLIB_KOALA (20352) @note 反馈结构体:\ref ZC_MSG_RESP_RESULT + \ref GETPREPLANLIB_KOALA_S * N
     ZC_MSG_ALARM_GETEVENTLIB_KOALA,         ///<(50203)获取事件库_Koala结果反馈 @note 请求消息值:\ref ZC_MSG_APP_ALARM_GETEVENTLIB_KOALA (20353) @note 反馈结构体:\ref ZC_MSG_RESP_RESULT + \ref GETEVENTLIB_KOALA_S * N
     ZC_MSG_ALARM_GETALARMATTACHMENT_KOALA,  ///<(50204)获取Koala报警附件结果反馈 @note 请求消息值:\ref ZC_MSG_APP_ALARM_GETALARMATTACHMENT_KOALA (20354) @note 反馈结构体:\ref ZC_MSG_RESP_RESULT + \ref GETALARMATTACHMENT_KOALA_S * N
-
+    ZC_MSG_ALARM_DISPOSALADDCATEGORYID_AC_SET,  ///<(50205)设置报警复核_警情类型值结果反馈 @note 请求消息值:\ref ZC_MSG_APP_ALARM_DISPOSALADDCATEGORYID_AC_SET (20355) @note 反馈结构体:\ref ZC_MSG_RESP_RESULT
+    ZC_MSG_ALARM_JH_COMPLEXCHECKWITHLOCK_NEW,   ///<(50206)报警处理信息的综合查询WITHLOCK_NEW结果反馈 @note 请求消息值:\ref ZC_MSG_APP_ALARM_JH_COMPLEXCHECKWITHLOCK_NEW (20356) @note 反馈结构体:\ref ZC_MSG_RESP_RESULT + \ref S_NEW_COMPLEXCHECKWITHLOCK * N
+    ZC_MSG_ALARM_ALARMDEVICESTATEINTO_NEW,      ///<(50207)根据报警GUID获取报警主机布撤防状态反馈 @note 请求消息值:\ref ZC_MSG_APP_ALARM_ALARMDEVICESTATEINTO_NEW (20357) @note 反馈结构体:\ref ZC_MSG_RESP_RESULT + \ref S_AlarmDeviceStateInfo * N
 }E_ZC_MSG_ALARM;
 /** @} */
 
@@ -1741,6 +2341,7 @@ typedef enum
     ZC_MSG_SYSDORCTOR_OMRECORDDAYSMODULE,      ///<(52033)获取通道录像模板天数信息结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_OMRECORDDAYSMODULE (20533) 
     ZC_MSG_SYSDORCTOR_DETECTMODULEINFO,        ///<(52034)获取通道录像模板是否启用信息结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_DETECTMODULEINFO (20534) 
     ZC_MSG_SYSDORCTOR_SOFTSETCHANNELRECORDDAYS,///<(52035)根据录像天数模板ID获取关联摄像头信息结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_SOFTSETCHANNELRECORDDAYS (20535) 
+    ZC_MSG_SYSDORCTOR_IOMOPERATIONINFO,        ///<(52036)获取一键运维信息结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_IOMOPERATIONINFO (20536) 
 
     ZC_MSG_SYSDORCTOR_FAULTINFO = 52040,           ///<(52040)所有故障现象信息获取结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_FAULTINFO (20540)
     ZC_MSG_SYSDORCTOR_MALFUNCTIONINFO,             ///<(52041)报修记录信息查询结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_MALFUNCTIONINFO (20541) 
@@ -1750,6 +2351,8 @@ typedef enum
     ZC_MSG_SYSDORCTOR_STATMALFUNCTIONINFO,         ///<(52045)报修记录信息统计结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_STATMALFUNCTIONINFO (20545)
     ZC_MSG_SYSDORCTOR_DEVICEBASEINFOBYID,          ///<(52046)根据设备编号请求设备基本信息结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_DEVICEBASEINFOBYID (20546)
     ZC_MSG_SYSDORCTOR_DEVICEBASEINFOBYCAPITALCODE, ///<(52047)根据设备资产编号请求设备基本信息结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_DEVICEBASEINFOBYCAPITALCODE (20547)
+    ZC_MSG_SYSDORCTOR_DEVICEBASEINFOGET_NEW,       ///<(52048)获取设备基础信息_NEW结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_DEVICEBASEINFOGET_NEW (20548)
+    ZC_MSG_SYSDORCTOR_MALFUNCTIONINFO_GET_NEW,     ///<(52049)报修记录信息查询_NEW结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_MALFUNCTIONINFO_GET_NEW (20549)
 
 	ZC_MSG_SYSDORCTOR_DVRONLINESTATE = 52060, ///<(52060)监控主机在线状态查询结果反馈 @note 请求消息值:\ref ZC_MSG_BCBCLIENT_SYSDORCTOR_DVRONLINESTATE (30400) 
 	ZC_MSG_SYSDORCTOR_ALARMHOSTSTATE,         ///<(52061)报警主机状态查询结果反馈 @note 请求消息值:\ref ZC_MSG_BCBCLIENT_SYSDORCTOR_ALARMHOSTSTATE (30401) 
@@ -1760,11 +2363,62 @@ typedef enum
     ZC_MSG_SYSDORCTOR_DEVCHECKVIDEO,          ///<(52066)监控主机硬盘状态查询结果反馈 @note 请求消息值:\ref ZC_MSG_BCBCLIENT_SYSDORCTOR_DEVCHECKVIDEO (30406)
     ZC_MSG_SYSDORCTOR_ACCESSSTATE,            ///<(52067)门禁主机状态查询结果反馈 @note 请求消息值:\ref ZC_MSG_BCBCLIENT_SYSDORCTOR_ACCESSSTATE (30407)
     ZC_MSG_SYSDORCTOR_VIDEOQUALITY,           ///<(52068)查询视频质量诊断巡检结果反馈 @note 请求消息值:\ref ZC_MSG_BCBCLIENT_SYSDORCTOR_VIDEOQUALITY (30408)
+    ZC_MSG_SYSDORCTOR_NODESTATE,              ///<(52069)查询节点状态（服务器节点）结果反馈 @note 请求消息值:\ref ZC_MSG_BCBCLIENT_SYSDORCTOR_NODESTATE (30409)
 
-    ZC_MSG_SYSDORCTOR_OPENDEVICEMANAGER = 52080,  ///<(52080)请求打开设备信息管理界面 @note 该消息为主动推送消息，暂不需要反馈       
-    ZC_MSG_SYSDORCTOR_OPENCHECKSTATEMANAGER,      ///<(52081)请求打开状态查询管理界面 @note 该消息为主动推送消息，暂不需要反馈 
-    ZC_MSG_SYSDORCTOR_OPENREPAIRMANAGER,          ///<(52082)请求打开故障管理界面 @note 该消息为主动推送消息，暂不需要反馈 
-}E_ZC_MSG_SYSDORCTOR;
+    /**
+	 * @brief (52080)请求打开智能运维主界面
+	 *
+	 * 智能运维一期中，该消息为请求打开设备信息管理界面
+	 *
+	 * @note 该消息为主动推送消息，暂不需要反馈
+	 */
+    ZC_MSG_SYSDORCTOR_OPENDEVICEMANAGER = 52080, 
+
+	/**
+	 * @brief (52081)智能运维二期不再使用
+	 *
+	 * 智能运维一期中，该消息为请求打开状态查询管理界面
+	 *
+	 * @note 该消息为主动推送消息，暂不需要反馈
+	 */        
+    ZC_MSG_SYSDORCTOR_OPENCHECKSTATEMANAGER, 
+
+	/**
+	 * @brief (52082)智能运维二期不再使用
+	 *
+	 * 智能运维一期中，该消息为请求打开故障管理界面
+	 *
+	 * @note 该消息为主动推送消息，暂不需要反馈
+	 */  
+    ZC_MSG_SYSDORCTOR_OPENREPAIRMANAGER, 
+
+	ZC_MSG_SYSDORCTOR_CHANNELDETECTMODULE_OPERATION_NEW,  ///<(52083)通道检查模板相关操作结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_CHANNELDETECTMODULE_OPERATION_NEW (20550)
+	ZC_MSG_SYSDORCTOR_OMRECORDDAYSMODULE_GET_NEW,         ///<(52084)智能运维获取录像天数模板结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_OMRECORDDAYSMODULE_GET_NEW (20551)
+	ZC_MSG_SYSDORCTOR_MALFUNCTION_NEW_GET,                ///<(52085)报修管理数据项获取结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_MALFUNCTION_NEW_GET (20552)
+	ZC_MSG_SYSDORCTOR_FAULTTREATMENT_GET,                 ///<(52086)智能运维故障处理记录结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_FAULTTREATMENT_GET (20553)
+	ZC_MSG_SYSDORCTOR_MAINTENANCERECORD_GET,              ///<(52087)智能运维维修记录结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_MAINTENANCERECORD_GET (20554)
+	ZC_MSG_SYSDORCTOR_REVIEWANDEVALUTION_GET,             ///<(52088)智能运维复核与评价记录结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_REVIEWANDEVALUTION_GET (20555)
+	ZC_MSG_SYSDORCTOR_FAULTDEVICEINFO_ADD,                ///<(52089)智能运维故障记录写入结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_FAULTDEVICEINFO_ADD (20556)
+	ZC_MSG_SYSDORCTOR_FAULTDEVICEHANDLEINFO_ADD,          ///<(52090)智能运维故障处理记录写入结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_FAULTDEVICEHANDLEINFO_ADD (20557)
+	ZC_MSG_SYSDORCTOR_MALFUNCTIONINFO_ADD,                ///<(52091)智能报修记录写入结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_MALFUNCTIONINFO_ADD (20558)
+	ZC_MSG_SYSDORCTOR_MAINTENCEINFO_ADD,                  ///<(52092)智能运维维修记录写入结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_MAINTENCEINFO_ADD (20559)
+	ZC_MSG_SYSDORCTOR_CHECKINFO_ADD,                      ///<(52093)智能运维复核记录写入结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_CHECKINFO_ADD (20560)
+	ZC_MSG_SYSDORCTOR_DEVICEFAULTINFO_SET,                ///<(52094)设备历史故障检索结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_DEVICEFAULTINFO_SET (20561)
+	ZC_MSG_SYSDORCTOR_NEW_FAULTEXTREMELYINFO_GET,         ///<(52095)获取故障异常详情结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_NEW_FAULTEXTREMELYINFO_GET (20562)
+	ZC_MSG_SYSDORCTOR_NEWFAULTDEVICEADDITIONAL_ADD,       ///<(52096)IOM区分具体故障类型故障记录写入结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_NEWFAULTDEVICEADDITIONAL_ADD (20563)
+	ZC_MSG_SYSDORCTOR_NEW_SUPPLIERMAINTENANCE_OPERATION,  ///<(52097)厂商信息操作结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_NEW_SUPPLIERMAINTENANCE_OPERATION (20564)
+	ZC_MSG_SYSDORCTOR_NEW_SUPPLIERMAINTENANCEINFO_GET,    ///<(52098)厂商信息获取结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_NEW_SUPPLIERMAINTENANCEINFO_GET (20565)
+	ZC_MSG_SYSDORCTOR_NEW_CAPTICALINFONEW_OPERATION,      ///<(52099)资产信息操作结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_NEW_CAPTICALINFONEW_OPERATION (20566)
+	ZC_MSG_SYSDORCTOR_NEW_CAPTICALINFO_NEW_GET,           ///<(52100)资产信息获取结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_NEW_CAPTICALINFO_NEW_GET (20567)
+    ZC_MSG_SYSDORCTOR_NEW_DETECTSCHEDULE_GET,             ///<(52101)获取巡检计划结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_NEW_DETECTSCHEDULE_GET (20568)  
+	ZC_MSG_SYSDORCTOR_CAPTICALADDITIONALINFO_GET,         ///<(52102)资产状态统计_Additional结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_CAPTICALADDITIONALINFO_GET (20569)  
+    ZC_MSG_SYSDORCTOR_CAPTICALSTATISTICSINFO_GET,         ///<(52103)资产状态统计结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_CAPTICALSTATISTICSINFO_GET (20570)  
+    ZC_MSG_SYSDORCTOR_FAULTSTATISTICSINFO_GET,            ///<(52104)故障统计结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_FAULTSTATISTICSINFO_GET (20571)  
+    ZC_MSG_SYSDORCTOR_MAINTENANCESTATISTICSINFO_GET,      ///<(52105)维保服务统计结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_MAINTENANCESTATISTICSINFO_GET (20572)  
+    ZC_MSG_SYSDORCTOR_CAPTICALAREAEXCEPTIONINFO_GET,      ///<(52106)网点异常资产统计结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_CAPTICALAREAEXCEPTIONINFO_GET (20573)  
+    ZC_MSG_SYSDORCTOR_BATCHMALFUNCTIONINFO_SET,           ///<(52107)IOM批量报修处理结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_BATCHMALFUNCTIONINFO_SET (20574)  
+    ZC_MSG_SYSDORCTOR_FAULTIDBYDEVICEDETAILINFO_GET,      ///<(52108)根据设备信息获取故障ID结果反馈 @note 请求消息值:\ref ZC_MSG_APP_SYSDORCTOR_FAULTIDBYDEVICEDETAILINFO_GET (20575)
+}E_ZC_MSG_SYSDORCTOR; 
 /** @} */
 /** @} */
 
@@ -1983,6 +2637,7 @@ typedef struct
 {
 	bool bNormalPosal;   ///< 是否有普通使用权限 
 	bool bDevInfoPosal;  ///< 是否有设备信息管理权限
+	bool bReviewPosal;	///< 是否有报修管理复核权限
 }T_SYSDORCTORPOSALINFO,*LPT_SYSDORCTORPOSALINFO;
 
 //报警联动请求参数结构（15）
@@ -2046,9 +2701,9 @@ typedef struct
 {
 	unsigned char ucChannel;    ///< 报警通道号或报警主机分区号
 	unsigned char ucDevType;    ///< 报警设备类型(报警源类型：0-主机 1-摄像头、探头)
-	unsigned char ucAlarmType;  ///< 报警类型/巡检异常事件E_EVENTPATROL_EXCEPT，199：门禁认证；其它值：报警类型
+	unsigned char ucAlarmType;  ///< 报警类型/巡检异常事件E_EVENTPATROL_EXCEPT
 	unsigned char ucReserved;   ///< 报警等级
-	char chMemo[128];           ///< 附加信息/备注信息[人名、部门、出入时间信息]，如果为门禁认证，字串分段：是否合法|卡号|身份证      "0"--非法，"1"--合法
+	char chMemo[128];           ///< 附加信息/备注信息[人名、部门、出入时间信息]	前64字节是描述，后64字节是附件
 	int	 nDealType;             ///< 9999：巡检异常类报警； 其它值：沿用原来定义:0-不需人工处理  1-未处理（chDealUser表示指定的处理人姓名） 8-未分配（chDealUser表示分配该信息的值班长姓名）
 	char chDealUser[64];        ///< 处理人姓名/ip地址
 }T_TRANSMITALARMENTITY,*LPT_TRANSMITALARMENTITY;
@@ -2059,8 +2714,8 @@ typedef struct
     char guid[64];                              ///< 报警唯一标识
     int  videoseconds;                          ///< 联动录像秒数（为0不录像）
     int  picturescount;                         ///< 联动抓图张数（为0不抓图）
-    int  reserved1;                             ///< 保留1 守押认证使用，0：人脸识别，20：押钞车，30：款箱
-    char reserved2[32];                         ///< 保留2 守押认证使用,"押运"
+    int  reserved1;                             ///< 保留1	0-众绎    1-考拉
+    char reserved2[32];                         ///< 保留2
 }T_TRANSMITALARMENTITY_EX,*lPT_TRANSMITALARMENTITY_EX;
 
 typedef struct
@@ -2115,6 +2770,12 @@ typedef enum
 	PATROL_EXCEPT_VQ_SNOWFLAKE,			// 雪花干扰
 	PATROL_EXCEPT_VQ_STRIPE,			// 条纹干扰
 	PATROL_EXCEPT_VQ_SHAKE,				// 画面抖动
+    PATROL_EXCEPT_KOALA_QUICK_ALARM = 198,	// 考拉一键报警
+		
+    // 监测节点状态
+	PATROL_EXCEPT_NODE_CPU_HIGH = 100,	// CPU使用率过高
+	PATROL_EXCEPT_NODE_MEM_HIGH,		// 内存使用率过高
+	PATROL_EXCEPT_NODE_NET_HIGH,		// 网络使用率过高
 }E_EVENTPATROL_EXCEPT;
 
 /************************************************
@@ -2171,8 +2832,15 @@ typedef struct
 typedef struct
 {
     char chReceiveUserName[64];      // 消息接收用户名
-	DWORD dwReceiveModuleType;       // 消息接收模块值
+    DWORD dwReceiveModuleType;       // 消息接收模块值
 }T_TRANS_COMMONHEADINFO,*LPT_TRANS_COMMONHEADINFO;
+
+typedef struct
+{
+    char chReceiveUserName[64];      // 消息接收用户名
+    int  nUserType;                  // 用户类型 电视墙-1003 电子地图-1004 分控-1005 控制台-1006
+    DWORD dwReceiveModuleType;       // 消息接收模块值
+}T_TRANS_COMMONHEADINFO_EX,*LPT_TRANS_COMMONHEADINFO_EX;
 
 //消息转发消息体结构
 typedef struct
@@ -2340,6 +3008,27 @@ struct TPatrolResultVideoQuality
 	char pictureID[32];			// 图片存储在文件服务器中的ID
 };
 
+// 节点状态类型
+enum ENodeStateType
+{
+	NODE_STATE_TYPE_CPU = 1,	//CPU
+	NODE_STATE_TYPE_MEMORY,		//内存
+	NODE_STATE_TYPE_NETWORK,	//网络
+};
+
+// 节点状态巡检结果
+struct TPatrolResultNodeState
+{
+	short	type;			//状态类型，参见ENodeStateType
+	char	flag;			//0-正常，1-异常
+	char	param;			//保留
+	int		total;			//总量（CPU-无，内存-MB，网络-MB）
+	double	usage;			//使用率
+	int		data1;			//保留
+	int		data2;			//保留
+	char	reserved[8];	//保留
+};
+
 //获取考拉在线人员信息
 typedef struct
 {
@@ -2490,11 +3179,22 @@ typedef struct
 	int  state;				// 状态（0：结束）
 	char guid[64];			// 报警唯一标识
 	char describe[128];		// 动作描述
+	char label[40];			// 警情类型（实警、误报等）
 	char user[40];			// 处理人
 	char time[40];			// 开始时间
 	char files[256];		// 附件串
 }TDealEndToKoala, *LPTDealEndToKoala;
 
+//收到考拉上报处置结束后反馈
+typedef struct
+{
+	int msg;				// 消息类型 (固定值：200006)
+	int operate;			// (为0)
+	int state;				// 众绎端处置状态 (0:未结束, 1:结束)
+	char guid[64];			// 报警唯一标识
+	char describe[128];		// 描述
+	char reserved[64];		// 预留
+}TFeedBackToKoala, *LPTFeedBackToKoala;
 
 //考拉处置进度上报
 typedef struct
@@ -2532,6 +3232,7 @@ typedef struct
 	int  state;				// 状态（0：结束）
 	char guid[64];			// 报警唯一标识
 	char describe[128];		// 动作描述
+	char label[40];			// 警情类型（实警、误报等）
 	char user[40];			// 处理人
 	char time[40];			// 开始时间
 	char files[256];		// 附件串
