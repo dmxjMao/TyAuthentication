@@ -43,6 +43,7 @@ enum emButton {
 struct stUserInfo {
 	S_New_UserInfo stBaseInfo;//基础信息
 	T_OPENDOORPOSALINFO stDisposalInfo;//权限
+	std::shared_ptr<std::vector<int>> pVecACSHostID;//用户受理的门禁id
 };
 
 
@@ -93,8 +94,10 @@ struct stACSHostInfo {
 	UINT8 nCtrlLevel = -1;//管控等级
 	char szPlaceName[64] = { 0 };//所在场所名称
 	char szPartName[64] = { 0 };//所在部位名称
-	std::vector<int> vecRelChnl;//联动视频通道id
-	std::vector<int> vecRelTalk;//关联对讲设备id
+
+	std::vector<int> vecAuthRelCameraID;//认证联动视频通道id
+	std::vector<int> vecGrantRelCameraID;//授权联动视频通道id
+	std::vector<int> vecAuthRelTalkID;//认证关联对讲设备id
 };
 
 
@@ -124,17 +127,19 @@ struct stArea : stNode{
 };
 
 struct stHost : stNode {
-	stHost(unsigned short id, std::string code, std::string fCode, std::string name)
-		: stNode(id, code, fCode, name) {}
+	int nFactoryType;//厂家类型
+	stHost(unsigned short id, std::string code, std::string fCode, std::string name,
+		int factory)
+		: stNode(id, code, fCode, name), nFactoryType(factory) {}
 };
 
 struct stDevice : stNode {
 	unsigned short nChnlNo;//通道号
-	std::string strFatherName;//所属主机名
+	std::string strHostCode;//所属主机编码
 
 	stDevice(unsigned short id, std::string code, std::string fCode, std::string name,
-		unsigned short chnlNo, std::string fName) 
-		: stNode(id,code,fCode,name), nChnlNo(chnlNo), strFatherName(fName){}
+		unsigned short chnlNo, std::string HCode) 
+		: stNode(id,code,fCode,name), nChnlNo(chnlNo), strHostCode(HCode){}
 };
 
 
@@ -156,6 +161,8 @@ struct stApplyInfo {
 	CString strWebSiteName;//申请网点
 	CString strPartName;//申请部位
 	int nImportance = -1;//重要程度（管控等级）
+	//int nDevID = -1;//刷卡设备
+	CString strDevName;//刷卡设备名称
 	UINT8 nSlave = -1;//是否主从门禁刷卡：-1无，0主，1从
 	//CString strMode;//刷卡模式：(如:XX人刷卡+中心授权)
 	CTime tmApply;//申请认证时间，CString不好转CTime

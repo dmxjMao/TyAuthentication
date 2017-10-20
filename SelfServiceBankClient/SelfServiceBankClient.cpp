@@ -21,6 +21,9 @@
 //网络服务库
 #include "TYServerSDK.h"
 #pragma comment(lib,"..\\TYServerSDK\\TYServerSDK.lib")
+//解码库
+#include "LoadTJTY_Play.h"
+#pragma comment(lib, "..\\TjtyPlayer\\Tjty_Play.lib")
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -57,6 +60,9 @@ CSelfServiceBankClientApp::CSelfServiceBankClientApp()
 
 	//初始化消息处理函数
 	InitZCMsgHandler();
+
+	//加载解码库
+	LoadTJTY_Play(m_oGobal->GetExePath());
 }
 
 
@@ -207,25 +213,25 @@ void CSelfServiceBankClientApp::InitZCMsgHandler()
 	//m_mapZCMsgHandler[ZC_MSG_COMMON_CURUSERINFOEX] = ZCMsgCurrentUserInfo;
 	//注册自己感兴趣的消息，其他不处理
 	m_mapZCMsgHandler = { /*<反馈， 处理方法>*/
-		{ ZC_MSG_COMMON_CURUSERINFOEX, &CSelfServiceBankClientApp::ZCMsgCurrentUserInfo },//当前用户信息
+		{ ZC_MSG_COMMON_CURUSERINFOEX, &CSelfServiceBankClientApp::ZCMsgCurrentUserInfo },//当前用户
 		{ ZC_MSG_COMMON_USERALLINFO, &CSelfServiceBankClientApp::ZCMsgUserDetailInfo },//用户详情
-		{ ZC_MSG_OPENDOOR_DISPOSALINFO, &CSelfServiceBankClientApp::ZCMsgDisposalInfo },//权限信息
-		{ ZC_MSG_COMMON_ALLAREAINFO, &CSelfServiceBankClientApp::ZCMsgAreaInfo },//区域信息
-		{ ZC_MSG_COMMON_ALLDEVICEINFO, &CSelfServiceBankClientApp::ZCMsgDevHostInfo },//主机信息
-		{ ZC_MSG_OPENDOOR_GETALLPEPOLEINFO, &CSelfServiceBankClientApp::ZCMsgCtrlPersonInfo },//管辖人员信息
+		{ ZC_MSG_OPENDOOR_DISPOSALINFO, &CSelfServiceBankClientApp::ZCMsgDisposalInfo },//权限
+		{ ZC_MSG_COMMON_ALLAREAINFO, &CSelfServiceBankClientApp::ZCMsgAreaInfo },//区域
+		{ ZC_MSG_COMMON_ALLDEVICEINFO, &CSelfServiceBankClientApp::ZCMsgDevHostInfo },//主机
+		{ ZC_MSG_SYSDORCTOR_CAMERAINFO, &CSelfServiceBankClientApp::ZCMsgDeviceInfo },//探头
+		{ ZC_MSG_OPENDOOR_GETALLPEPOLEINFO, &CSelfServiceBankClientApp::ZCMsgCtrlPersonInfo },//管辖人员
 		{ ZC_MSG_COMMON_DOWNLOADPIC, &CSelfServiceBankClientApp::ZCMsgCtrlHeadPic },//管辖人员头像 
-		{ ZC_MSG_OPENDOOR_DEPARTMENTINFO, &CSelfServiceBankClientApp::ZCMsgDepartmentInfo },//部门信息，未请求
+		//{ ZC_MSG_OPENDOOR_DEPARTMENTINFO, &CSelfServiceBankClientApp::ZCMsgDepartmentInfo },//部门
 		{ ZC_MSG_OPENDOOR_ACCESSRELATION, &CSelfServiceBankClientApp::ZCMsgEntranceRelation },//门禁主从关系
-		{ ZC_MSG_OPENDOOR_GETALLACSHOSTINFO, &CSelfServiceBankClientApp::ZCMsgACSHostInfo },//所有门禁主机信息
-		{ ZC_MSG_OPENDOOR_CTRLLEVELMULINFO, &CSelfServiceBankClientApp::ZCMsgCtrlLevelInfo },//获取管控信息
-		{ ZC_MSG_OPENDOOR_CTRLLEVELPLAN, &CSelfServiceBankClientApp::ZCMsgCtrlPlanInfo }, //管控策略信息
-		{ ZC_MSG_COMMON_ALLKEYPARTINFO, &CSelfServiceBankClientApp::ZCMsgKeypartInfo },//部位信息
-		{ ZC_MSG_OPENDOOR_GETACSHOSTLINKINFO, &CSelfServiceBankClientApp::ZCMsgACSHostLinkCameraInfo },//门禁主机关联摄像头设备
-		{ ZC_MSG_OPENDOOR_GETACSHOSTLINKTALKINFO, &CSelfServiceBankClientApp::ZCMsgACSHostLinkTalkInfo },//门禁主机关联对讲设备
-		{ ZC_MSG_COMMON_ALLUSERINFO, &CSelfServiceBankClientApp::ZCMsgHandlerInfo },//所有处置人姓名
-		{ ZC_MSG_OPENDOOR_USERDOORCAMERARELATION, &CSelfServiceBankClientApp::ZCMsgDoorRelationInfo },//用户门禁摄像头关联信息
-		{ ZC_MSG_COMMON_PLANINFO, &CSelfServiceBankClientApp::ZCMsgEMPlanInfo },//所有预案信息
-		//{ ZC_MSG_SYSDORCTOR_CAMERAINFO, &CSelfServiceBankClientApp::ZCMsgEMPlanInfo },//所有预案信息
+		{ ZC_MSG_OPENDOOR_GETALLACSHOSTINFO, &CSelfServiceBankClientApp::ZCMsgACSHostInfo },//门禁主机
+		{ ZC_MSG_OPENDOOR_CTRLLEVELMULINFO, &CSelfServiceBankClientApp::ZCMsgCtrlLevelInfo },//管控
+		{ ZC_MSG_OPENDOOR_CTRLLEVELPLAN, &CSelfServiceBankClientApp::ZCMsgCtrlPlanInfo }, //管控策略
+		//{ ZC_MSG_COMMON_ALLKEYPARTINFO, &CSelfServiceBankClientApp::ZCMsgKeypartInfo },//部位
+		{ ZC_MSG_OPENDOOR_GETACSHOSTLINKINFO, &CSelfServiceBankClientApp::ZCMsgACSHostLinkCameraInfo },//授权门禁主机关联摄像头设备
+		{ ZC_MSG_OPENDOOR_GETACSHOSTLINKTALKINFO, &CSelfServiceBankClientApp::ZCMsgACSHostLinkTalkInfo },//认证门禁关联对讲设备
+		{ ZC_MSG_COMMON_ALLUSERINFO, &CSelfServiceBankClientApp::ZCMsgHandlerInfo },//处置人姓名
+		{ ZC_MSG_OPENDOOR_USERDOORCAMERARELATION, &CSelfServiceBankClientApp::ZCMsgDoorRelationInfo },//认证门禁关联摄像头
+		{ ZC_MSG_COMMON_PLANINFO, &CSelfServiceBankClientApp::ZCMsgEMPlanInfo },//预案
 	};
 }
 
@@ -323,7 +329,7 @@ void CSelfServiceBankClientApp::ZCMsgAreaInfo(PBYTE pMsg, DWORD dwMsgID, INT nMs
 
 	ZCMsgMacro_beginfor(T_AREA_INFO, pMsg, nMsgLen)
 	T_AREA_INFO* pInfo = (T_AREA_INFO*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
-
+	
 	auto sp = make_shared<stArea>(pInfo->nAreaId, pInfo->chCode, pInfo->chFatherNo, pInfo->chName);
 	vecArea.push_back(std::move(sp));
 
@@ -342,7 +348,7 @@ void CSelfServiceBankClientApp::ZCMsgDevHostInfo(PBYTE pMsg, DWORD dwMsgID, INT 
 	ZCMsgMacro_beginfor(S_DevNodeInfo, pMsg, nMsgLen)
 	S_DevNodeInfo* pInfo = (S_DevNodeInfo*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
 	
-	auto sp = make_shared<stArea>(pInfo->nID, pInfo->chDevCode, pInfo->chAreaCode, pInfo->chDevName);
+	auto sp = make_shared<stHost>(pInfo->nID, pInfo->chDevCode, pInfo->chAreaCode, pInfo->chDevName, pInfo->nDevManufatureID);
 	vecHost.push_back(std::move(sp));
 
 	pInfo = 0;
@@ -357,14 +363,13 @@ void CSelfServiceBankClientApp::ZCMsgDeviceInfo(PBYTE pMsg, DWORD dwMsgID, INT n
 	auto& vecDevice = m_mapNodeInfo[DeviceNode];
 
 	ZCMsgMacro_beginfor(CAMERA_NODE_INFO, pMsg, nMsgLen)
-		
+
 	CAMERA_NODE_INFO* pInfo = (CAMERA_NODE_INFO*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
-	//auto sp = make_shared<stDevice>(pInfo->nID, pInfo->chDevCode, pInfo->chAreaCode, pInfo->chDevName);
-	//vecDevice.push_back(std::move(sp));
+	auto sp = make_shared<stDevice>(pInfo->nId, pInfo->chCode, pInfo->chAreaCode, pInfo->chName, pInfo->nChannelNo, pInfo->chHostCode);
+	vecDevice.push_back(std::move(sp));
 
 	pInfo = 0;
 	ZCMsgMacro_endfor
-
 	
 }
 
@@ -580,10 +585,42 @@ void CSelfServiceBankClientApp::ZCMsgKeypartInfo(PBYTE pMsg, DWORD dwMsgID, INT 
 	ZCMsgMacro_endfor
 }
 
-//门禁主机关联摄像头设备
+//认证门禁摄像头关联信息
 bool lambda_FindACSHostByID(const std::pair<CString, shared_ptr<stACSHostInfo>>& p, const int id) {
 	return p.second->stBaseInfo.nID == id;
 }
+void CSelfServiceBankClientApp::ZCMsgDoorRelationInfo(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
+{
+	ZCMsgMacro_beginfor(USERDOORCAMERARELATION_CLIENT_GET_S, pMsg, nMsgLen)
+	USERDOORCAMERARELATION_CLIENT_GET_S* pInfo = (USERDOORCAMERARELATION_CLIENT_GET_S*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
+	auto itACSHost = std::find_if(m_mapACSHostInfo.begin(), m_mapACSHostInfo.end(),
+		std::bind(lambda_FindACSHostByID, _1, pInfo->nDoorId));
+	if (m_mapACSHostInfo.end() == itACSHost) {
+		return;
+	}
+
+	auto& st = itACSHost->second;
+	st->vecGrantRelCameraID.resize(/*pInfo->nLinkNum*/1);
+	for (int i = 0; i < /*pInfo->nLinkNum*/1; ++i) {
+		st->vecGrantRelCameraID[i] = /*pInfo->nCameraID[i]*/pInfo->nDeviceId;
+	}
+
+	//只接收当前用户的
+	CString strName(pInfo->chUserName);
+	if (strName != m_strCurUserName)
+		return;
+	auto& sp = m_mapUserInfo[m_strCurUserName]->pVecACSHostID;
+	if (0 == sp) {
+		sp = make_shared<std::vector<int>>();
+	}
+	sp->push_back(pInfo->nDoorId);
+
+	pInfo = 0;
+	ZCMsgMacro_endfor
+
+}
+
+//授权门禁主机关联摄像头设备
 void CSelfServiceBankClientApp::ZCMsgACSHostLinkCameraInfo(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
 {
 
@@ -598,16 +635,16 @@ void CSelfServiceBankClientApp::ZCMsgACSHostLinkCameraInfo(PBYTE pMsg, DWORD dwM
 	}
 
 	auto& st = itACSHost->second;
-	st->vecRelChnl.resize(pInfo->nLinkNum);
+	st->vecGrantRelCameraID.resize(pInfo->nLinkNum);
 	for (int i = 0; i < pInfo->nLinkNum; ++i) {
-		st->vecRelChnl[i] = pInfo->nCameraID[i];
+		st->vecGrantRelCameraID[i] = pInfo->nCameraID[i];
 	}
 
 	pInfo = 0;
 	ZCMsgMacro_endfor
 }
 
-//门禁主机关联对讲设备
+//认证门禁主机关联对讲设备
 void CSelfServiceBankClientApp::ZCMsgACSHostLinkTalkInfo(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
 {
 	ZCMsgMacro_beginfor(S_HostTalkInfo, pMsg, nMsgLen)
@@ -620,9 +657,9 @@ void CSelfServiceBankClientApp::ZCMsgACSHostLinkTalkInfo(PBYTE pMsg, DWORD dwMsg
 	}
 
 	auto& st = itACSHost->second;
-	st->vecRelTalk.resize(pInfo->nLinkNum);
+	st->vecAuthRelTalkID.resize(pInfo->nLinkNum);
 	for (int i = 0; i < pInfo->nLinkNum; ++i) {
-		st->vecRelTalk[i] = pInfo->nCameraID[i];
+		st->vecAuthRelTalkID[i] = pInfo->nCameraID[i];
 	}
 
 	pInfo = 0;
@@ -646,15 +683,6 @@ void CSelfServiceBankClientApp::ZCMsgHandlerInfo(PBYTE pMsg, DWORD dwMsgID, INT 
 
 }
 
-//用户门禁摄像头关联信息
-void CSelfServiceBankClientApp::ZCMsgDoorRelationInfo(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
-{
-	ZCMsgMacro_beginfor(USERDOORCAMERARELATION_CLIENT_GET_S, pMsg, nMsgLen)
-		USERDOORCAMERARELATION_CLIENT_GET_S* pInfo = (USERDOORCAMERARELATION_CLIENT_GET_S*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
-		pInfo = 0;
-	ZCMsgMacro_endfor
-	
-}
 
 //所有预案信息
 bool lambda_FindEMPlanByID(const shared_ptr<stEmergPlan>& st, const int id) {
@@ -688,7 +716,10 @@ void CSelfServiceBankClientApp::ZCMsgEMPlanInfo(PBYTE pMsg, DWORD dwMsgID, INT n
 //写日志
 void _cdecl CSelfServiceBankClientApp::WriteLog(severity_level level, const TCHAR* szMsg, ...)
 {
-	TCHAR szBuffer[1024];
+	if (0 == szMsg)
+		return; //_vsntprintf_s会崩
+
+	TCHAR szBuffer[1024] = { 0 };
 	va_list pArgList; //char*
 	va_start(pArgList, szMsg); //将指针与最后一个固定参数关联
 
@@ -775,6 +806,7 @@ void __stdcall CSelfServiceBankClientApp::ServerExcepCallBack(U_LONG_TY dwExcept
 {
 	if (USER_EXCHANGE_ERR == dwExceptMsg)
 	{
+		//网络问题，如掉线；超时未发送心跳包，如调试；
 		theApp.WriteLog(error, _T("ServerSDK异常回调：用户交互异常！"));
 	}
 	else if (REALPLAY_ERR == dwExceptMsg)
@@ -786,5 +818,10 @@ void __stdcall CSelfServiceBankClientApp::ServerExcepCallBack(U_LONG_TY dwExcept
 //ServerSDK消息回调函数
 void __stdcall CSelfServiceBankClientApp::MsgCallBackFunc(long lUserID, DWORD MsgType, BYTE *chMsgBuf, DWORD dwBufSize, unsigned int nMsgID, DWORD dwUser)
 {
-
+	if (MsgType == USER_LOGIN_CMS || MsgType == USER_LOGOUT_CMS){
+		theApp.WriteLog(trace, _T("ServerSDK消息回调：用户登录、登出..."));
+	}
+	else if(MsgType == MSG_TRANS_BY_CMS){
+		theApp.WriteLog(trace, _T("ServerSDK消息回调：中心转发消息..."));
+	}
 }

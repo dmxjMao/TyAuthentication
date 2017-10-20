@@ -7,6 +7,15 @@ class CMyListCtrl1;
 class CMyStatic1;
 class CMyStatic2;
 
+//视频信息
+struct stVideoInfo {
+	//ENUM_PlayType emFactoryType;//厂家编号
+	int nFactoryType;//厂家编号
+	CStatic* pWnd = 0;//播放窗口
+	long nPlayID = -1;//播放句柄
+	int nLinkType = -1;//直连/转发
+};
+
 class CApplyRecordDlg : public CDialogEx
 {
 	DECLARE_DYNAMIC(CApplyRecordDlg)
@@ -16,7 +25,6 @@ public:
 	//CApplyRecordDlg(const CApplyRecordDlg&) {} //vector<CApplyRecordDlg>需要
 	virtual ~CApplyRecordDlg();
 
-	virtual BOOL OnInitDialog();
 
 // Dialog Data
 #ifdef AFX_DESIGN_TIME
@@ -31,7 +39,8 @@ protected:
 
 	CStatic m_oVideo1;//视频
 	CStatic m_oVideo2;
-	
+	std::vector<stVideoInfo> m_vecVideoInfo;//视频信息
+
 	std::shared_ptr<CMyListCtrl1> m_oPersonInfo = 0;  //申请认证人员信息
 
 	std::shared_ptr<CMyStatic1> m_oPicDoor = 0;//门
@@ -45,9 +54,12 @@ protected:
 	std::shared_ptr<CMyStatic2> m_oConfirm = 0;//确认并关闭
 
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
+	virtual BOOL OnInitDialog();
 
 	DECLARE_MESSAGE_MAP()
 	afx_msg void OnPaint();
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	afx_msg void OnClickedEmergency();
 
 public:
 	//获取成员m_stApplyInfo
@@ -64,7 +76,8 @@ public:
 	void EnableButton(std::vector<emButton> em, bool b);
 
 
-public:
-	afx_msg void OnTimer(UINT_PTR nIDEvent);
-	afx_msg void OnClickedEmergency();
+private:
+	//申请视频
+	bool ReqVideo();
+
 };

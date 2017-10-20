@@ -140,6 +140,9 @@
     <ClCompile Include="MyLogListCtrl.cpp">
       <Filter>MyOwnDraw</Filter>
     </ClCompile>
+    <ClCompile Include="..\TjtyPlayer\LoadTJTY_Play.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="SelfServiceBankClient.rc">

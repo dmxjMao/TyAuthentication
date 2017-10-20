@@ -12,8 +12,70 @@
 #include "MyStatic2.h" //按钮
 #include "EmergencyPlanDialog.h" //应急处置
 
+//网络服务库
+#include "TYServerSDK.h"
+//解码库
+#include "LoadTJTY_Play.h"
+
+
 using std::vector;
+using std::shared_ptr;
+using std::placeholders::_1;
+
 #define IDT_Valid	1
+
+
+// 预览音视频回调
+void __stdcall RealPlayDataCallBack(long lHandle, DWORD dwDataType, BYTE *pBuffer,
+	DWORD dwBufSize, DWORD dwUser)
+{
+	//附件参数
+	const stVideoInfo& st = *(stVideoInfo*)dwUser;
+	bool bRet = false;
+
+	static DWORD dwBuffSize = (1024 << 10); //播放器中数据流缓冲区大小
+	static int nBuffNum = 25;//播放器缓冲区最大缓存帧数
+
+	switch (dwDataType)
+	{
+	case SYSHEAD_DATA: //系统头信息
+	{
+		bRet = TJTY_PLAY_InitplayStyle(st.nPlayID, st.nFactoryType);
+		bRet = TJTY_PLAY_SetStreamOpenMode(st.nPlayID, 0);				//设置为实时流播放，Hik，dh有效
+
+		int nHeaderSize = 40;		//海康大华等其他厂家视频头为40字节
+		if (TJTY_DVR_BSR == st.nFactoryType || TJTY_DVR_BSR7 == st.nFactoryType){//蓝星系列为256字节视频头
+			nHeaderSize = 256;
+		}
+		bRet = TJTY_PLAY_StartPlay(st.nPlayID, (BYTE*)pBuffer, nHeaderSize, dwBuffSize, st.pWnd->GetSafeHwnd(), nBuffNum);
+		if (! bRet){
+			theApp.WriteLog(warning, _T("播放视频失败！厂家id：%d"), st.nFactoryType);
+			//LOG(ERROR) << "TJTY_PLAY_StartPlay failed. Error:" << TJTY_PLAY_GetLastError(TJTY_PLAY_PORT_NUM);
+		}
+		break;
+	}
+	case AUDIO_AND_VIDEO_DATA://音视频混合数据
+	{
+		bRet = TJTY_PLAY_InputData(st.nPlayID, (BYTE*)pBuffer, dwBufSize);
+		UINT uiFailCount = 3;
+		while (!bRet && uiFailCount--)
+		{
+			//投递失败表明缓冲区已满，稍等后重新投递
+			Sleep(40);
+			bRet = TJTY_PLAY_InputData(st.nPlayID, (BYTE*)pBuffer, dwBufSize);
+			if (!bRet && uiFailCount == 0)
+			{
+				//LOG(ERROR) << "TJTY_PLAY_InputData failed. Error:" << TJTY_PLAY_GetLastError(TJTY_PLAY_PORT_NUM);
+			}
+		}
+	}
+	default:
+		break;
+	}
+
+	//回放录像
+}
+
 
 // CApplyRecordDlg dialog
 
@@ -196,6 +258,9 @@ void CApplyRecordDlg::OnPaint()
 void CApplyRecordDlg::Update()
 {
 	if (m_stApplyInfo) {
+		//请求视频
+		ReqVideo();
+
 		//计时“已失效”，N秒，点击左侧就不能这样了
 		//SetTimer(IDT_Valid, 5 * 1000, 0);
 		//点击ListBox、初始化，计算剩余时间
@@ -316,4 +381,87 @@ void CApplyRecordDlg::OnClickedEmergency()
 
 	//CEmergencyPlanDialog dlg(sp, this);
 	//dlg.DoModal();
+}
+
+
+//申请视频
+//查找节点
+bool Lambda_FindNodeByID(const shared_ptr<stNode>& st, const int id) {
+	return st->nID == id;
+}
+//查找主机
+bool Lambda_FindHostByCode(const shared_ptr<stNode>& st, const std::string& code) {
+	return st->strCode == code;
+}
+bool CApplyRecordDlg::ReqVideo()
+{
+	//从申请过来的门禁信息中拿到关联探头id
+	//在设备信息中查找对应设备信息
+	//构造申请结构，调服务库申请视频，传入窗口句柄
+	//在回调中，调解码库播放
+
+	//在申请消息过来的时候已经find过了，直接用[]
+	const auto& vecCameraID = theApp.m_mapACSHostInfo[m_stApplyInfo->strDevName]->vecAuthRelCameraID;
+	if (vecCameraID.empty()) return true; //无联动视频
+	
+	//const vector<CStatic*> vecPlayWnd = { &m_oVideo1, &m_oVideo2 };
+	m_vecVideoInfo.clear();
+	m_vecVideoInfo.resize(2);
+	m_vecVideoInfo[0].pWnd = &m_oVideo1;
+	m_vecVideoInfo[1].pWnd = &m_oVideo2;
+	//
+	const auto& vecDevInfo = theApp.m_mapNodeInfo[DeviceNode];
+	const auto& vecHostInfo = theApp.m_mapNodeInfo[HostNode];
+
+	int nCameraCnt = min(vecCameraID.size(), 2);
+
+	for (int i = 0; i < nCameraCnt/*(int)vecCameraID.size()*/; ++i) {
+		const int nCameraID = vecCameraID[i];
+
+		auto itDev = std::find_if(vecDevInfo.begin(), vecDevInfo.end(),
+			std::bind(Lambda_FindNodeByID, _1, nCameraID));
+		if (vecDevInfo.end() == itDev) {
+			theApp.WriteLog(warning, _T("没有找到摄像头！设备id：%d"), nCameraID);
+			continue;
+		}
+		const shared_ptr<stDevice>& spDevInfo = (shared_ptr<stDevice>&)(*itDev);
+
+		//构造申请预览结构
+		T_VIEW_APPLYINFO tViewInfo = { 0 };
+		tViewInfo.TDEVIDInfo.lDEVID = nCameraID;
+		vector<long> vecTmp = { 102,0,0,0,0 };
+		for(int i=0;i<5;++i)
+			tViewInfo.TDEVIDInfo.lCMSCascadeInfo[i] = vecTmp[i];
+		//获取级联信息 {102,0,0,0,0}
+		//memcpy(tViewInfo.TDEVIDInfo.lCMSCascadeInfo, cRequestVideoParam.m_nCMSId, sizeof(long)*MAX_CASCADE);
+		tViewInfo.nStreamType = STREAM_TYPE_DEF; //标清
+		tViewInfo.nViewMode = 0;	// 普通预览
+		tViewInfo.nChannel = spDevInfo->nChnlNo;
+
+		//int nLinkType = -1;
+		T_DEV_LOGIN_INFO stLoginInfo;
+		//返回预览操作句柄，-1失败
+		long nPlayID = TY_Server_RequestPlay(theApp.m_oGobal->nCMSHander, &tViewInfo, m_vecVideoInfo[i].nLinkType, &stLoginInfo);
+		DWORD dwErr = TY_Server_GetLastError();
+		if (-1 == nPlayID) {
+			theApp.WriteLog(error, _T("请求预览失败！设备id：%d"), nCameraID);
+			continue;
+		}
+		m_vecVideoInfo[i].nPlayID = nPlayID;
+		//根据探头所属主机编码，查找厂家类型
+		auto itHost = std::find_if(vecHostInfo.begin(), vecHostInfo.end(),
+			std::bind(Lambda_FindHostByCode, _1, spDevInfo->strFatherCode));
+		//找不到探头之前就continue了，这里肯定能找到
+		const shared_ptr<stHost>& spHostInfo = (shared_ptr<stHost>&)(*itHost);
+		m_vecVideoInfo[i].nFactoryType = spHostInfo->nFactoryType;
+
+		//开始预览，只有采用了经媒体转发的方式才调用该方法，直连要使用网络库
+		int nRet = TY_Server_StartPlay(nPlayID, RealPlayDataCallBack, (DWORD)&m_vecVideoInfo[i]);
+		if (nRet != 0) {//0成功，其他失败
+			theApp.WriteLog(error, _T("开始预览失败！设备id：%d"), nCameraID);
+			continue;
+		}
+	}
+
+	return true;
 }

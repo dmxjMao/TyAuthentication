@@ -518,11 +518,22 @@ void CSelfServiceBankClientDlg::ZCMsgAuthentication(PBYTE pMsg, DWORD dwMsgID, I
 	CString strAuthMemo(pAuthInfo->tTransmitAlarmInfo.tAlarmInfo.chMemo);
 	theApp.WriteLog(trace, _T("收到刷卡认证信息：%s"), strAuthMemo);
 
+	//解析刷卡信息：字串分段：是否合法 | 卡号 | 身份证， "0"--非法，"1"--合法，“2”--无权限
+	vector<CString> vecMemo;
+	SplitString(strAuthMemo, _T('|'), vecMemo);
+	assert(vecMemo.size() >= 2);
+
+	//根据卡号判断是否需要处理这条申请，比如：1）已申请过了
+	if (!IfDealTheApplyMsg(vecMemo[1])) {
+		theApp.WriteLog(warning, _T("重复申请！"));
+		return;
+	}
+
 	//门禁信息
-	int nDevNo = pAuthInfo->tTransmitAlarmInfo.nDevNumber; //刷卡设备id
+	int nDevID = pAuthInfo->tTransmitAlarmInfo.nDevNumber; //刷卡设备id
 	const auto& mapACSHostInfo = theApp.m_mapACSHostInfo;
 	auto itACSHost = std::find_if(mapACSHostInfo.begin(), mapACSHostInfo.end(),
-		std::bind(lambda_FindACSHostByDevNo, _1, nDevNo)); //itACSHost是一个pair
+		std::bind(lambda_FindACSHostByDevNo, _1, nDevID)); //itACSHost是一个pair
 	if (mapACSHostInfo.end() == itACSHost) {
 		theApp.WriteLog(error, _T("没有找到门禁主机！"));
 		return;
@@ -535,21 +546,19 @@ void CSelfServiceBankClientDlg::ZCMsgAuthentication(PBYTE pMsg, DWORD dwMsgID, I
 	auto& spApplyPersonInfo = spApplyInfo->stPersonInfo;
 
 	spApplyInfo->nImportance = pHostInfo->nCtrlLevel;//管控等级
-	//管控策略配了 1人刷卡， 而门禁信息是从门禁刷卡，按配置来
+	//spApplyInfo->nDevID = nDevID;//刷卡设备id
+	spApplyInfo->strDevName = itACSHost->first; //刷卡设备名称
+
+	//管控策略
 	const auto& stCtrlPlan = theApp.m_mapCtrlPlan[pHostInfo->nCtrlLevel];
 	spApplyInfo->nSlave = pHostInfo->nSlave;//是否主从刷卡
 	
-	//解析刷卡信息：字串分段：是否合法 | 卡号 | 身份证      "0"--非法，"1"--合法，“2”--无权限
-	vector<CString> vecMemo;
-	SplitString(strAuthMemo, _T('|'), vecMemo);
-	assert(vecMemo.size() >= 2);
-
 	//卡的类别
 	spApplyPersonInfo->nCardType = _ttoi(vecMemo[0]);
 
-	//管辖人员信息
+	//管辖人员vector
 	const auto& vecCtrlPInfo = theApp.m_vecCtrlPersonInfo;
-	//没有身份证信息？现已改为用卡号了
+
 	auto itCtrlPInfo = std::find_if(vecCtrlPInfo.begin(), vecCtrlPInfo.end(),
 		std::bind(lambda_FindCtrlInfoByCardID, _1, vecMemo[1]));
 	if (vecCtrlPInfo.end() == itCtrlPInfo) {
@@ -557,14 +566,9 @@ void CSelfServiceBankClientDlg::ZCMsgAuthentication(PBYTE pMsg, DWORD dwMsgID, I
 		return;
 	}
 	const auto& stCtrlPInfo = *itCtrlPInfo;//管辖人员信息
+	
 	CTime tmApply = ZCMsgHelper_ParseTime(pAuthInfo->tTransmitAlarmInfo.chAlarmDateTime);
-	//判断是否需要处理这条申请，比如：1）已申请过了
-	if (!IfDealTheApplyMsg(vecMemo[1])) {
-		theApp.WriteLog(warning, _T("重复申请！"));
-		return;
-	}
-
-	spApplyPersonInfo->stPersonInfo = stCtrlPInfo;//刷卡人员信息
+	spApplyPersonInfo->stPersonInfo = stCtrlPInfo;
 	spApplyInfo->strWebSiteName = pAuthInfo->tTransmitAlarmInfo.chArea;//网点
 	spApplyInfo->strPartName = pAuthInfo->tTransmitAlarmInfo.chKeyPart;//部位
 	spApplyPersonInfo->tmApply = spApplyInfo->tmApply = std::move(tmApply);//申请时间
