@@ -122,7 +122,7 @@ void CMyListBox1::DrawItem(LPDRAWITEMSTRUCT lpDis/*lpDrawItemStruct*/)
 	CClientDC dc(this);
 	
 	UINT idx = lpDis->itemID;
-	if (idx != (UINT)-1) {//空列表框会收到-1
+	if (idx != (UINT)-1/* && (idx < m_vecApplyInfo.size())*/) {//空列表框会收到-1
 		Graphics gh(dc.GetSafeHdc());
 
 		const CRect& rc = lpDis->rcItem;
@@ -349,14 +349,14 @@ bool Lambda_FindApplyInfo(const std::shared_ptr<stApplyInfo>& st, const CString&
 void CMyListBox1::MyInsertString(const std::shared_ptr<stApplyInfo>& st)
 {
 	
-	if (st->nSlave > -1) {//多人刷卡
-		//查找是否有该网点、部位的刷卡信息
-		auto it = std::find_if(m_vecApplyInfo.begin(), m_vecApplyInfo.end(),
-			std::bind(Lambda_FindApplyInfo, _1, st->strWebSiteName, st->strPartName));
-		if (m_vecApplyInfo.end() != it) {
-			return;
-		}
-	}
+	//if (st->nSlave > -1) {//多人刷卡
+	//	//查找是否有该网点、部位的刷卡信息
+	//	auto it = std::find_if(m_vecApplyInfo.begin(), m_vecApplyInfo.end(),
+	//		std::bind(Lambda_FindApplyInfo, _1, st->strWebSiteName, st->strPartName));
+	//	if (m_vecApplyInfo.end() != it) {
+	//		return;
+	//	}
+	//}
 		
 
 	//找到t应该在m_spVecItemData中的索引
@@ -366,8 +366,9 @@ void CMyListBox1::MyInsertString(const std::shared_ptr<stApplyInfo>& st)
 		std::bind(Lambda_InsertString, _1, st));
 	
 	if (m_vecApplyInfo.end() == it) {
-		InsertString(m_vecApplyInfo.size(), st->strWebSiteName);
 		m_vecApplyInfo.push_back(st);
+		//InsertString触发DrawItem，DrawItem使用数据
+		InsertString(m_vecApplyInfo.size() - 1, st->strWebSiteName);
 	}
 	else {
 		int idx = std::distance(m_vecApplyInfo.begin(), it);
@@ -382,7 +383,7 @@ void CMyListBox1::OnLbnSelchange()
 	//中介者，各控件之间的关系
 	//获取所选item内容-》传给中介，中介获取右侧第一行信息排序
 	int nSel = GetCurSel();
-	//点击空白，nSel = -1
+	//点击空白，nSel = -1;
 	if (nSel < 0) return;
 	const auto& st = m_vecApplyInfo[nSel];
 	m_oMediator->DisplayDetail(st); //m_oMediator=0xcccc竟然也能进去，所以m_li崩溃

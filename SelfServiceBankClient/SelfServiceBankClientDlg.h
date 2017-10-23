@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#include "afxwin.h"
 
 //class CLogDialog;
 
@@ -14,6 +15,8 @@ class CApplyRecordDlg;
 
 using tplMultiApplyInfo = std::tuple<std::shared_ptr<stApplyInfo>, std::shared_ptr<stApplyInfo>,
 	std::shared_ptr<stApplyInfo>, std::shared_ptr<stApplyInfo>>; //多人刷卡信息结构
+
+																 //视频信息
 
 class CSelfServiceBankClientDlg : public CDialogEx, public CZCMsgObserver
 {
@@ -87,6 +90,11 @@ private:
 
 #endif // DEBUG
 
-protected:
-	CStatic m_oDemoVideo;//demo获取视频
+public:
+//	CStatic m_oDemoVideo;
+//demo获取视频
+	CStatic m_demoVideo;
+public:
+	afx_msg void OnBnClickedButton1();
+	afx_msg void OnDblclkDemovideo();
 };

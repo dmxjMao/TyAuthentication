@@ -37,6 +37,8 @@ namespace keywords = logging::keywords;
 namespace expr = boost::log::expressions;
 using namespace logging::trivial;
 
+using std::vector;
+using std::tuple;
 using std::shared_ptr;
 using std::make_shared;
 using std::placeholders::_1;
@@ -147,6 +149,8 @@ int CSelfServiceBankClientApp::ExitInstance()
 {
 	//内存检查
 	_CrtDumpMemoryLeaks();
+
+	int nRet = TY_Server_LogOutCMS(m_oGobal->nCMSHander);//0成功
 	TY_Server_Cleanup();
 
 	return CWinApp::ExitInstance();
@@ -299,8 +303,8 @@ void CSelfServiceBankClientApp::ZCMsgUserDetailInfo(PBYTE pMsg, DWORD dwMsgID, I
 		//获取操作句柄
 		TJTY_TIME stTjtyTime = { 0 };
 		T_CLIENT_USERINFO stCMSUseInfo = { 0 };
-		memcpy(stCMSUseInfo.chUserName, pInfo->chUserName, _countof(stCMSUseInfo.chUserName));
-		memcpy(stCMSUseInfo.chUserPwd, "ty123456", _countof(stCMSUseInfo.chUserPwd));
+		memcpy(stCMSUseInfo.chUserName, /*pInfo->chUserName*/"configclient", _countof(stCMSUseInfo.chUserName));
+		memcpy(stCMSUseInfo.chUserPwd, "360", _countof(stCMSUseInfo.chUserPwd));
 		//memcpy(stCMSUseInfo.chUserPwd, pInfo->chPassword, _countof(stCMSUseInfo.chUserPwd));
 		stCMSUseInfo.nClientType = TJTY_SOFT_EMAP;//普通用户
 		m_oGobal->nCMSHander = TY_Server_LogInCMS("192.168.2.65", 4000, &stCMSUseInfo, &stTjtyTime);
@@ -609,11 +613,11 @@ void CSelfServiceBankClientApp::ZCMsgDoorRelationInfo(PBYTE pMsg, DWORD dwMsgID,
 	CString strName(pInfo->chUserName);
 	if (strName != m_strCurUserName)
 		return;
-	auto& sp = m_mapUserInfo[m_strCurUserName]->pVecACSHostID;
+	auto& sp = m_mapUserInfo[m_strCurUserName]->pDealedACSHost;
 	if (0 == sp) {
-		sp = make_shared<std::vector<int>>();
+		sp = make_shared<vector<USERDOORCAMERARELATION_CLIENT_GET_S>>();
 	}
-	sp->push_back(pInfo->nDoorId);
+	sp->push_back(std::move(*pInfo));
 
 	pInfo = 0;
 	ZCMsgMacro_endfor
@@ -808,6 +812,9 @@ void __stdcall CSelfServiceBankClientApp::ServerExcepCallBack(U_LONG_TY dwExcept
 	{
 		//网络问题，如掉线；超时未发送心跳包，如调试；
 		theApp.WriteLog(error, _T("ServerSDK异常回调：用户交互异常！"));
+
+		//重新登录
+
 	}
 	else if (REALPLAY_ERR == dwExceptMsg)
 	{

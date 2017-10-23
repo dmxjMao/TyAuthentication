@@ -13,7 +13,11 @@ struct stVideoInfo {
 	int nFactoryType;//厂家编号
 	CStatic* pWnd = 0;//播放窗口
 	long nPlayID = -1;//播放句柄
-	int nLinkType = -1;//直连/转发
+	int nLinkType = 1;//直连/转发
+	UINT8 nWndNo = 1;//播放窗口号
+
+	int nDevID = -1;//探头所在设备id
+	int nChnlNo = -1;//通道号
 };
 
 class CApplyRecordDlg : public CDialogEx
@@ -39,7 +43,6 @@ protected:
 
 	CStatic m_oVideo1;//视频
 	CStatic m_oVideo2;
-	std::vector<stVideoInfo> m_vecVideoInfo;//视频信息
 
 	std::shared_ptr<CMyListCtrl1> m_oPersonInfo = 0;  //申请认证人员信息
 
@@ -65,19 +68,17 @@ public:
 	//获取成员m_stApplyInfo
 	inline const std::shared_ptr<stApplyInfo>& 
 		GetApplyInfo() const { return m_stApplyInfo; }
-	inline void SetApplyInfo(const std::shared_ptr<stApplyInfo>& st) {
-		m_stApplyInfo = st; 
-	}
+	void SetApplyInfo(const std::shared_ptr<stApplyInfo>& st, bool bAdd = false);
 	//设置对话框在父窗口中的区域，因为Create->OnInitDialog->SetWindowPos
 	inline void SetRectInParent(const CRect& rc) { m_rcInParent = rc; }
 	//刷新显示
 	void Update();
 	//按钮灰化/可用处理，改为按钮
 	void EnableButton(std::vector<emButton> em, bool b);
-
-
-private:
 	//申请视频
 	bool ReqVideo();
 
+public:
+	std::vector<stVideoInfo> m_vecVideoInfo;//视频信息
+	afx_msg void OnDblclkVideo1();
 };

@@ -19,6 +19,12 @@
 #define new DEBUG_NEW
 #endif
 
+//网络服务库
+#include "TYServerSDK.h"
+//解码库
+#include "LoadTJTY_Play.h"
+
+stVideoInfo g_stVideInfo;
 
 namespace {
 	using std::vector;
@@ -113,7 +119,8 @@ CSelfServiceBankClientDlg::CSelfServiceBankClientDlg(CWnd* pParent /*=NULL*/)
 
 CSelfServiceBankClientDlg::~CSelfServiceBankClientDlg()
 {
-	
+	//TJTY_PLAY_StopPlay(g_stVideInfo.nPlayID);
+	//TY_Server_StopPlay(g_stVideInfo.nPlayID, g_stVideInfo.nLinkType);
 }
 
 void CSelfServiceBankClientDlg::DoDataExchange(CDataExchange* pDX)
@@ -122,7 +129,8 @@ void CSelfServiceBankClientDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_CloseWindow, *m_oCloseWindow);
 	//  DDX_Control(pDX, IDC_ApplyList, m_oApplyList);
 	//DDX_Control(pDX, IDC_ApplyList, m_oApplyList);
-	DDX_Control(pDX, IDC_demoVideo, m_oDemoVideo);
+	//  DDX_Control(pDX, IDC_demoVideo, m_oDemoVideo);
+	DDX_Control(pDX, IDC_demoVideo, m_demoVideo);
 }
 
 BEGIN_MESSAGE_MAP(CSelfServiceBankClientDlg, CDialogEx)
@@ -131,6 +139,8 @@ BEGIN_MESSAGE_MAP(CSelfServiceBankClientDlg, CDialogEx)
 	//ON_WM_QUERYDRAGICON()
 	ON_STN_CLICKED(IDC_CloseWindow, &CSelfServiceBankClientDlg::OnStnClickedClosewindow)
 	ON_WM_LBUTTONDOWN()
+	ON_BN_CLICKED(IDC_BUTTON1, &CSelfServiceBankClientDlg::OnBnClickedButton1)
+	ON_STN_DBLCLK(IDC_demoVideo, &CSelfServiceBankClientDlg::OnDblclkDemovideo)
 END_MESSAGE_MAP()
 
 
@@ -221,7 +231,7 @@ BOOL CSelfServiceBankClientDlg::OnInitDialog()
 
 #ifdef DEBUG
 	//demo视频
-	m_oDemoVideo.SetWindowPos(0, m_rcRecord.left + 10, m_rcRecord.top + 100, 200, 200, SWP_NOZORDER);
+	m_demoVideo.SetWindowPos(0, m_rcRecord.left + 10, m_rcRecord.top + 100, 200, 200, SWP_NOZORDER);
 
 #endif // DEBUG
 
@@ -392,7 +402,7 @@ void CSelfServiceBankClientDlg::MyInsertRecord(const shared_ptr<stApplyInfo>& st
 		auto itDlg = m_vecApplyRecordDlg.begin();
 		std::advance(itDlg, i);
 		if (nullptr == *it) {//空记录
-			(*itDlg)->SetApplyInfo(st);
+			(*itDlg)->SetApplyInfo(st, true);
 			(*itDlg)->Update();
 		}
 		else {//替换更晚的申请
@@ -403,7 +413,7 @@ void CSelfServiceBankClientDlg::MyInsertRecord(const shared_ptr<stApplyInfo>& st
 				auto& dlg = m_vecApplyRecordDlg[i];
 				if (vec[i] == dlg->GetApplyInfo())
 					continue;
-				dlg->SetApplyInfo(vec[i]);
+				dlg->SetApplyInfo(vec[i], true);
 				dlg->Update();
 			}
 		}
@@ -546,7 +556,7 @@ void CSelfServiceBankClientDlg::ZCMsgAuthentication(PBYTE pMsg, DWORD dwMsgID, I
 	auto& spApplyPersonInfo = spApplyInfo->stPersonInfo;
 
 	spApplyInfo->nImportance = pHostInfo->nCtrlLevel;//管控等级
-	//spApplyInfo->nDevID = nDevID;//刷卡设备id
+	spApplyInfo->nDevID = nDevID;//刷卡设备id
 	spApplyInfo->strDevName = itACSHost->first; //刷卡设备名称
 
 	//管控策略
@@ -601,4 +611,122 @@ bool CSelfServiceBankClientDlg::IfDealTheApplyMsg(const CString& strCardNum/*, c
 	}
 	//失效自动删除，已放入删除队列里了
 	return false;
+}
+
+
+
+
+
+// 预览音视频回调
+void __stdcall RealPlayDataCallBack2(long lHandle, DWORD dwDataType, BYTE *pBuffer,
+	DWORD dwBufSize, DWORD dwUser)
+{
+	//附件参数
+	//CSelfServiceBankClientDlg* pDlg = (CSelfServiceBankClientDlg*)dwUser;
+	const stVideoInfo& st = g_stVideInfo;
+	bool bRet = false;
+
+	static DWORD dwBuffSize = (1024 << 10); //播放器中数据流缓冲区大小
+	static int nBuffNum = 25;//播放器缓冲区最大缓存帧数
+	static UINT8 nWndNo = 1;  //用st.nPlayID还不行
+
+	switch (dwDataType)
+	{
+	case SYSHEAD_DATA: //系统头信息
+	{
+		bRet = TJTY_PLAY_InitplayStyle(nWndNo, st.nFactoryType);
+		bRet = TJTY_PLAY_SetStreamOpenMode(nWndNo, 0);				//设置为实时流播放，Hik，dh有效
+
+		int nHeaderSize = 40;		//海康大华等其他厂家视频头为40字节
+		if (TJTY_DVR_BSR == st.nFactoryType || TJTY_DVR_BSR7 == st.nFactoryType) {//蓝星系列为256字节视频头
+			nHeaderSize = 256;
+		}
+		bRet = TJTY_PLAY_StartPlay(nWndNo, (BYTE*)pBuffer, nHeaderSize, dwBuffSize, st.pWnd->GetSafeHwnd(), nBuffNum);
+		if (!bRet) {
+			theApp.WriteLog(warning, _T("播放视频失败！厂家id：%d"), st.nFactoryType);
+			//LOG(ERROR) << "TJTY_PLAY_StartPlay failed. Error:" << TJTY_PLAY_GetLastError(TJTY_PLAY_PORT_NUM);
+		}
+		break;
+	}
+	case AUDIO_AND_VIDEO_DATA://音视频混合数据
+	{
+		bRet = TJTY_PLAY_InputData(nWndNo, (BYTE*)pBuffer, dwBufSize);
+		UINT uiFailCount = 3;
+		while (!bRet && uiFailCount--)
+		{
+			//投递失败表明缓冲区已满，稍等后重新投递
+			Sleep(40);
+			bRet = TJTY_PLAY_InputData(nWndNo, (BYTE*)pBuffer, dwBufSize);
+			if (!bRet && uiFailCount == 0)
+			{
+				//LOG(ERROR) << "TJTY_PLAY_InputData failed. Error:" << TJTY_PLAY_GetLastError(TJTY_PLAY_PORT_NUM);
+			}
+		}
+	}
+	default:
+		break;
+	}
+
+	//回放录像
+}
+
+
+void CSelfServiceBankClientDlg::OnBnClickedButton1()
+{
+	if (g_stVideInfo.pWnd)
+		return;
+
+	//构造申请预览结构
+	T_VIEW_APPLYINFO tViewInfo = { 0 };
+	tViewInfo.TDEVIDInfo.lDEVID = 8; //天跃，枪机3
+	//vector<long> vecTmp = { itDealHost->nCenterNo,0,0,0,0 };
+	//for(int i=0;i<5;++i)
+	tViewInfo.TDEVIDInfo.lCMSCascadeInfo[0] = 102;
+	tViewInfo.nStreamType = TJTY_SOFT_EMAP; //标清
+	tViewInfo.nViewMode = 0;	// 普通预览
+	tViewInfo.nChannel = 3;
+
+	int nLinkType = -1;
+	T_DEV_LOGIN_INFO stLoginInfo;
+	//返回预览操作句柄，-1失败，TY_Server都是同步的，狂点按钮导致界面卡死
+	long nPlayID = TY_Server_RequestPlay(theApp.m_oGobal->nCMSHander, &tViewInfo, nLinkType, &stLoginInfo);
+	DWORD dwErr = TY_Server_GetLastError();
+	if (-1 == nPlayID) {
+		theApp.WriteLog(error, _T("请求预览失败！设备id：%d"), 8);
+		return;
+	}
+
+	//static stVideoInfo vi;
+	g_stVideInfo.nPlayID = nPlayID;
+	g_stVideInfo.pWnd = &m_demoVideo;
+	g_stVideInfo.nLinkType = nLinkType;
+	g_stVideInfo.nFactoryType = 1;
+
+	//开始预览，只有采用了经媒体转发的方式才调用该方法，直连要使用网络库
+	int nRet = TY_Server_StartPlay(nPlayID, RealPlayDataCallBack2, 0);
+	if (nRet != 0) {//0成功，其他失败
+		theApp.WriteLog(error, _T("开始预览失败！设备id：%d"), 8);
+		return;
+	}
+}
+
+
+void CSelfServiceBankClientDlg::OnDblclkDemovideo()
+{
+	static bool bZoom = false;
+	CRect rc;
+	m_demoVideo.GetWindowRect(&rc);
+	ScreenToClient(&rc);
+	static CRect rcOri = rc; //正常
+
+	int x = 0, y = 0, w = 0, h = 0;
+	if (bZoom) {//放大双击，缩小
+		x = rcOri.left, y = rcOri.top, w = rcOri.Width(), h = rcOri.Height();
+		bZoom = false;
+	}
+	else {
+		x = m_rcClient.left, y = m_rcClient.top, w = m_rcClient.Width(), h = m_rcClient.Height();
+		bZoom = true;
+	}
+	m_demoVideo.SetWindowPos(0, x, y, w, h, SWP_NOZORDER);
 }

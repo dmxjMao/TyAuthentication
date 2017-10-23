@@ -43,7 +43,7 @@ enum emButton {
 struct stUserInfo {
 	S_New_UserInfo stBaseInfo;//基础信息
 	T_OPENDOORPOSALINFO stDisposalInfo;//权限
-	std::shared_ptr<std::vector<int>> pVecACSHostID;//用户受理的门禁id
+	std::shared_ptr<std::vector<USERDOORCAMERARELATION_CLIENT_GET_S>> pDealedACSHost;//用户受理的门禁id及其关联的视频
 };
 
 
@@ -95,7 +95,7 @@ struct stACSHostInfo {
 	char szPlaceName[64] = { 0 };//所在场所名称
 	char szPartName[64] = { 0 };//所在部位名称
 
-	std::vector<int> vecAuthRelCameraID;//认证联动视频通道id
+	//std::vector<int> vecAuthRelCameraID;//认证联动视频通道id，非是要单独一条消息过来
 	std::vector<int> vecGrantRelCameraID;//授权联动视频通道id
 	std::vector<int> vecAuthRelTalkID;//认证关联对讲设备id
 };
@@ -161,12 +161,12 @@ struct stApplyInfo {
 	CString strWebSiteName;//申请网点
 	CString strPartName;//申请部位
 	int nImportance = -1;//重要程度（管控等级）
-	//int nDevID = -1;//刷卡设备
+	int nDevID = -1;//刷卡设备
 	CString strDevName;//刷卡设备名称
 	UINT8 nSlave = -1;//是否主从门禁刷卡：-1无，0主，1从
 	//CString strMode;//刷卡模式：(如:XX人刷卡+中心授权)
 	CTime tmApply;//申请认证时间，CString不好转CTime
-	//两路视频
+	//std::vector<std::tuple<>>//两路视频
 	//stApplyPersonInfo stPersonInfo;//申请人员信息
 	//std::vector<std::shared_ptr<stApplyPersonInfo>> vecPersonInfo;//申请人员信息
 	std::shared_ptr<stApplyPersonInfo> stPersonInfo;//申请人员信息
