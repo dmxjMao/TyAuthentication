@@ -206,6 +206,7 @@
     <ClInclude Include="Resource.h" />
     <ClInclude Include="SelfServiceBankClient.h" />
     <ClInclude Include="SelfServiceBankClientDlg.h" />
+    <ClInclude Include="MyState.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="ZCMsgManager.h" />
@@ -227,6 +228,7 @@
     <ClCompile Include="MyStatic3.cpp" />
     <ClCompile Include="SelfServiceBankClient.cpp" />
     <ClCompile Include="SelfServiceBankClientDlg.cpp" />
+    <ClCompile Include="MyState.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

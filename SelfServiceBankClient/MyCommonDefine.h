@@ -31,7 +31,15 @@ enum emButton {
 	emButtonBuff
 };
 
-
+/*认证状态
+*/
+enum emAuthState {
+	Dealing,//处理中
+	Verify,//待审核
+	Dealed,//已处理
+	Invalid,//已失效
+	emAuthStateBuff
+};
 
 /*结构体
 */
@@ -64,16 +72,16 @@ struct stCtrlPlanInfo {
 	UINT8 nDoor1Num = 1;//识别一  人数
 	UINT8 nDoor2Type = 2;//认证识别二  1-指纹、  2-刷卡
 	UINT8 nDoor2Num = 1;//识别二 人数
-	UINT8 nRecType = -1;//录像方式 1-主通道、2-全通道
+	UINT8 nRecType = 0;//录像方式 1-主通道、2-全通道
 	UINT8 nPreRecTime = 30;//预录时长
 	UINT8 nRecTime = 60;//录像时长
 	UINT8 nCapType = -1;//抓图方式  1-主通道、2-全通道
 	UINT8 nCapDur = 5;//抓图间隔
 	UINT8 nCapTime = 60;//抓图时长
-	int nEMPlanID = -1;//预案ID
+	int nEMPlanID = 0;//预案ID
 	UINT8 bEMPlanStep = 2;//预案按步执行    1-是      2-否
-	UINT8 nOpenGrantType = -1;//开门授权    1-刷卡    2-密码
-	UINT8 nSuperGrantType = -1;//上级授权    1-刷卡    2-密码
+	UINT8 nOpenGrantType = 0;//开门授权    1-刷卡    2-密码
+	UINT8 nSuperGrantType = 0;//上级授权    1-刷卡    2-密码
 	//排班核对    1-是      2-否
 	UINT8 bApproval = 2;//允许特批    1-是      2-否
 	UINT8 bFCGrant = 2;//首卡授权    1-是      2-否
@@ -158,7 +166,7 @@ struct stApplyPersonInfo {
 多人模式下，同一个网点（场所），同一个部位代表同一个申请
 */
 struct stApplyInfo {
-	CString strWebSiteName;//申请网点
+	CString strWebSiteName;//申请网点（区域）
 	CString strPartName;//申请部位
 	int nImportance = -1;//重要程度（管控等级）
 	int nDevID = -1;//刷卡设备

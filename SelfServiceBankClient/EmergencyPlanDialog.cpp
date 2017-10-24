@@ -27,13 +27,7 @@ namespace{
 IMPLEMENT_DYNAMIC(CEmergencyPlanDialog, CDialogEx)
 
 CEmergencyPlanDialog::CEmergencyPlanDialog(CWnd* pParent /*=NULL*/)
-	: CDialogEx(IDD_EmergencyPlan, pParent)
-{
-
-}
-
-CEmergencyPlanDialog::CEmergencyPlanDialog(const std::shared_ptr<std::vector<stEmergPlan>>& sp, CWnd* pParent)
-	: m_vecEmergPlan(sp), m_pParent(pParent), CDialogEx(IDD_EmergencyPlan, pParent)
+	: CDialogEx(IDD_EmergencyPlan, pParent), m_pParent(pParent)
 {
 	std::shared_ptr<Image> sp1(Image::FromFile(_T("res\\预案_灰色圆圈.png")));
 	m_img1 = std::move(sp1);
@@ -46,6 +40,21 @@ CEmergencyPlanDialog::CEmergencyPlanDialog(const std::shared_ptr<std::vector<stE
 	m_oOther = std::make_shared<CMyButton1>();
 	m_oSubmit = std::make_shared<CMyButton1>();
 }
+//
+//CEmergencyPlanDialog::CEmergencyPlanDialog(const std::vector<std::shared_ptr<stEmergPlan>>& vec, CWnd* pParent)
+//	: m_vecEmergPlan(sp), m_pParent(pParent), CDialogEx(IDD_EmergencyPlan, pParent)
+//{
+//	std::shared_ptr<Image> sp1(Image::FromFile(_T("res\\预案_灰色圆圈.png")));
+//	m_img1 = std::move(sp1);
+//	std::shared_ptr<Image> sp2(Image::FromFile(_T("res\\预案_背景常态.png")));
+//	m_img2 = std::move(sp2);
+//
+//	//关闭按钮、预案名称、其他预案、提交按钮
+//	m_oCloseWindow = std::make_shared<CMyStatic1>();
+//	m_oName = std::make_shared<CMyStatic3>();
+//	m_oOther = std::make_shared<CMyButton1>();
+//	m_oSubmit = std::make_shared<CMyButton1>();
+//}
 
 CEmergencyPlanDialog::~CEmergencyPlanDialog()
 {
@@ -115,13 +124,14 @@ BOOL CEmergencyPlanDialog::OnInitDialog()
 	m_oCloseWindow->Set(_T("res\\标题栏关闭常态.png"), _T("res\\标题栏关闭悬停.png"), false);
 	//m_oCloseWindow->SetWindowPos(0, rc.left, rc.top, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 
-	//没有预案
-	if (!m_vecEmergPlan || m_vecEmergPlan->empty())
-		return FALSE;
+	
+	const auto& vecPlan = theApp.m_vecEMPlanInfo;
+	if (vecPlan.empty())
+		return FALSE;//没有预案
 
 	//预案名称
 	//m_oName = std::make_shared<CMyStatic3>();
-	auto& stPlan = m_vecEmergPlan->at(0); //默认第一条
+	auto& stPlan = vecPlan[0]; //默认第一条
 	GetClientRect(&rc);
 	//x = rc.left, y = cstnCaptionH + 5;
 	//w = rc.left + rc.Width() / 3, h = 2 * cstnCaptionH + 5;
@@ -174,8 +184,8 @@ void CEmergencyPlanDialog::OnPaint()
 	PointF pf(0.0f, 2.0f);
 	gh.DrawString(_T("应急预案"), -1, &font, pf, &sbrText);
 
-
-	if (!m_vecEmergPlan || m_vecEmergPlan->empty()) {//没有预案
+	const auto& vecPlan = theApp.m_vecEMPlanInfo;
+	if (vecPlan.empty()) {//没有预案
 		sbrText.SetColor(Color(255, 0, 0));
 		pf.Y = cstnCaptionH + 1;
 		gh.DrawString(_T("没有预案信息！"), -1, &font, pf, &sbrText);
@@ -259,11 +269,12 @@ void CEmergencyPlanDialog::OnBtnClickedOtherEMPlan()
 
 	
 	if (bCreate) {
+		const auto& vecPlan = theApp.m_vecEMPlanInfo;
 		m_oOtherLB->ResetContent();//清空
-		int nCnt = (int)m_vecEmergPlan->size();
+		int nCnt = (int)vecPlan.size();
 		for (int i = 0; i < nCnt; ++i) {
-			const auto& st = m_vecEmergPlan->at(i);
-			m_oOtherLB->AddString(st.strPlanName);
+			const auto& st = vecPlan[i];
+			m_oOtherLB->AddString(st->strPlanName);
 			m_oOtherLB->SetItemData(i, (DWORD_PTR)&st);
 		}
 		m_oOtherLB->ShowWindow(SW_NORMAL);
@@ -275,21 +286,21 @@ void CEmergencyPlanDialog::OnBtnClickedOtherEMPlan()
 void CEmergencyPlanDialog::OnOtherEMPlanSelchange()
 {
 	int nSel = m_oOtherLB->GetCurSel();
-	stEmergPlan& st = *(stEmergPlan*)m_oOtherLB->GetItemData(nSel);
-	DrawEMPlanStep(st);
+	std::shared_ptr<stEmergPlan>* st = (std::shared_ptr<stEmergPlan>*)m_oOtherLB->GetItemData(nSel);
+	DrawEMPlanStep(*st);
 }
 
 
-void CEmergencyPlanDialog::DrawEMPlanStep(const stEmergPlan& stPlan)
+void CEmergencyPlanDialog::DrawEMPlanStep(const std::shared_ptr<stEmergPlan>& stPlan)
 {
 	CString str;
 	m_oName->GetWindowText(str);
-	if (str == stPlan.strPlanName)
+	if (str == stPlan->strPlanName)
 		return;
-	m_oName->SetWindowText(stPlan.strPlanName);
+	m_oName->SetWindowText(stPlan->strPlanName);
 	m_oName->Invalidate(); //自绘就是麻烦
 
-	int nStepCnt = (int)stPlan.vecStep.size();
+	int nStepCnt = (int)stPlan->vecStep.size();
 	CRect rc;
 	m_oName->GetWindowRect(&rc);
 	ScreenToClient(&rc);
@@ -304,7 +315,7 @@ void CEmergencyPlanDialog::DrawEMPlanStep(const stEmergPlan& stPlan)
 		rc.SetRect(x, y + i*h, x + w, y + (i + 1)*h);
 		auto& btn = m_vecStep[i];
 		btn = std::make_shared<CMyButton2>(m_img1, m_img2);
-		const auto& step = stPlan.vecStep[i];
+		const auto& step = stPlan->vecStep[i];
 		btn->Create(step.strName, WS_CHILD | WS_VISIBLE | BS_OWNERDRAW /*| BS_NOTIFY*/,
 			rc, this, IDC_EMPlanStep + i);
 		//btn->SetWindowPos(0, x, y, w, h, SWP_NOZORDER);

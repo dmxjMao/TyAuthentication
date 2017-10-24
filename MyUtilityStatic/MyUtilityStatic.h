@@ -12,7 +12,7 @@ delete (p); (p) = nullptr;	\
 template<typename T>
 inline std::shared_ptr<BYTE> MyStructToPBYTE(const T& var) {
 	PBYTE pBuf = new BYTE[sizeof(T)];
-	memset(pBuf, &var, sizeof(T));
+	memcpy(pBuf, &var, sizeof(T));
 
 	return std::shared_ptr<BYTE>(pBuf);
 }

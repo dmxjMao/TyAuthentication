@@ -85,6 +85,8 @@ private:
 	CTime ZCMsgHelper_ParseTime(const char*);
 	//是否处理申请
 	bool IfDealTheApplyMsg(const CString& strCardNum/*, const CTime& tmApply*/);
+	//开门
+	void ZCMsgOpenDoor(PBYTE, DWORD, INT);
 
 #ifdef DEBUG
 

@@ -11,17 +11,21 @@
 #include "MyStatic1.h" //门
 #include "MyStatic2.h" //按钮
 #include "EmergencyPlanDialog.h" //应急处置
+#include "MyState.h"//申请状态
 
 //网络服务库
 #include "TYServerSDK.h"
 //解码库
 #include "LoadTJTY_Play.h"
 
+#include "ZCMsgManager.h"
+
 namespace {
 	#define IDT_Valid	1
 
 	using std::vector;
 	using std::shared_ptr;
+	using std::make_shared;
 	using std::placeholders::_1;
 
 	const UINT8 cstnVideoCnt = 1;
@@ -91,16 +95,16 @@ IMPLEMENT_DYNAMIC(CApplyRecordDlg, CDialogEx)
 CApplyRecordDlg::CApplyRecordDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(IDD_ApplyRecordDlg, pParent)
 {
-	m_oPersonInfo = std::make_shared<CMyListCtrl1>();
-	m_oPicDoor = std::make_shared<CMyStatic1>();
+	m_oPersonInfo = make_shared<CMyListCtrl1>();
+	m_oPicDoor = make_shared<CMyStatic1>();
 	
-	m_oEmergency = std::make_shared<CMyStatic2>();
-	m_oGrant = std::make_shared<CMyStatic2>();
-	m_oOpen = std::make_shared<CMyStatic2>();
-	m_oEnterMapLayer = std::make_shared<CMyStatic2>();
-	m_oLock = std::make_shared<CMyStatic2>();
-	m_oRefuseOpen = std::make_shared<CMyStatic2>();
-	m_oConfirm = std::make_shared<CMyStatic2>();
+	m_oEmergency = make_shared<CMyStatic2>();
+	m_oGrant = make_shared<CMyStatic2>();
+	m_oOpen = make_shared<CMyStatic2>();
+	m_oEnterMapLayer = make_shared<CMyStatic2>();
+	m_oLock = make_shared<CMyStatic2>();
+	m_oRefuseOpen = make_shared<CMyStatic2>();
+	m_oConfirm = make_shared<CMyStatic2>();
 
 	//视频信息
 	CStatic* pWnd[] = { &m_oVideo1,&m_oVideo2 };
@@ -110,7 +114,7 @@ CApplyRecordDlg::CApplyRecordDlg(CWnd* pParent /*=NULL*/)
 		m_vecVideoInfo[i].pWnd = pWnd[i];
 	}
 	
-	//m_vecVideoInfo[1].pWnd = &m_oVideo2;
+	m_pState = make_shared<CApplyState>();
 }
 
 CApplyRecordDlg::~CApplyRecordDlg()
@@ -121,7 +125,8 @@ CApplyRecordDlg::~CApplyRecordDlg()
 		TY_Server_StopPlay(st.nPlayID, st.nLinkType);
 	}
 	
-	//
+	//解锁图层
+	CZCMsgManager::Instance()->RequestMsg(ZC_MODULE_BCBCLIENT, ZC_MSG_BCBCLIENT_ALARMPOSITION_UNLOCK);
 }
 
 void CApplyRecordDlg::DoDataExchange(CDataExchange* pDX)
@@ -147,6 +152,8 @@ BEGIN_MESSAGE_MAP(CApplyRecordDlg, CDialogEx)
 	ON_WM_TIMER()
 	ON_STN_CLICKED(IDC_Emergency, &CApplyRecordDlg::OnClickedEmergency)
 	ON_STN_DBLCLK(IDC_Video1, &CApplyRecordDlg::OnDblclkVideo1)
+	ON_STN_CLICKED(IDC_EnterMapLayer, &CApplyRecordDlg::OnStnClickedEntermaplayer)
+	ON_STN_CLICKED(IDC_Open, &CApplyRecordDlg::OnStnClickedOpen)
 END_MESSAGE_MAP()
 
 
@@ -324,10 +331,10 @@ void CApplyRecordDlg::Update()
 		const auto& stPlan = theApp.m_mapCtrlPlan[m_stApplyInfo->nImportance];
 		vector<emButton> vecDisable;
 		if (1 == stPlan->nAuthType) {
-			if (stPlan->nSuperGrantType > 0) {
+			if (stPlan->nSuperGrantType > 0) {//UINT8 = -1就是255，始终>0
 				vecDisable = { OpenDoorBtn , LockDoorBtn, RefuseOpenBtn };
 			}
-			else {
+			else { //不需要上级授权
 				vecDisable = { GrantBtn };
 			}
 		}
@@ -412,9 +419,8 @@ void CApplyRecordDlg::OnClickedEmergency()
 
 	static auto sp = std::make_shared<vector<stEmergPlan>>(vecPlan);*/
 
-
-	//CEmergencyPlanDialog dlg(sp, this);
-	//dlg.DoModal();
+	CEmergencyPlanDialog dlg(this);
+	dlg.DoModal();
 }
 
 
@@ -550,4 +556,34 @@ void CApplyRecordDlg::OnDblclkVideo1()
 		bZoom = true;
 	}
 	m_oVideo1.SetWindowPos(0, x, y, w, h, SWP_NOZORDER);
+}
+
+//进入图层
+void CApplyRecordDlg::OnStnClickedEntermaplayer()
+{
+	//char buf[64] = { 0 };  和代码页有关
+	//wcstombs_s(0, buf, _countof(buf), m_stApplyInfo->strWebSiteName.GetBuffer(), _TRUNCATE);
+	CT2A szBuf(m_stApplyInfo->strWebSiteName.GetBuffer());
+	
+	//先解锁，在进入
+	const auto& pMgr = CZCMsgManager::Instance();
+	pMgr->RequestMsg(ZC_MODULE_BCBCLIENT, ZC_MSG_BCBCLIENT_ALARMPOSITION_UNLOCK);
+	pMgr->RequestMsg(ZC_MODULE_BCBCLIENT,
+		ZC_MSG_BCBCLIENT_ALARMPOSITION, (PBYTE)(LPSTR)szBuf, /*strlen(szBuf)必须64*/64);
+}
+
+//开门
+void CApplyRecordDlg::OnStnClickedOpen()
+{
+	T_CONTROLACSHOSTPRARM st = { 0 };
+
+	CT2A szDevName(m_stApplyInfo->strDevName.GetBuffer());
+	memcpy_s(st.chAlarmSource, _countof(st.chAlarmSource), szDevName, strlen(szDevName));
+
+	st.nCmd = 2;//开门
+	auto& sp = MyStructToPBYTE(st);
+
+	CZCMsgManager::Instance()->RequestMsg(ZC_MODULE_BCBCLIENT,
+		ZC_MSG_BCBCLIENT_CONTROLACSHOST, sp.get(), sizeof(T_CONTROLACSHOSTPRARM));
+
 }

@@ -19,6 +19,9 @@
     <Filter Include="Dialog">
       <UniqueIdentifier>{c5ed822f-1b7d-4179-abb6-6e681e066db5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="State">
+      <UniqueIdentifier>{3a141466-60f9-40ee-95fa-a5f48ea6c81d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -87,6 +90,9 @@
     <ClInclude Include="MyCommonDefine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MyState.h">
+      <Filter>State</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SelfServiceBankClient.cpp">
@@ -142,6 +148,9 @@
     </ClCompile>
     <ClCompile Include="..\TjtyPlayer\LoadTJTY_Play.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MyState.cpp">
+      <Filter>State</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -15,7 +15,7 @@ class CEmergencyPlanDialog : public CDialogEx
 
 public:
 	CEmergencyPlanDialog(CWnd* pParent = NULL);   // standard constructor
-	CEmergencyPlanDialog(const std::shared_ptr<std::vector<stEmergPlan>>& sp, CWnd* pParent = NULL);
+	//CEmergencyPlanDialog(const std::vector<std::shared_ptr<stEmergPlan>>& vec, CWnd* pParent = NULL);
 	virtual ~CEmergencyPlanDialog();
 	
 
@@ -25,7 +25,7 @@ public:
 #endif
 
 protected:
-	std::shared_ptr<std::vector<stEmergPlan>> m_vecEmergPlan = nullptr;//预案信息
+	//std::shared_ptr<std::vector<std::shared_ptr<stEmergPlan>>> m_vecEmergPlan = nullptr;//预案信息
 	//控件
 	CWnd* m_pParent = nullptr; //父窗口
 	std::shared_ptr<CMyStatic3> m_oName = nullptr;//预案名
@@ -51,6 +51,6 @@ public:
 	virtual BOOL PreTranslateMessage(MSG* pMsg);//提示
 
 private:
-	void DrawEMPlanStep(const stEmergPlan& st);//画预案步骤
+	void DrawEMPlanStep(const std::shared_ptr<stEmergPlan>& st);//画预案步骤
 
 };

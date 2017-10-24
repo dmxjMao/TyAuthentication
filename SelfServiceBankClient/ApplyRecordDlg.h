@@ -6,6 +6,7 @@ struct stApplyInfo;
 class CMyListCtrl1;
 class CMyStatic1;
 class CMyStatic2;
+class CApplyState;//申请状态
 
 //视频信息
 struct stVideoInfo {
@@ -37,9 +38,10 @@ public:
 
 protected:
 	CRect m_rcInParent, m_rcClient/*, m_rcPerson*/;//在父窗口中的区域坐标、客户区域
-	//共享申请数据
-	std::shared_ptr<stApplyInfo> m_stApplyInfo = nullptr;
+	
+	std::shared_ptr<stApplyInfo> m_stApplyInfo = 0;//共享申请数据
 	//std::vector<stApplyPersonInfo> m_vecStPersonInfo;//申请认证人员信息
+	std::shared_ptr<CApplyState> m_pState = 0; //申请状态
 
 	CStatic m_oVideo1;//视频
 	CStatic m_oVideo2;
@@ -81,4 +83,6 @@ public:
 public:
 	std::vector<stVideoInfo> m_vecVideoInfo;//视频信息
 	afx_msg void OnDblclkVideo1();
+	afx_msg void OnStnClickedEntermaplayer();
+	afx_msg void OnStnClickedOpen();
 };

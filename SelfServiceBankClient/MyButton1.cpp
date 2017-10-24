@@ -72,7 +72,7 @@ void CMyButton1::OnPaint()
 	CRect rc;
 	GetClientRect(&rc);
 	Rect rcGdi(rc.left, rc.top, rc.right, rc.bottom);
-	SolidBrush sbr(Color(123, 123, 0)/*m_clrBG*/);
+	SolidBrush sbr(Color(255, 255, 255)/*m_clrBG*/);
 	gh.FillRectangle(&sbr, rcGdi);
 
 	//Ð´ÎÄ×Ö

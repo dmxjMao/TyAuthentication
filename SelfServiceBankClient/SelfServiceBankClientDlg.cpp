@@ -506,8 +506,9 @@ void CSelfServiceBankClientDlg::InitZCMsgHandler()
 {
 	//注册自己感兴趣的消息，其他不处理
 	m_mapZCMsgHandler = { /*<反馈， 处理方法>*/
-		{ ZC_MSG_ALARM_NEWALARMINFO_EX, &CSelfServiceBankClientDlg::ZCMsgAuthentication }//刷卡认证信息
+		{ ZC_MSG_ALARM_NEWALARMINFO_EX, &CSelfServiceBankClientDlg::ZCMsgAuthentication },//刷卡认证信息
 		//{ ZC_MSG_ALARM_NEWALARMINFO, &CSelfServiceBankClientDlg::ZCMsgAuthentication }//刷卡认证信息，先来这条
+		{ ZC_MSG_COMMON_CONTROLACSHOST , &CSelfServiceBankClientDlg::ZCMsgOpenDoor}//开门
 	};
 }
 
@@ -613,6 +614,12 @@ bool CSelfServiceBankClientDlg::IfDealTheApplyMsg(const CString& strCardNum/*, c
 	return false;
 }
 
+
+//开门
+void CSelfServiceBankClientDlg::ZCMsgOpenDoor(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
+{
+
+}
 
 
 
