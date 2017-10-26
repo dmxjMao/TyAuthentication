@@ -31,7 +31,8 @@ using std::placeholders::_1;
 
 IMPLEMENT_DYNAMIC(CMyListBox1, CListBox)
 
-CMyListBox1::CMyListBox1()
+CMyListBox1::CMyListBox1(CSelfServiceBankClientDlg* pMediator)
+	:m_oMediator(pMediator)
 {
 
 }
@@ -343,8 +344,9 @@ bool Lambda_InsertString(const std::shared_ptr<stApplyInfo>& st1,
 		return false;
 }
 //≤È’“…Í«Î–≈œ¢
-bool Lambda_FindApplyInfo(const std::shared_ptr<stApplyInfo>& st, const CString& webName, const CString& partName) {
-	return (st->strWebSiteName == webName && st->strPartName == partName);
+bool Lambda_FindApplyInfo(const std::shared_ptr<stApplyInfo>& stElm, 
+	const std::shared_ptr<stApplyInfo>& stDest) {
+	return (stElm == stDest);
 }
 void CMyListBox1::MyInsertString(const std::shared_ptr<stApplyInfo>& st)
 {
@@ -376,6 +378,19 @@ void CMyListBox1::MyInsertString(const std::shared_ptr<stApplyInfo>& st)
 		InsertString(idx, st->strWebSiteName);
 	}
 	//}
+}
+
+void CMyListBox1::MyDeleteString(const std::shared_ptr<stApplyInfo>& st)
+{
+	auto it = std::find_if(m_vecApplyInfo.begin(), m_vecApplyInfo.end(),
+		std::bind(Lambda_FindApplyInfo, _1, st));
+	if (m_vecApplyInfo.end() != it) {
+		return;
+	}
+
+	int idx = std::distance(m_vecApplyInfo.begin(), it);
+	m_vecApplyInfo.erase(it);
+	DeleteString(idx);
 }
 
 void CMyListBox1::OnLbnSelchange()

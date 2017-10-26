@@ -101,17 +101,21 @@ END_MESSAGE_MAP()
 CSelfServiceBankClientDlg::CSelfServiceBankClientDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(IDD_SELFSERVICEBANKCLIENT_DIALOG, pParent)
 {
+	//
+	
+	
+	
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 
 	m_vecApplyRecordDlg.resize(cstnApplyRecordCnt);
-	for (auto& sp : m_vecApplyRecordDlg) {
-		sp = std::make_shared<CApplyRecordDlg>();
+	for (int i = 0; i < cstnApplyRecordCnt; ++i) {
+		m_vecApplyRecordDlg[i] = std::make_shared<CApplyRecordDlg>(i, this);
 	}
 
 	m_oLogDlg = std::make_shared<CLogDialog>();
 
 	m_oCloseWindow = std::make_shared<CMyStatic1>();
-	m_oApplyList = std::make_shared<CMyListBox1>();
+	m_oApplyList = std::make_shared<CMyListBox1>(this);
 
 	//ZCMsg消息映射
 	InitZCMsgHandler();
@@ -213,7 +217,7 @@ BOOL CSelfServiceBankClientDlg::OnInitDialog()
 	//在笔记本上实际高度并不是m_rcList.Height()，？
 	m_oApplyList->SetWindowPos(nullptr, m_rcList.left, m_rcList.top, m_rcList.Width(), m_rcList.Height(), SWP_NOZORDER);
 	//m_oApplyList.MySetItemData(m_vecApplyInfo); //
-	m_oApplyList->Set(this);
+	//m_oApplyList->Set(this);
 
 
 	//申请认证详情对话框
@@ -290,14 +294,16 @@ void CSelfServiceBankClientDlg::OnPaint()
 	gh.DrawString(_T("门禁认证信息"), -1, &font, pf, &sbrText);
 
 	//“没有更多的认证信息” 提示
-	StringFormat sf;
-	//sf.SetAlignment(StringAlignmentCenter);//文本居中
-	//sf.SetLineAlignment(StringAlignmentCenter);//上下居中
-	RectF rcGdiF((m_rcRecord.left + 10) * 1.0f, (m_rcRecord.top+10) * 1.0f, 
-		m_rcRecord.right * 1.0f, m_rcRecord.bottom * 1.0f / 3);
-	sbrText.SetColor(Color(255, 0, 0));
-	Gdiplus::Font fontTip1(&ff, 20, FontStyleRegular, UnitPixel);
-	gh.DrawString(_T("现在没有申请认证信息！"), -1, &fontTip1, rcGdiF, &sf, &sbrText);
+	//if (0 == m_oApplyList->GetCount()) {
+	//	StringFormat sf;
+	//	//sf.SetAlignment(StringAlignmentCenter);//文本居中
+	//	//sf.SetLineAlignment(StringAlignmentCenter);//上下居中
+	//	RectF rcGdiF((m_rcRecord.left + 10) * 1.0f, (m_rcRecord.top + 10) * 1.0f,
+	//		m_rcRecord.right * 1.0f, m_rcRecord.bottom * 1.0f / 3);
+	//	sbrText.SetColor(Color(255, 0, 0));
+	//	Gdiplus::Font fontTip1(&ff, 20, FontStyleRegular, UnitPixel);
+	//	gh.DrawString(_T("现在没有申请认证信息！"), -1, &fontTip1, rcGdiF, &sf, &sbrText);
+	//}
 
 
 #ifdef _DEBUG
@@ -389,7 +395,7 @@ void CSelfServiceBankClientDlg::MyInsertRecord(const shared_ptr<stApplyInfo>& st
 	//}
 
 
-	//找st比哪个时间早，排序m_liApplyRecordDlg把坐标都换了
+	//找st比哪个时间早，排序m_liApplyRecordDlg把坐标都换了，所以不能动m_vecApplyRecordDlg
 	
 	vector<shared_ptr<stApplyInfo>> vec;
 	for (auto& st : m_vecApplyRecordDlg)
@@ -403,7 +409,7 @@ void CSelfServiceBankClientDlg::MyInsertRecord(const shared_ptr<stApplyInfo>& st
 		std::advance(itDlg, i);
 		if (nullptr == *it) {//空记录
 			(*itDlg)->SetApplyInfo(st, true);
-			(*itDlg)->Update();
+			//(*itDlg)->Update();
 		}
 		else {//替换更晚的申请
 			auto& last = *vec.rbegin();
@@ -414,76 +420,32 @@ void CSelfServiceBankClientDlg::MyInsertRecord(const shared_ptr<stApplyInfo>& st
 				if (vec[i] == dlg->GetApplyInfo())
 					continue;
 				dlg->SetApplyInfo(vec[i], true);
-				dlg->Update();
+				//dlg->Update();
 			}
 		}
 	}
-	//auto it = std::find_if(m_liApplyRecordDlg.begin(), m_liApplyRecordDlg.end(),
-	//	std::bind(Lambda_InsertRecord, _1, st));
-
-	//if (m_liApplyRecordDlg.end() != it) {
-	//	if (nullptr == it->GetApplyInfo()) {
-	//		it->SetApplyInfo(st);
-	//	}
-	//	else {
-	//		auto& lastDlg = *m_liApplyRecordDlg.rbegin();
-	//		lastDlg.SetApplyInfo(st);
-	//	}
-
-	//	//把窗口坐标都换了！改为排临时变量
-	//	m_liApplyRecordDlg.sort(Lambda_SortRecordList);
-	//	for (auto& dlg : m_liApplyRecordDlg) {
-	//		dlg.Update();
-	//	}
-	//}
-
-	//如果有：替换最后一个，并向后顺延
-	//if (m_liApplyRecordDlg.end() != it) {
-	//	//
-	//	if (nullptr == it->GetApplyInfo()) {
-	//		it->SetApplyInfo(st);
-	//		return;
-	//	}
-
-	//	//替换最后一个并显示
-	//	auto& lastDlg = m_vecApplyRecordDlg[cstnApplyRecordCnt - 1];
-	//	lastDlg.SetApplyInfo(st);
-	//	//将它移动到it所在位置
-	//	int nDis = std::distance(m_vecApplyRecordDlg.begin(), it);
-	//	CRect rc;
-	//	lastDlg.GetClientRect(&rc);
-	//	lastDlg.SetWindowPos(0, m_rcRecord.left,
-	//		m_rcRecord.top + nDis*rc.Height(), 0, 0, 
-	//		SWP_NOZORDER | SWP_NOSIZE);
-	//	//其它顺延
-	//	for (int i = cstnApplyRecordCnt - 2; i >= nDis; --i) {
-	//		auto& moveDlg = m_vecApplyRecordDlg[i];
-	//		moveDlg.SetWindowPos(0, m_rcRecord.left,
-	//			m_rcRecord.top + (i + 1)*rc.Height(), 0, 0,
-	//			SWP_NOZORDER | SWP_NOSIZE);
-	//	}
-	//	
-	//}
-	//else { //st没有比谁早
-	//	for (auto& dlg : m_vecApplyRecordDlg) {
-	//		if (nullptr == dlg.GetApplyInfo())
-	//			dlg.SetApplyInfo(st);
-	//	}
-	//}
-
-	
 }
 
-void CSelfServiceBankClientDlg::DisplayDetail(const std::shared_ptr<stApplyInfo>& st)
+void CSelfServiceBankClientDlg::DisplayDetail(const shared_ptr<stApplyInfo>& st)
 {
 	//在右侧第一行显示，原右侧第一行信息将在左侧参与排序后显示
 	//int n = m_liApplyRecordDlg.size();
 	auto& dlg = *m_vecApplyRecordDlg.begin();
 	dlg->SetApplyInfo(st);
-	dlg->Update();
+	//dlg->Update();
 }
 
-
+//关闭记录，删除左边，右边
+void CSelfServiceBankClientDlg::DeleteRecord(int idx)
+{
+	if (idx >= 0 && idx < cstnApplyRecordCnt) {
+		auto& pDlg = m_vecApplyRecordDlg[idx];
+		//左边
+		m_oApplyList->MyDeleteString(pDlg->GetApplyInfo());
+		//右边
+		pDlg->SetApplyInfo(0);
+	}
+}
 
 void CSelfServiceBankClientDlg::Update(bool bOK, DWORD dwType, DWORD dwMsgID, PBYTE pMsg, INT nMsgLen)
 {
@@ -508,7 +470,7 @@ void CSelfServiceBankClientDlg::InitZCMsgHandler()
 	m_mapZCMsgHandler = { /*<反馈， 处理方法>*/
 		{ ZC_MSG_ALARM_NEWALARMINFO_EX, &CSelfServiceBankClientDlg::ZCMsgAuthentication },//刷卡认证信息
 		//{ ZC_MSG_ALARM_NEWALARMINFO, &CSelfServiceBankClientDlg::ZCMsgAuthentication }//刷卡认证信息，先来这条
-		{ ZC_MSG_COMMON_CONTROLACSHOST , &CSelfServiceBankClientDlg::ZCMsgOpenDoor}//开门
+		{ ZC_MSG_COMMON_CONTROLACSHOST , &CSelfServiceBankClientDlg::ZCMsgOpenDoor}//“开门” + 解锁
 	};
 }
 
@@ -525,67 +487,30 @@ void CSelfServiceBankClientDlg::ZCMsgAuthentication(PBYTE pMsg, DWORD dwMsgID, I
 	}
 
 	T_TRANSMITALARMINFO_EX* pAuthInfo = (T_TRANSMITALARMINFO_EX*)pMsg;
-	//传过来的刷卡信息
-	CString strAuthMemo(pAuthInfo->tTransmitAlarmInfo.tAlarmInfo.chMemo);
-	theApp.WriteLog(trace, _T("收到刷卡认证信息：%s"), strAuthMemo);
-
-	//解析刷卡信息：字串分段：是否合法 | 卡号 | 身份证， "0"--非法，"1"--合法，“2”--无权限
-	vector<CString> vecMemo;
-	SplitString(strAuthMemo, _T('|'), vecMemo);
-	assert(vecMemo.size() >= 2);
-
-	//根据卡号判断是否需要处理这条申请，比如：1）已申请过了
-	if (!IfDealTheApplyMsg(vecMemo[1])) {
-		theApp.WriteLog(warning, _T("重复申请！"));
-		return;
-	}
-
-	//门禁信息
+	//找门禁信息
 	int nDevID = pAuthInfo->tTransmitAlarmInfo.nDevNumber; //刷卡设备id
 	const auto& mapACSHostInfo = theApp.m_mapACSHostInfo;
+	
 	auto itACSHost = std::find_if(mapACSHostInfo.begin(), mapACSHostInfo.end(),
 		std::bind(lambda_FindACSHostByDevNo, _1, nDevID)); //itACSHost是一个pair
+	
 	if (mapACSHostInfo.end() == itACSHost) {
 		theApp.WriteLog(error, _T("没有找到门禁主机！"));
 		return;
 	}
 	const auto& pHostInfo = (itACSHost->second);//门禁主机信息
-
-	//构造申请信息
-	auto& spApplyInfo = std::make_shared<stApplyInfo>();
-	spApplyInfo->stPersonInfo = std::make_shared<stApplyPersonInfo>();
-	auto& spApplyPersonInfo = spApplyInfo->stPersonInfo;
-
-	spApplyInfo->nImportance = pHostInfo->nCtrlLevel;//管控等级
-	spApplyInfo->nDevID = nDevID;//刷卡设备id
-	spApplyInfo->strDevName = itACSHost->first; //刷卡设备名称
-
-	//管控策略
-	const auto& stCtrlPlan = theApp.m_mapCtrlPlan[pHostInfo->nCtrlLevel];
-	spApplyInfo->nSlave = pHostInfo->nSlave;//是否主从刷卡
-	
-	//卡的类别
-	spApplyPersonInfo->nCardType = _ttoi(vecMemo[0]);
-
-	//管辖人员vector
-	const auto& vecCtrlPInfo = theApp.m_vecCtrlPersonInfo;
-
-	auto itCtrlPInfo = std::find_if(vecCtrlPInfo.begin(), vecCtrlPInfo.end(),
-		std::bind(lambda_FindCtrlInfoByCardID, _1, vecMemo[1]));
-	if (vecCtrlPInfo.end() == itCtrlPInfo) {
-		theApp.WriteLog(error, _T("没有找到该管辖人员信息！"));
+	const auto& stCtrlPlan = theApp.GetCtrlPlanInfo(pHostInfo->nCtrlLevel);//对应的管控策略
+	//用成员方法的一个缺点就是要传各种入参，用类
+	if (1 == stCtrlPlan->nAuthType) {//远程认证
+		RemoteAuth(pAuthInfo->tTransmitAlarmInfo, pHostInfo);
+	}
+	else if (pHostInfo->nCtrlLevel > 0) {//本地认证、本地不管控（中心监控）
+		LocalAuth(pAuthInfo->tTransmitAlarmInfo, pHostInfo);
+	}
+	else {//本地认证、本地管控（不用中心监控）
+		theApp.WriteLog(warning, _T("本地认证、本地管控（不用中心监控），不显示。"));
 		return;
 	}
-	const auto& stCtrlPInfo = *itCtrlPInfo;//管辖人员信息
-	
-	CTime tmApply = ZCMsgHelper_ParseTime(pAuthInfo->tTransmitAlarmInfo.chAlarmDateTime);
-	spApplyPersonInfo->stPersonInfo = stCtrlPInfo;
-	spApplyInfo->strWebSiteName = pAuthInfo->tTransmitAlarmInfo.chArea;//网点
-	spApplyInfo->strPartName = pAuthInfo->tTransmitAlarmInfo.chKeyPart;//部位
-	spApplyPersonInfo->tmApply = spApplyInfo->tmApply = std::move(tmApply);//申请时间
-	
-	//各控件传递
-	InsertApplyInfo(spApplyInfo);
 
 }
 
@@ -615,9 +540,31 @@ bool CSelfServiceBankClientDlg::IfDealTheApplyMsg(const CString& strCardNum/*, c
 }
 
 
-//开门
+//"开门" + 解锁 = 开门，两次都会返回
 void CSelfServiceBankClientDlg::ZCMsgOpenDoor(PBYTE pMsg, DWORD dwMsgID, INT nMsgLen)
 {
+	//
+
+	static UINT8 cnt[cstnApplyRecordCnt] = { 0 };
+	if (dwMsgID >= 0 && dwMsgID < cstnApplyRecordCnt) {
+		cnt[dwMsgID] = ++cnt[dwMsgID] % 2;
+		//改变图标，"开门" + 解锁都返回
+		if (0 == cnt[dwMsgID]) {//开门
+			//要访问成员，又不想把CApplyRecordDlg作为观察者，就要麻烦点了
+			auto& dlg = m_vecApplyRecordDlg[dwMsgID];
+			dlg->m_oPicDoor->Set(_T("res\\openeddoor_32px.png"));
+			dlg->m_oPicDoor->Invalidate();
+
+			vector<emButton> vecBtn = { OpenDoorBtn };
+			dlg->EnableButton(vecBtn, false);
+			//AfxMessageBox(_T("开门成功！"));
+		}
+		else {//锁门
+			//还是要回调
+		}
+	}
+	
+	//如果“开门”、解锁有一个不成功，这里只会返回成功！
 
 }
 
@@ -736,4 +683,80 @@ void CSelfServiceBankClientDlg::OnDblclkDemovideo()
 		bZoom = true;
 	}
 	m_demoVideo.SetWindowPos(0, x, y, w, h, SWP_NOZORDER);
+}
+
+
+
+//本地认证
+void CSelfServiceBankClientDlg::LocalAuth(const T_TRANSMITALARMINFO& pAuthInfo, const shared_ptr<stACSHostInfo>& pHostInfo)
+{
+	bool bRet = CreateApplyInfo(pAuthInfo, pHostInfo, 0);
+	if (!bRet)
+		return;
+}
+
+//远程认证
+void CSelfServiceBankClientDlg::RemoteAuth(const T_TRANSMITALARMINFO& stAuthInfo, const shared_ptr<stACSHostInfo>& pHostInfo)
+{
+	bool bRet = CreateApplyInfo(stAuthInfo, pHostInfo, 1);
+	if (!bRet)
+		return;
+}
+
+
+//构造申请信息
+bool CSelfServiceBankClientDlg::CreateApplyInfo(const T_TRANSMITALARMINFO& stAuthInfo, 
+	const shared_ptr<stACSHostInfo>& pHostInfo, UINT8 nLocal)
+{
+	//传过来的刷卡信息
+	CString strAuthMemo(stAuthInfo.tAlarmInfo.chMemo);
+	theApp.WriteLog(trace, _T("收到刷卡认证信息：%s"), strAuthMemo);
+
+	//解析刷卡信息：字串分段：是否合法 | 卡号 | 身份证， "0"--非法，"1"--合法，“2”--无权限
+	vector<CString> vecMemo;
+	SplitString(strAuthMemo, _T('|'), vecMemo);
+	assert(vecMemo.size() >= 2);
+
+	//根据卡号判断是否需要处理这条申请，比如：1）已申请过了
+	if (!IfDealTheApplyMsg(vecMemo[1])) {
+		theApp.WriteLog(warning, _T("重复申请！"));
+		return false;
+	}
+
+
+	//构造申请信息
+	auto& spApplyInfo = std::make_shared<stApplyInfo>();
+	spApplyInfo->stPersonInfo = std::make_shared<stApplyPersonInfo>();
+	auto& spApplyPersonInfo = spApplyInfo->stPersonInfo;
+
+	spApplyInfo->nLocal = nLocal;//本地or远程认证
+	spApplyInfo->nImportance = pHostInfo->nCtrlLevel;//管控等级
+	spApplyInfo->nDevID = stAuthInfo.nDevNumber;//刷卡设备id
+	spApplyInfo->strDevName = CString(pHostInfo->stBaseInfo.chDevName); //刷卡设备名称
+
+	spApplyInfo->nSlave = pHostInfo->nSlave;//是否主从刷卡
+	spApplyPersonInfo->nCardType = _ttoi(vecMemo[0]);	//卡的类别
+
+	//找管辖人员
+	const auto& vecCtrlPInfo = theApp.m_vecCtrlPersonInfo;
+
+	auto itCtrlPInfo = std::find_if(vecCtrlPInfo.begin(), vecCtrlPInfo.end(),
+		std::bind(lambda_FindCtrlInfoByCardID, _1, vecMemo[1]));
+	
+	if (vecCtrlPInfo.end() == itCtrlPInfo) {
+		theApp.WriteLog(error, _T("没有找到该管辖人员信息！"));
+		return false;
+	}
+	const auto& stCtrlPInfo = *itCtrlPInfo;//管辖人员信息
+
+	CTime tmApply = ZCMsgHelper_ParseTime(stAuthInfo.chAlarmDateTime);
+	spApplyPersonInfo->stPersonInfo = stCtrlPInfo;
+	spApplyInfo->strWebSiteName = stAuthInfo.chArea;//网点
+	spApplyInfo->strPartName = stAuthInfo.chKeyPart;//部位
+	spApplyPersonInfo->tmApply = spApplyInfo->tmApply = std::move(tmApply);//申请时间
+
+	//传入各控件
+	InsertApplyInfo(spApplyInfo);
+
+	return true;
 }

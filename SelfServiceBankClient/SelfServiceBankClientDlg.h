@@ -3,7 +3,7 @@
 //
 
 #pragma once
-#include "afxwin.h"
+//#include "afxwin.h"
 
 //class CLogDialog;
 
@@ -12,11 +12,7 @@ class CMyStatic1;
 class CMyListBox1;
 struct stApplyInfo;
 class CApplyRecordDlg;
-
-using tplMultiApplyInfo = std::tuple<std::shared_ptr<stApplyInfo>, std::shared_ptr<stApplyInfo>,
-	std::shared_ptr<stApplyInfo>, std::shared_ptr<stApplyInfo>>; //多人刷卡信息结构
-
-																 //视频信息
+struct T_TRANSMITALARMINFO;
 
 class CSelfServiceBankClientDlg : public CDialogEx, public CZCMsgObserver
 {
@@ -24,16 +20,17 @@ class CSelfServiceBankClientDlg : public CDialogEx, public CZCMsgObserver
 public:
 	CSelfServiceBankClientDlg(CWnd* pParent = NULL);
 	~CSelfServiceBankClientDlg();
-	//中介方法
+	//中介方法，维护各控件之间的逻辑
 	//点击左侧，显示右侧
 	void DisplayDetail(const std::shared_ptr<stApplyInfo>& st);
+	//关闭记录，删除左边，右边
+	void DeleteRecord(int idx);
+
 	//消息通知
 	virtual void Update(bool, DWORD, DWORD, PBYTE, INT);
-	//刷卡认证信息
-	
 	//插入申请记录
 	void MyInsertRecord(const std::shared_ptr<stApplyInfo>& st);
-	//申请授权回复，开关门，日志
+	
 
 
 // Dialog Data
@@ -55,7 +52,7 @@ protected:
 	//std::list<CApplyRecordDlg> m_liApplyRecordDlg; //申请记录详细对话框
 	std::vector<std::shared_ptr<CApplyRecordDlg>> m_vecApplyRecordDlg; //申请记录详细对话框
 	std::vector<std::shared_ptr<stApplyInfo>> m_vecApplyInfo;//单人刷卡申请消息
-	std::vector<tplMultiApplyInfo> m_vecMultiApplyInfo;//多人刷卡信息
+	//std::vector<tplMultiApplyInfo> m_vecMultiApplyInfo;//多人刷卡信息
 
 	std::shared_ptr<CLogDialog> m_oLogDlg = 0;//日志对话框
 
@@ -85,6 +82,12 @@ private:
 	CTime ZCMsgHelper_ParseTime(const char*);
 	//是否处理申请
 	bool IfDealTheApplyMsg(const CString& strCardNum/*, const CTime& tmApply*/);
+	//本地认证
+	void LocalAuth(const T_TRANSMITALARMINFO&, const std::shared_ptr<stACSHostInfo>&);
+	//远程认证
+	void RemoteAuth(const T_TRANSMITALARMINFO&, const std::shared_ptr<stACSHostInfo>&);
+	//构造刷卡信息
+	bool CreateApplyInfo(const T_TRANSMITALARMINFO&, const std::shared_ptr<stACSHostInfo>&, UINT8 nLocal);
 	//开门
 	void ZCMsgOpenDoor(PBYTE, DWORD, INT);
 

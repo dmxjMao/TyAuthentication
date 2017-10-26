@@ -14,17 +14,18 @@ public:
 	//using ItemData = std::tuple<CString, int, CTime>;
 	//typedef std::tuple<CString, int, CTime> ItemData;
 
-	CMyListBox1();
+	CMyListBox1(CSelfServiceBankClientDlg* pMediator);
 	virtual ~CMyListBox1();
 	//void MySetItemData(int, CString, int, CTime);
 	//void MyInsertString(ItemData& t);
 	//inline void MySetItemData(std::vector<stApplyInfo>& vec) { 
 	//	m_spVecItemData = std::make_shared<decltype(vec)>(vec);
 	//}
-	inline void Set(CSelfServiceBankClientDlg* pMediator) {
-		m_oMediator = pMediator;
-	}
+	//inline void Set(CSelfServiceBankClientDlg* pMediator) {
+	//	m_oMediator = pMediator;
+	//}
 	void MyInsertString(const std::shared_ptr<stApplyInfo>&);
+	void MyDeleteString(const std::shared_ptr<stApplyInfo>&);
 
 protected:
 	//bool m_bMouseTrack = true, m_bMouseHover = false;

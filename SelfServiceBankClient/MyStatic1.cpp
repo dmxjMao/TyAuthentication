@@ -66,7 +66,7 @@ void CMyStatic1::OnPaint()
 		if(!m_bFixOrImg)
 			SetWindowPos(nullptr, 0, 0, w, h, SWP_NOMOVE | SWP_NOZORDER);
 		//Çå¿Õ±³¾°£¬°×É«
-		//gh.Clear(/*cstClrTitle*/Color(255, 255, 255));
+		//gh.Clear(Color::Transparent);
 		gh.DrawImage(img, 0, 0, w, h);
 	}
 }

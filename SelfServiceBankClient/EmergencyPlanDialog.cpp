@@ -92,20 +92,23 @@ BOOL CEmergencyPlanDialog::OnInitDialog()
 	//auto p3 = pParent->GetDlgItem(IDC_Emergency);
 
 	m_pParent->GetDlgItem(IDC_Emergency)->GetWindowRect(&rcBtn);
-	int x = rcBtn.left, y = rcBtn.bottom + 1;
+	int x = rcBtn.left, y = rcBtn.bottom + 1; //dlg的左上取按钮的左上
 	//int w = 4 * rcBtn.Width();
 	CRect rcParent;
 	m_pParent->GetWindowRect(&rcParent);
-	int w = rcParent.right - rcBtn.left;
+	int w = rcParent.right - rcBtn.left;//dlg宽度
 	
-	CRect rc;//临时变量
-	GetParent()->GetClientRect(&rc); //GetParent是主窗口
-	int h = rc.Height() / 2;
-	//如果超过边界
+	//GetParent()->GetClientRect(&rc); //GetParent是主窗口
+	//int h = rc.Height() * 3 / 4;
+	//高度取分辨率一半，根据y判断是在上面还是下面显示
 	int nScreenY = ::GetSystemMetrics(SM_CYFULLSCREEN);//除任务栏
-	if (y + h > nScreenY) {
+	int h = nScreenY / 2;
+	if (y > h)
 		y = rcBtn.top - h - 1;
-	}
+
+	//if (y + h > nScreenY) {
+	//	y = rcBtn.top - h - 1;
+	//}
 	SetWindowPos(0, x, y, w, h, SWP_NOZORDER);
 
 	//tooltip
@@ -117,6 +120,7 @@ BOOL CEmergencyPlanDialog::OnInitDialog()
 	}
 
 	//关闭按钮
+	CRect rc;//临时变量
 	GetClientRect(&rc);
 	rc.SetRect(rc.right - 24, rc.top, rc.right, rc.bottom); //popup和child不一样
 	//m_oCloseWindow = std::make_shared<CMyStatic1>();
@@ -249,15 +253,10 @@ void CEmergencyPlanDialog::OnBtnClickedOtherEMPlan()
 	static BOOL bCreate = FALSE;
 	static bool bExpand = true;
 	bExpand = !bExpand;
-	if (bExpand){
-		m_oOtherLB->ShowWindow(SW_HIDE);
-		return;
-	}
 	
-
 	if (nullptr == m_oOtherLB) {
 		m_oOtherLB = std::make_shared<CMyListBox2>();
-		
+
 		CRect rc;
 		GetDlgItem(IDC_OtherEMPlan)->GetWindowRect(&rc);
 		ScreenToClient(&rc);
@@ -267,6 +266,12 @@ void CEmergencyPlanDialog::OnBtnClickedOtherEMPlan()
 		bCreate = m_oOtherLB->Create(LBS_HASSTRINGS | LBS_NOTIFY | LBS_OWNERDRAWFIXED | WS_CHILD | WS_VISIBLE, rc, this, IDC_OtherEMPlanLB);
 	}
 
+	if (bExpand){
+		//要在if (nullptr == m_oOtherLB)之后，因为客户可能直接关闭“预案”dlg，这时m_oOtherLB变为空
+		m_oOtherLB->ShowWindow(SW_HIDE);
+		return;
+	}
+	
 	
 	if (bCreate) {
 		const auto& vecPlan = theApp.m_vecEMPlanInfo;

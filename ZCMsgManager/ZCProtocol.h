@@ -2718,7 +2718,7 @@ typedef struct
     char reserved2[32];                         ///< 保留2
 }T_TRANSMITALARMENTITY_EX,*lPT_TRANSMITALARMENTITY_EX;
 
-typedef struct
+struct T_TRANSMITALARMINFO
 {
     char chDevID[20];           ///< 设备ID(字符串)
     long nDevNumber;            ///< 设备ID(整形)
@@ -2727,7 +2727,7 @@ typedef struct
     char chAlarmDateTime[32];   ///< 报警发生时间
 	char chKeyPart[64];         ///< 所属部位
     T_TRANSMITALARMENTITY tAlarmInfo;        ///< 具体报警信息/巡检结果信息
-}T_TRANSMITALARMINFO,*LPT_TRANSMITALARMINFO;
+};
 
 typedef struct
 {

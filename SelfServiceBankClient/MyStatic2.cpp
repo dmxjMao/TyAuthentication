@@ -59,11 +59,13 @@ void CMyStatic2::OnPaint()
 	//gh.SetClip(&rgn);
 
 	//填充背景色
-	if (!m_bEnable) {
+	if (!m_bEnable) {//不可用
+		ModifyStyle(SS_NOTIFY, 0);
 		SolidBrush sbr = m_clrGray;
 		gh.FillRectangle(&sbr, rcGdi);
 	}
 	else {
+		ModifyStyle(0, SS_NOTIFY);
 		SolidBrush sbr = m_bHover ? m_clrHoverBG : m_clrBG;
 		gh.FillRectangle(&sbr, rcGdi);
 	}

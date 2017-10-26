@@ -233,7 +233,7 @@ void CSelfServiceBankClientApp::InitZCMsgHandler()
 		//{ ZC_MSG_COMMON_ALLKEYPARTINFO, &CSelfServiceBankClientApp::ZCMsgKeypartInfo },//部位
 		{ ZC_MSG_OPENDOOR_GETACSHOSTLINKINFO, &CSelfServiceBankClientApp::ZCMsgACSHostLinkCameraInfo },//授权门禁主机关联摄像头设备
 		{ ZC_MSG_OPENDOOR_GETACSHOSTLINKTALKINFO, &CSelfServiceBankClientApp::ZCMsgACSHostLinkTalkInfo },//认证门禁关联对讲设备
-		{ ZC_MSG_COMMON_ALLUSERINFO, &CSelfServiceBankClientApp::ZCMsgHandlerInfo },//处置人姓名
+		//{ ZC_MSG_COMMON_ALLUSERINFO, &CSelfServiceBankClientApp::ZCMsgHandlerInfo },//处置人姓名
 		{ ZC_MSG_OPENDOOR_USERDOORCAMERARELATION, &CSelfServiceBankClientApp::ZCMsgDoorRelationInfo },//认证门禁关联摄像头
 		{ ZC_MSG_COMMON_PLANINFO, &CSelfServiceBankClientApp::ZCMsgEMPlanInfo },//预案
 	};
@@ -597,6 +597,7 @@ void CSelfServiceBankClientApp::ZCMsgDoorRelationInfo(PBYTE pMsg, DWORD dwMsgID,
 {
 	ZCMsgMacro_beginfor(USERDOORCAMERARELATION_CLIENT_GET_S, pMsg, nMsgLen)
 	USERDOORCAMERARELATION_CLIENT_GET_S* pInfo = (USERDOORCAMERARELATION_CLIENT_GET_S*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
+	
 	auto itACSHost = std::find_if(m_mapACSHostInfo.begin(), m_mapACSHostInfo.end(),
 		std::bind(lambda_FindACSHostByID, _1, pInfo->nDoorId));
 	if (m_mapACSHostInfo.end() == itACSHost) {
@@ -831,4 +832,15 @@ void __stdcall CSelfServiceBankClientApp::MsgCallBackFunc(long lUserID, DWORD Ms
 	else if(MsgType == MSG_TRANS_BY_CMS){
 		theApp.WriteLog(trace, _T("ServerSDK消息回调：中心转发消息..."));
 	}
+}
+
+//获取管控策略信息
+std::shared_ptr<stCtrlPlanInfo> CSelfServiceBankClientApp::GetCtrlPlanInfo(int nLevel)
+{
+	auto it = m_mapCtrlPlan.find(nLevel);
+	if (m_mapCtrlPlan.end() == it || (nullptr == it->second)) {
+		return make_shared<stCtrlPlanInfo>();
+	}
+
+	return it->second;
 }

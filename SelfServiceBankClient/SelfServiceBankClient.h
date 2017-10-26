@@ -50,6 +50,8 @@ public:
 	void _cdecl WriteLog(severity_level level, const TCHAR* szMsg, ...);
 	//消息通知
 	virtual void Update(bool, DWORD, DWORD, PBYTE, INT);
+	//获取管控策略：配置客户端未设置过策略，db就不会返回“基础设置”，map->second就为空，该方法解决这个麻烦
+	std::shared_ptr<stCtrlPlanInfo> GetCtrlPlanInfo(int nLevel);
 
 	DECLARE_MESSAGE_MAP()
 	

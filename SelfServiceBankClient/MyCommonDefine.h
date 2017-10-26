@@ -47,11 +47,12 @@ enum emAuthState {
 
 
 /*用户信息
+所有处理人不用获取了，这里只有当前用户了
 */
 struct stUserInfo {
 	S_New_UserInfo stBaseInfo;//基础信息
 	T_OPENDOORPOSALINFO stDisposalInfo;//权限
-	std::shared_ptr<std::vector<USERDOORCAMERARELATION_CLIENT_GET_S>> pDealedACSHost;//用户受理的门禁id及其关联的视频
+	std::shared_ptr<std::vector<USERDOORCAMERARELATION_CLIENT_GET_S>> pDealedACSHost;//用户受理的门禁id及其关联的视频，只有当前用户有
 };
 
 
@@ -171,9 +172,11 @@ struct stApplyInfo {
 	int nImportance = -1;//重要程度（管控等级）
 	int nDevID = -1;//刷卡设备
 	CString strDevName;//刷卡设备名称
+	UINT8 nLocal = -1;//是否本地认证：0本地，1远程
 	UINT8 nSlave = -1;//是否主从门禁刷卡：-1无，0主，1从
 	//CString strMode;//刷卡模式：(如:XX人刷卡+中心授权)
 	CTime tmApply;//申请认证时间，CString不好转CTime
+	emAuthState emState = Dealing;//认证状态
 	//std::vector<std::tuple<>>//两路视频
 	//stApplyPersonInfo stPersonInfo;//申请人员信息
 	//std::vector<std::shared_ptr<stApplyPersonInfo>> vecPersonInfo;//申请人员信息

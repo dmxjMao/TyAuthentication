@@ -11,7 +11,8 @@
 #include "MyStatic1.h" //门
 #include "MyStatic2.h" //按钮
 #include "EmergencyPlanDialog.h" //应急处置
-#include "MyState.h"//申请状态
+//#include "MyState.h"//申请状态
+#include "SelfServiceBankClientDlg.h"
 
 //网络服务库
 #include "TYServerSDK.h"
@@ -92,8 +93,8 @@ void __stdcall RealPlayDataCallBack(long lHandle, DWORD dwDataType, BYTE *pBuffe
 
 IMPLEMENT_DYNAMIC(CApplyRecordDlg, CDialogEx)
 
-CApplyRecordDlg::CApplyRecordDlg(CWnd* pParent /*=NULL*/)
-	: CDialogEx(IDD_ApplyRecordDlg, pParent)
+CApplyRecordDlg::CApplyRecordDlg(int nIdx, CSelfServiceBankClientDlg* pDlg, CWnd* pParent /*=NULL*/)
+	: m_nIdx(nIdx), m_oMediator(pDlg), CDialogEx(IDD_ApplyRecordDlg, pParent)
 {
 	m_oPersonInfo = make_shared<CMyListCtrl1>();
 	m_oPicDoor = make_shared<CMyStatic1>();
@@ -114,19 +115,17 @@ CApplyRecordDlg::CApplyRecordDlg(CWnd* pParent /*=NULL*/)
 		m_vecVideoInfo[i].pWnd = pWnd[i];
 	}
 	
-	m_pState = make_shared<CApplyState>();
+	//m_pState = make_shared<CApplyState>();
+
 }
 
 CApplyRecordDlg::~CApplyRecordDlg()
 {
-	for (int i = 0; i < cstnVideoCnt; ++i) {
-		const auto& st = m_vecVideoInfo[i];
-		TJTY_PLAY_StopPlay(st.nWndNo);
-		TY_Server_StopPlay(st.nPlayID, st.nLinkType);
-	}
+	//停止预览视频
+	StopVideo();
 	
-	//解锁图层
-	CZCMsgManager::Instance()->RequestMsg(ZC_MODULE_BCBCLIENT, ZC_MSG_BCBCLIENT_ALARMPOSITION_UNLOCK);
+	//解锁图层，父dlg已经析构了，ZC的反馈ob->Update，ob为空，崩溃
+	//CZCMsgManager::Instance()->RequestMsg(ZC_MODULE_BCBCLIENT, ZC_MSG_BCBCLIENT_ALARMPOSITION_UNLOCK);
 }
 
 void CApplyRecordDlg::DoDataExchange(CDataExchange* pDX)
@@ -154,6 +153,9 @@ BEGIN_MESSAGE_MAP(CApplyRecordDlg, CDialogEx)
 	ON_STN_DBLCLK(IDC_Video1, &CApplyRecordDlg::OnDblclkVideo1)
 	ON_STN_CLICKED(IDC_EnterMapLayer, &CApplyRecordDlg::OnStnClickedEntermaplayer)
 	ON_STN_CLICKED(IDC_Open, &CApplyRecordDlg::OnStnClickedOpen)
+	ON_STN_CLICKED(IDC_Lock, &CApplyRecordDlg::OnStnClickedLock)
+	ON_STN_CLICKED(IDC_RefuseOpen, &CApplyRecordDlg::OnStnClickedRefuseopen)
+	ON_STN_CLICKED(IDC_Confirm, &CApplyRecordDlg::OnStnClickedConfirm)
 END_MESSAGE_MAP()
 
 
@@ -208,6 +210,7 @@ BOOL CApplyRecordDlg::OnInitDialog()
 	y += rc.Height() + 20/*间距*/;
 	m_oPicDoor->SetWindowPos(0, x, y, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
 	m_oPicDoor->Set(_T("res\\closeddoor_32px.png"));
+	//m_oPicDoor->Set(_T("res\\openeddoor_32px.png"));
 
 	//按钮，根据配置灰化处理
 	y -= 15;
@@ -293,28 +296,8 @@ void CApplyRecordDlg::Update()
 		//请求视频
 		ReqVideo();
 
-		//计时“已失效”，N秒，点击左侧就不能这样了
-		//SetTimer(IDT_Valid, 5 * 1000, 0);
-		//点击ListBox、初始化，计算剩余时间
-		CTimeSpan tmLeft = CTime::GetCurrentTime() - m_stApplyInfo->tmApply;
-		int nLeftSecond = (int)tmLeft.GetTotalSeconds();
-		//认证处理有效时长
-		int nLimitSecond = 0; 
-		auto& spCtrlPlan = theApp.m_mapCtrlPlan[m_stApplyInfo->nImportance];
-		if (0 == spCtrlPlan) {//没有就用默认的
-			stCtrlPlanInfo st;
-			nLimitSecond = st.nAuthTimeLimit * 60;
-		}
-		else
-			nLimitSecond = spCtrlPlan->nAuthTimeLimit * 60;
-		if (nLeftSecond < nLimitSecond) {
-			//EnableButton({ GrantBtn ,OpenDoorBtn ,LockDoorBtn ,RefuseOpenBtn }, true);
-			SetTimer(IDT_Valid, (nLimitSecond - nLeftSecond) * 1000, 0);
-		}
-		else {
-			//OnTimer(IDT_Valid);  //窗口还没创建好，崩溃
-			SetTimer(IDT_Valid, 0, 0);//立即触发
-		}
+		//失效判断
+		IsInvalid();
 
 		//网点名称
 		GetDlgItem(IDC_title)->SetWindowText(m_stApplyInfo->strWebSiteName);
@@ -325,23 +308,13 @@ void CApplyRecordDlg::Update()
 		//m_oPersonInfo.Update();  //导致多了垂直滚动条
 		//UpdateWindow();
 
-		//远程认证，未设置上级授权，灰化“申请授权”
-		//设置了上级授权，灰化“开门”，“锁门”，“拒绝开门”
-		//策略配置
-		const auto& stPlan = theApp.m_mapCtrlPlan[m_stApplyInfo->nImportance];
-		vector<emButton> vecDisable;
-		if (1 == stPlan->nAuthType) {
-			if (stPlan->nSuperGrantType > 0) {//UINT8 = -1就是255，始终>0
-				vecDisable = { OpenDoorBtn , LockDoorBtn, RefuseOpenBtn };
-			}
-			else { //不需要上级授权
-				vecDisable = { GrantBtn };
-			}
+		//认证
+		if (1 == m_stApplyInfo->nLocal) {//远程认证
+			RemoteAuth();
 		}
-		else { //本地认证
-			vecDisable = { GrantBtn ,OpenDoorBtn,LockDoorBtn,RefuseOpenBtn,ConfirmBtn };
+		else if(0 == m_stApplyInfo->nLocal){ //本地认证，非管控（中心监控），申请人如何自行完成认证
+			LocalAuth();	
 		}
-		EnableButton(vecDisable, false);
 
 		Invalidate();
 		ShowWindow(SW_NORMAL);
@@ -355,6 +328,7 @@ void CApplyRecordDlg::SetApplyInfo(const std::shared_ptr<stApplyInfo>& st, bool 
 	if (bAdd) {//添加申请人员
 		m_oPersonInfo->MyInsertSubItem(st->stPersonInfo);
 	}
+	Update();
 }
 
 //按钮灰化/可用处理
@@ -384,23 +358,7 @@ void CApplyRecordDlg::OnTimer(UINT_PTR nIDEvent)
 	switch (nIDEvent) {
 	case IDT_Valid: //”已失效“
 	{
-		KillTimer(nIDEvent);
-		//获取m_oVideo1.right，“已失效”的宽
-		CRect rc;
-		m_oVideo1.GetWindowRect(&rc);
-		ScreenToClient(&rc);
-		Image img(_T("res\\已失效.png"));
-		int w = img.GetWidth(), h = img.GetHeight();
-		int x = rc.right - w / 2;
-		int y = rc.top + rc.Height() / 2 - h / 2;
-		
-		CClientDC dc(this);
-		Graphics gh(dc.GetSafeHdc());
-		gh.DrawImage(&img, x, y, w, h);
-
-		//灰化按钮
-		EnableButton({ GrantBtn ,OpenDoorBtn ,LockDoorBtn ,RefuseOpenBtn }, false);
-
+		DoInvalid();
 		break;
 	}	
 	}
@@ -457,13 +415,7 @@ UINT TYServerVideoThread(LPVOID lpParam)
 
 	if (pVecDealHost->end() == itDealHost) return true; //不受理该门禁
 
-	//const int nVideoWndNum = 1;//播放的视频窗口数
-	for (int i = 0; i < cstnVideoCnt; ++i) {
-		//关闭视频，要两个一起，不然视频卡住
-		const auto& st = dlg.m_vecVideoInfo[i];
-		TJTY_PLAY_StopPlay(st.nWndNo);
-		TY_Server_StopPlay(st.nPlayID, st.nLinkType);
-	}
+	dlg.StopVideo();
 
 	//
 	//const auto& vecDevInfo = theApp.m_mapNodeInfo[DeviceNode];
@@ -583,7 +535,146 @@ void CApplyRecordDlg::OnStnClickedOpen()
 	st.nCmd = 2;//开门
 	auto& sp = MyStructToPBYTE(st);
 
-	CZCMsgManager::Instance()->RequestMsg(ZC_MODULE_BCBCLIENT,
-		ZC_MSG_BCBCLIENT_CONTROLACSHOST, sp.get(), sizeof(T_CONTROLACSHOSTPRARM));
+	const auto& pMsg = CZCMsgManager::Instance();
+	//pMsg->AddObserver();
+	//"开门" + 解锁 = 开门
+	pMsg->RequestMsgWithMsgID(ZC_MODULE_BCBCLIENT,
+		ZC_MSG_BCBCLIENT_CONTROLACSHOST, m_nIdx, sp.get(), sizeof(T_CONTROLACSHOSTPRARM));
 
+	
+	st.nCmd = 1;//解锁
+	sp = MyStructToPBYTE(st);
+	pMsg->RequestMsgWithMsgID(ZC_MODULE_BCBCLIENT,
+		ZC_MSG_BCBCLIENT_CONTROLACSHOST, m_nIdx, sp.get(), sizeof(T_CONTROLACSHOSTPRARM));
+
+	//反馈消息在主对话框ZCMsgOpenDoor中处理
+}
+
+
+//锁门
+void CApplyRecordDlg::OnStnClickedLock()
+{
+	T_CONTROLACSHOSTPRARM st = { 0 };
+
+	CT2A szDevName(m_stApplyInfo->strDevName.GetBuffer());
+	memcpy_s(st.chAlarmSource, _countof(st.chAlarmSource), szDevName, strlen(szDevName));
+
+	st.nCmd = 2;
+	auto& sp = MyStructToPBYTE(st);
+
+	//pMsg->AddObserver();
+	//"开门" = 关门
+	CZCMsgManager::Instance()->RequestMsgWithMsgID(ZC_MODULE_BCBCLIENT,
+		ZC_MSG_BCBCLIENT_CONTROLACSHOST, m_nIdx, sp.get(), sizeof(T_CONTROLACSHOSTPRARM));
+
+}
+
+//拒绝开门
+void CApplyRecordDlg::OnStnClickedRefuseopen()
+{
+	//记录日志
+
+}
+
+
+void CApplyRecordDlg::IsInvalid()
+{
+	//计时“已失效”，N秒，点击左侧就不能这样了
+	//SetTimer(IDT_Valid, 5 * 1000, 0);
+	//点击ListBox、初始化，计算剩余时间
+	CTimeSpan tmLeft = CTime::GetCurrentTime() - m_stApplyInfo->tmApply;
+	int nLeftSecond = (int)tmLeft.GetTotalSeconds();
+	//认证处理有效时长
+	int nLimitSecond = 0;
+	//auto& spCtrlPlan = theApp.m_mapCtrlPlan[m_stApplyInfo->nImportance];
+	auto& spCtrlPlan = theApp.GetCtrlPlanInfo(m_stApplyInfo->nImportance);
+	nLimitSecond = spCtrlPlan->nAuthTimeLimit * 60;
+	//if (0 == spCtrlPlan) {//没有就用默认的
+	//	stCtrlPlanInfo st;
+	//	nLimitSecond = st.nAuthTimeLimit * 60;
+	//}
+	//else
+	//	nLimitSecond = spCtrlPlan->nAuthTimeLimit * 60;
+	if (nLeftSecond < nLimitSecond) {
+		SetTimer(IDT_Valid, (nLimitSecond - nLeftSecond) * 1000, 0);
+	}
+	else {
+		//OnTimer(IDT_Valid);  //窗口还没创建好，崩溃
+		SetTimer(IDT_Valid, 0, 0);//立即触发
+	}
+}
+
+//失效处理
+void CApplyRecordDlg::DoInvalid()
+{
+	KillTimer(IDT_Valid);
+
+	//停止预览
+	StopVideo();
+
+	//获取m_oVideo1.right，“已失效”的宽
+	CRect rc;
+	m_oVideo1.GetWindowRect(&rc);
+	ScreenToClient(&rc);
+	Image img(_T("res\\已失效.png"));
+	int w = img.GetWidth(), h = img.GetHeight();
+	int x = rc.right - w / 2;
+	int y = rc.top + rc.Height() / 2 - h / 2;
+
+	CClientDC dc(this);
+	Graphics gh(dc.GetSafeHdc());
+	gh.DrawImage(&img, x, y, w, h);
+
+	//灰化按钮
+	EnableButton({ GrantBtn ,OpenDoorBtn ,LockDoorBtn ,RefuseOpenBtn }, false);
+
+}
+
+//停止预览视频
+void CApplyRecordDlg::StopVideo()
+{
+	for (int i = 0; i < cstnVideoCnt; ++i) {
+		const auto& st = m_vecVideoInfo[i];
+		TJTY_PLAY_StopPlay(st.nWndNo);
+		TY_Server_StopPlay(st.nPlayID, st.nLinkType);
+	}
+}
+
+//远程认证分支
+void CApplyRecordDlg::RemoteAuth()
+{
+	const auto& stPlan = theApp.GetCtrlPlanInfo(m_stApplyInfo->nImportance);
+	//是否上级授权
+	if (stPlan->nSuperGrantType > 0) {//UINT8 = -1就是255，始终>0
+		vector<emButton> vecDisable = { OpenDoorBtn , LockDoorBtn, RefuseOpenBtn };
+		EnableButton(vecDisable, false);
+	}
+	else { //不需要上级授权
+		vector<emButton> vecDisable = { GrantBtn };
+		EnableButton(vecDisable, false);
+	}
+}
+
+//本地认证分支
+void CApplyRecordDlg::LocalAuth()
+{
+	//灰化按钮
+	vector<emButton> vecDisable = { GrantBtn ,OpenDoorBtn,LockDoorBtn,RefuseOpenBtn,ConfirmBtn };
+	EnableButton(vecDisable, false); 
+}
+
+
+
+
+void CApplyRecordDlg::OnStnClickedConfirm()
+{
+	emAuthState em = m_stApplyInfo->emState;
+	if (Dealing == em || em == Verify) {//处理中和待审核
+		AfxMessageBox(_T("申请处理中或待审核！"));
+		return;
+	}
+
+	//已认证和已失效，直接关闭
+	//中介者，各控件之间的关系
+	m_oMediator->DeleteRecord(m_nIdx);
 }

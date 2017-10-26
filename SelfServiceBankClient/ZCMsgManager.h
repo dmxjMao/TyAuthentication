@@ -28,11 +28,13 @@ public:
 
 	bool Init(DWORD dwUser);
 	void SetInitState(bool bInit);
-	bool RequestMsg(WORD wModlueType, DWORD dwMsgType, PBYTE pBuf = 0, DWORD nBufSize = 0);
-	//msgid有特殊作用
-	bool RequestMsgWithMsgID(WORD wModlueType, DWORD dwMsgType, DWORD dwMsgID, PBYTE pBuf = 0, DWORD nBufSize = 0);
-	void NotifyObserver(bool bOK, DWORD dwMsgType, DWORD dwMsgID, PBYTE pMsg, INT nMsgLen);
 
+	bool RequestMsg(WORD wModlueType, DWORD dwMsgType, PBYTE pBuf = 0, DWORD nBufSize = 0);
+	bool RequestMsgWithMsgID(WORD wModlueType, DWORD dwMsgType, DWORD dwMsgID, PBYTE pBuf = 0, DWORD nBufSize = 0);
+
+	void NotifyObserver(bool bOK, DWORD dwMsgType, DWORD dwMsgID, PBYTE pMsg, INT nMsgLen);
+	void AddObserver(CZCMsgObserver*);
+	void RemoveObserver(CZCMsgObserver*);
 
 private:
 	CZCMsgManager(void);
@@ -42,9 +44,6 @@ private:
 	//void SetLastError(DWORD nError);
 	DWORD GetValidMsgID();
 	//void WriteLog(DWORD dwMsgType, );//写日志
-
-	void AddObserver(CZCMsgObserver*);
-	void RemoveObserver(CZCMsgObserver*);
 
 	void RequestInitMsg();//请求初始信息
 

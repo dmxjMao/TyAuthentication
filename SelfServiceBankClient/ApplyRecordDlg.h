@@ -6,7 +6,8 @@ struct stApplyInfo;
 class CMyListCtrl1;
 class CMyStatic1;
 class CMyStatic2;
-class CApplyState;//申请状态
+//class CApplyState;//申请状态
+class CSelfServiceBankClientDlg;//中介
 
 //视频信息
 struct stVideoInfo {
@@ -21,15 +22,16 @@ struct stVideoInfo {
 	int nChnlNo = -1;//通道号
 };
 
-class CApplyRecordDlg : public CDialogEx
+class CApplyRecordDlg : public CDialogEx/*, public CZCMsgObserver*/
 {
 	DECLARE_DYNAMIC(CApplyRecordDlg)
-
+	friend class CSelfServiceBankClientDlg;
 public:
-	CApplyRecordDlg(CWnd* pParent = NULL);   // standard constructor
+	CApplyRecordDlg(int nIdx, CSelfServiceBankClientDlg* pDlg, CWnd* pParent = NULL);   // standard constructor
 	//CApplyRecordDlg(const CApplyRecordDlg&) {} //vector<CApplyRecordDlg>需要
 	virtual ~CApplyRecordDlg();
-
+	//消息通知
+	//virtual void Update(bool, DWORD, DWORD, PBYTE, INT);
 
 // Dialog Data
 #ifdef AFX_DESIGN_TIME
@@ -39,9 +41,13 @@ public:
 protected:
 	CRect m_rcInParent, m_rcClient/*, m_rcPerson*/;//在父窗口中的区域坐标、客户区域
 	
-	std::shared_ptr<stApplyInfo> m_stApplyInfo = 0;//共享申请数据
+	std::shared_ptr<stApplyInfo> m_stApplyInfo = 0;//申请数据
 	//std::vector<stApplyPersonInfo> m_vecStPersonInfo;//申请认证人员信息
-	std::shared_ptr<CApplyState> m_pState = 0; //申请状态
+	//std::shared_ptr<CApplyState> m_pState = 0; //申请状态
+	//std::map<DWORD, void(CApplyRecordDlg::*)(PBYTE, DWORD, INT)> m_mapZCMsgHandler;//ZCMsgManager消息处理函数
+	//中介者，复杂的控件通信逻辑交给中介
+	//两种实现：1）Observer；2）直接提供接口；
+	CSelfServiceBankClientDlg* m_oMediator;
 
 	CStatic m_oVideo1;//视频
 	CStatic m_oVideo2;
@@ -68,21 +74,38 @@ protected:
 
 public:
 	//获取成员m_stApplyInfo
-	inline const std::shared_ptr<stApplyInfo>& 
-		GetApplyInfo() const { return m_stApplyInfo; }
+	inline const std::shared_ptr<stApplyInfo>& GetApplyInfo() const { return m_stApplyInfo; }
 	void SetApplyInfo(const std::shared_ptr<stApplyInfo>& st, bool bAdd = false);
 	//设置对话框在父窗口中的区域，因为Create->OnInitDialog->SetWindowPos
 	inline void SetRectInParent(const CRect& rc) { m_rcInParent = rc; }
 	//刷新显示
 	void Update();
-	//按钮灰化/可用处理，改为按钮
+	//灰化/可用处理，有空改为按钮，因为CStatic的可用是重绘的
 	void EnableButton(std::vector<emButton> em, bool b);
 	//申请视频
 	bool ReqVideo();
+	//停止预览视频
+	void StopVideo();
 
 public:
 	std::vector<stVideoInfo> m_vecVideoInfo;//视频信息
+	int m_nIdx;//在父窗口中的索引
 	afx_msg void OnDblclkVideo1();
 	afx_msg void OnStnClickedEntermaplayer();
 	afx_msg void OnStnClickedOpen();
+
+private:
+	//失效判断
+	void IsInvalid();
+	//失效处理
+	void DoInvalid();
+	//远程认证分支
+	void RemoteAuth();
+	//本地认证分支
+	void LocalAuth();
+
+public:
+	afx_msg void OnStnClickedLock();
+	afx_msg void OnStnClickedRefuseopen();
+	afx_msg void OnStnClickedConfirm();
 };
