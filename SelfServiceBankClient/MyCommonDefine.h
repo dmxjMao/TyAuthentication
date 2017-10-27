@@ -119,6 +119,7 @@ enum emNodeType {
 	DeviceNode,
 	emNodeTypeBuff
 };
+//就不该设计这些结构，直接用那详细的结构一样
 //节点父类
 struct stNode {
 	unsigned short nID;//id
@@ -131,12 +132,18 @@ struct stNode {
 };
 
 struct stArea : stNode{
-	stArea(unsigned short id, std::string code, std::string fCode, std::string name)
-		: stNode(id, code, fCode, name) {}
+	std::string strContactManName;//联系人
+	std::string strContactInfo;//联系方式
+	
+	stArea(unsigned short id, std::string code, std::string fCode, std::string name,
+		std::string contactName, std::string contactInfo)
+		: stNode(id, code, fCode, name), 
+		strContactManName(contactName), strContactInfo(contactInfo){}
 };
 
 struct stHost : stNode {
 	int nFactoryType;//厂家类型
+	
 	stHost(unsigned short id, std::string code, std::string fCode, std::string name,
 		int factory)
 		: stNode(id, code, fCode, name), nFactoryType(factory) {}
@@ -167,6 +174,7 @@ struct stApplyPersonInfo {
 多人模式下，同一个网点（场所），同一个部位代表同一个申请
 */
 struct stApplyInfo {
+	unsigned long nApplyID = 0;//申请id
 	CString strWebSiteName;//申请网点（区域）
 	CString strPartName;//申请部位
 	int nImportance = -1;//重要程度（管控等级）
@@ -178,8 +186,6 @@ struct stApplyInfo {
 	CTime tmApply;//申请认证时间，CString不好转CTime
 	emAuthState emState = Dealing;//认证状态
 	//std::vector<std::tuple<>>//两路视频
-	//stApplyPersonInfo stPersonInfo;//申请人员信息
-	//std::vector<std::shared_ptr<stApplyPersonInfo>> vecPersonInfo;//申请人员信息
 	std::shared_ptr<stApplyPersonInfo> stPersonInfo;//申请人员信息
 };
 
@@ -205,3 +211,22 @@ struct stEmergPlan {
 };
 
 
+//lambda方法
+//通过节点id查找节点
+bool lambda_FindNodeByID(const std::shared_ptr<stNode>& st, const int id);
+//通过节点名查找节点
+bool lambda_FindNodeByName(const std::shared_ptr<stNode>& st, const CString& name);
+//查找当前用户是否受理该门禁
+bool lambda_FindDealHostByID(const USERDOORCAMERARELATION_CLIENT_GET_S& st, const int id);
+//查找申请记录
+bool lambda_FindApplyInfo(const std::shared_ptr<stApplyInfo>& stElm, const std::shared_ptr<stApplyInfo>& stDest);
+//通过设备id查找主机信息
+bool lambda_FindACSHostByDevNo(const std::pair<CString, std::shared_ptr<stACSHostInfo>>& p, const int nDevNo);
+//通过卡号查找管辖人员
+bool lambda_FindCtrlInfoByCardID(const std::shared_ptr<stCtrlPersonInfo>& st, const CString& chID);
+//通过卡号查找申请信息
+bool lambda_FindApplyInfoByCardID(const std::shared_ptr<stApplyInfo>& st, const CString& chID);
+//查找记录的申请时间比哪条记录更早 或者找到一条空记录
+bool lambda_InsertRecord(const std::shared_ptr<stApplyInfo>& sp, const std::shared_ptr<stApplyInfo>& st);
+//排序申请记录，申请时间早的 > 空的
+bool lambda_SortApplyVector(const std::shared_ptr<stApplyInfo>& sp1, const std::shared_ptr<stApplyInfo>& sp2);

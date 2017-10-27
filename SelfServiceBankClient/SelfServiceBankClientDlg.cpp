@@ -9,6 +9,7 @@
 
 #include "MyCommonDefine.h"
 #include "LogDialog.h"
+#include "MyStg.h"
 #include "ZCMsgManager.h"
 #include "MyStatic1.h"
 #include "MyListBox1.h"
@@ -29,36 +30,10 @@ stVideoInfo g_stVideInfo;
 namespace {
 	using std::vector;
 	using std::shared_ptr;
+	using std::make_shared;
 	using std::placeholders::_1;
 	const UINT cstnApplyRecordCnt = 3; //申请记录详情行数
-	//通过设备id查找主机信息
-	bool lambda_FindACSHostByDevNo(const std::pair<CString, shared_ptr<stACSHostInfo>>& p, const int nDevNo) {
-		return p.second->stBaseInfo.nID == nDevNo;
-	}
-	//通过卡号查找管辖人员
-	bool lambda_FindCtrlInfoByCardID(const shared_ptr<stCtrlPersonInfo>& st, const CString& chID) {
-		return CString(st->stBaseInfo.chCardNum) == chID;
-	}
-	//通过卡号查找申请信息
-	bool lambda_FindApplyInfoByCardID(const shared_ptr<stApplyInfo>& st, const CString& chID) {
-		return CString(st->stPersonInfo->stPersonInfo->stBaseInfo.chCardNum) == chID;
-	}
-	//查找申请时间
-	bool Lambda_InsertRecord(/*CApplyRecordDlg& dlg*/const shared_ptr<stApplyInfo>& sp, const shared_ptr<stApplyInfo>& st)
-	{
-		return nullptr == sp || st->tmApply < sp->tmApply;
-	}
-	//排序
-	bool Lambda_SortRecordVector(const std::shared_ptr<stApplyInfo>& sp1,
-		const std::shared_ptr<stApplyInfo>& sp2)
-	{
-		if (sp1 && !sp2)
-			return true;
-		if (!sp1 && !sp2 || !sp1 && sp2)
-			return false;
-
-		return sp1->tmApply < sp2->tmApply;
-	}
+	
 };
 
 // CAboutDlg dialog used for App About
@@ -109,13 +84,14 @@ CSelfServiceBankClientDlg::CSelfServiceBankClientDlg(CWnd* pParent /*=NULL*/)
 
 	m_vecApplyRecordDlg.resize(cstnApplyRecordCnt);
 	for (int i = 0; i < cstnApplyRecordCnt; ++i) {
-		m_vecApplyRecordDlg[i] = std::make_shared<CApplyRecordDlg>(i, this);
+		m_vecApplyRecordDlg[i] = make_shared<CApplyRecordDlg>(i, this);
 	}
 
-	m_oLogDlg = std::make_shared<CLogDialog>();
+	m_oLogDlg = make_shared<CLogDialog>();
+	m_oStg = make_shared<CStgOperator>();
 
-	m_oCloseWindow = std::make_shared<CMyStatic1>();
-	m_oApplyList = std::make_shared<CMyListBox1>(this);
+	m_oCloseWindow = make_shared<CMyStatic1>();
+	m_oApplyList = make_shared<CMyListBox1>(this);
 
 	//ZCMsg消息映射
 	InitZCMsgHandler();
@@ -187,11 +163,13 @@ BOOL CSelfServiceBankClientDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// Set small icon
 
 	/*布局*/
-	//移动主界面
+	//移动主界面，控制最小尺寸，否则小屏幕按钮都看不见了
 	int cx = ::GetSystemMetrics(SM_CXFULLSCREEN);
 	int cy = ::GetSystemMetrics(SM_CYFULLSCREEN);
 	CRect rc(0, 0, cx, cy);
 	rc.DeflateRect(cx / 5, cy / 15);//左右各缩小1/4，高宽相等
+	if (rc.Width() < 1000)
+		rc.SetRect(rc.left, rc.top, rc.left + 1000, rc.bottom);
 	SetWindowPos(nullptr, rc.left, rc.top, rc.Width(), rc.Height(), SWP_NOZORDER);//屏幕坐标
 
 	//标题栏、客户、列表、申请认证记录区，SetRect参数是坐标值
@@ -239,9 +217,13 @@ BOOL CSelfServiceBankClientDlg::OnInitDialog()
 
 #endif // DEBUG
 
-	//初始化消息服务，因为界面元素可能是一个观察者
+	//初始化消息服务，因为界面元素可能是一个观察者，所以要等界面初始化完成
 	if (!CZCMsgManager::Instance()->Init(0))
 		return FALSE;
+	
+	//获取历史申请记录并显示
+	GetHistoryApplyAndDisplay();
+	
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -367,11 +349,26 @@ void CSelfServiceBankClientDlg::OnLButtonDown(UINT nFlags, CPoint point)
 }
 
 
+//读取历史申请记录并显示
+void CSelfServiceBankClientDlg::GetHistoryApplyAndDisplay()
+{
+	//获取当前申请id
+	m_dwApplyID = m_oStg->GetApplyID();
+
+	//读取stg，显示历史记录，前N条（今天，昨天，。。。不同的分类如何做？）
+	vector<stApplyInfo> vecApplyLog;
+	m_oStg->GetRecentNRecord(100, vecApplyLog);
+
+	for (const auto& stLog : vecApplyLog) {
+		//auto& sp = make_shared<stApplyInfo>();
+
+		//InsertApplyInfo
+	}
+	
+}
 
 void CSelfServiceBankClientDlg::InsertApplyInfo(const shared_ptr<stApplyInfo>& sp)
 {
-	m_vecApplyInfo.push_back(sp);
-
 	//插入到左侧申请列表
 	m_oApplyList->MyInsertString(sp);
 	
@@ -402,7 +399,7 @@ void CSelfServiceBankClientDlg::MyInsertRecord(const shared_ptr<stApplyInfo>& st
 		vec.push_back(st->GetApplyInfo());
 
 	auto it = std::find_if(vec.begin(), vec.end(),
-		std::bind(Lambda_InsertRecord, _1, st));
+		std::bind(lambda_InsertRecord, _1, st));
 	if (vec.end() != it) {//存在为空或更晚的记录，不存在啥也不做
 		int i = std::distance(vec.begin(), it);
 		auto itDlg = m_vecApplyRecordDlg.begin();
@@ -414,7 +411,7 @@ void CSelfServiceBankClientDlg::MyInsertRecord(const shared_ptr<stApplyInfo>& st
 		else {//替换更晚的申请
 			auto& last = *vec.rbegin();
 			last = st;
-			sort(vec.begin(), vec.end(), Lambda_SortRecordVector);
+			sort(vec.begin(), vec.end(), lambda_SortApplyVector);
 			for (/*auto& st : vec*/int i = 0; i < (int)vec.size(); ++i) {
 				auto& dlg = m_vecApplyRecordDlg[i];
 				if (vec[i] == dlg->GetApplyInfo())
@@ -445,6 +442,17 @@ void CSelfServiceBankClientDlg::DeleteRecord(int idx)
 		//右边
 		pDlg->SetApplyInfo(0);
 	}
+}
+
+//失效处理
+void CSelfServiceBankClientDlg::RemoveApply(const shared_ptr<stApplyInfo>& st)
+{
+	auto it = std::find_if(m_vecApplyInfo.begin(), m_vecApplyInfo.end(),
+		std::bind(lambda_FindApplyInfo, _1, st));
+	if (m_vecApplyInfo.end() == it)
+		return;
+
+	m_vecApplyInfo.erase(it);
 }
 
 void CSelfServiceBankClientDlg::Update(bool bOK, DWORD dwType, DWORD dwMsgID, PBYTE pMsg, INT nMsgLen)
@@ -500,7 +508,16 @@ void CSelfServiceBankClientDlg::ZCMsgAuthentication(PBYTE pMsg, DWORD dwMsgID, I
 	}
 	const auto& pHostInfo = (itACSHost->second);//门禁主机信息
 	const auto& stCtrlPlan = theApp.GetCtrlPlanInfo(pHostInfo->nCtrlLevel);//对应的管控策略
-	//用成员方法的一个缺点就是要传各种入参，用类
+
+	//当前用户是否受理该门禁
+	const auto& pVecDealHost = theApp.m_mapUserInfo[theApp.m_strCurUserName]->pDealedACSHost;
+	if (!pVecDealHost || pVecDealHost->empty()) return; //不处理任何门禁
+
+	auto itDealHost = std::find_if(pVecDealHost->begin(), pVecDealHost->end(),
+		std::bind(lambda_FindDealHostByID, _1, nDevID));
+	if (pVecDealHost->end() == itDealHost) return; //不受理该门禁
+
+
 	if (1 == stCtrlPlan->nAuthType) {//远程认证
 		RemoteAuth(pAuthInfo->tTransmitAlarmInfo, pHostInfo);
 	}
@@ -552,7 +569,7 @@ void CSelfServiceBankClientDlg::ZCMsgOpenDoor(PBYTE pMsg, DWORD dwMsgID, INT nMs
 		if (0 == cnt[dwMsgID]) {//开门
 			//要访问成员，又不想把CApplyRecordDlg作为观察者，就要麻烦点了
 			auto& dlg = m_vecApplyRecordDlg[dwMsgID];
-			dlg->m_oPicDoor->Set(_T("res\\openeddoor_32px.png"));
+			dlg->m_oPicDoor->Set(_T("res\\开门_58-74-_白.bmp"));
 			dlg->m_oPicDoor->Invalidate();
 
 			vector<emButton> vecBtn = { OpenDoorBtn };
@@ -723,12 +740,12 @@ bool CSelfServiceBankClientDlg::CreateApplyInfo(const T_TRANSMITALARMINFO& stAut
 		return false;
 	}
 
-
 	//构造申请信息
 	auto& spApplyInfo = std::make_shared<stApplyInfo>();
 	spApplyInfo->stPersonInfo = std::make_shared<stApplyPersonInfo>();
 	auto& spApplyPersonInfo = spApplyInfo->stPersonInfo;
 
+	spApplyInfo->nApplyID = ++m_dwApplyID % 10000; 
 	spApplyInfo->nLocal = nLocal;//本地or远程认证
 	spApplyInfo->nImportance = pHostInfo->nCtrlLevel;//管控等级
 	spApplyInfo->nDevID = stAuthInfo.nDevNumber;//刷卡设备id
@@ -755,8 +772,12 @@ bool CSelfServiceBankClientDlg::CreateApplyInfo(const T_TRANSMITALARMINFO& stAut
 	spApplyInfo->strPartName = stAuthInfo.chKeyPart;//部位
 	spApplyPersonInfo->tmApply = spApplyInfo->tmApply = std::move(tmApply);//申请时间
 
+	m_vecApplyInfo.push_back(spApplyInfo);//为什么不放在InsertApplyInfo里，因为“历史记录”
 	//传入各控件
 	InsertApplyInfo(spApplyInfo);
+
+	//写入日志流
+	m_oStg->WriteApplyLog(spApplyInfo);
 
 	return true;
 }

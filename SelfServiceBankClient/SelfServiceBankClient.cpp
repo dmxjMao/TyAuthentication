@@ -334,7 +334,8 @@ void CSelfServiceBankClientApp::ZCMsgAreaInfo(PBYTE pMsg, DWORD dwMsgID, INT nMs
 	ZCMsgMacro_beginfor(T_AREA_INFO, pMsg, nMsgLen)
 	T_AREA_INFO* pInfo = (T_AREA_INFO*)(&pMsg[ZCMsgHeaderLen + i * nStructLen]);
 	
-	auto sp = make_shared<stArea>(pInfo->nAreaId, pInfo->chCode, pInfo->chFatherNo, pInfo->chName);
+	auto sp = make_shared<stArea>(pInfo->nAreaId, pInfo->chCode, pInfo->chFatherNo, pInfo->chName,
+		pInfo->chManName, pInfo->chContactInfo);
 	vecArea.push_back(std::move(sp));
 
 	pInfo = 0;

@@ -187,6 +187,7 @@
   <ItemGroup>
     <Text Include="ReadMe.txt" />
     <Text Include="自绘说明.txt" />
+    <Text Include="说明.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ApplyRecordDlg.h" />
@@ -203,10 +204,10 @@
     <ClInclude Include="MyStatic1.h" />
     <ClInclude Include="MyStatic2.h" />
     <ClInclude Include="MyStatic3.h" />
+    <ClInclude Include="MyStg.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="SelfServiceBankClient.h" />
     <ClInclude Include="SelfServiceBankClientDlg.h" />
-    <ClInclude Include="MyState.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="ZCMsgManager.h" />
@@ -215,6 +216,9 @@
     <ClCompile Include="..\TjtyPlayer\LoadTJTY_Play.cpp" />
     <ClCompile Include="ApplyRecordDlg.cpp" />
     <ClCompile Include="EmergencyPlanDialog.cpp" />
+    <ClCompile Include="lambda.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="LogDialog.cpp" />
     <ClCompile Include="MyButton1.cpp" />
     <ClCompile Include="MyButton2.cpp" />
@@ -226,9 +230,9 @@
     <ClCompile Include="MyStatic1.cpp" />
     <ClCompile Include="MyStatic2.cpp" />
     <ClCompile Include="MyStatic3.cpp" />
+    <ClCompile Include="MyStg.cpp" />
     <ClCompile Include="SelfServiceBankClient.cpp" />
     <ClCompile Include="SelfServiceBankClientDlg.cpp" />
-    <ClCompile Include="MyState.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

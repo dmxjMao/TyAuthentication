@@ -13,6 +13,7 @@
 #include "EmergencyPlanDialog.h" //应急处置
 //#include "MyState.h"//申请状态
 #include "SelfServiceBankClientDlg.h"
+#include "MyStg.h"
 
 //网络服务库
 #include "TYServerSDK.h"
@@ -96,6 +97,8 @@ IMPLEMENT_DYNAMIC(CApplyRecordDlg, CDialogEx)
 CApplyRecordDlg::CApplyRecordDlg(int nIdx, CSelfServiceBankClientDlg* pDlg, CWnd* pParent /*=NULL*/)
 	: m_nIdx(nIdx), m_oMediator(pDlg), CDialogEx(IDD_ApplyRecordDlg, pParent)
 {
+	//m_oStg = make_shared<CStgOperator>();
+
 	m_oPersonInfo = make_shared<CMyListCtrl1>();
 	m_oPicDoor = make_shared<CMyStatic1>();
 	
@@ -205,17 +208,17 @@ BOOL CApplyRecordDlg::OnInitDialog()
 	//FlatSB_EnableScrollBar(m_oPersonInfo.m_hWnd, SB_BOTH, ESB_DISABLE_BOTH);
 	//FlatSB_ShowScrollBar(m_oPersonInfo.m_hWnd, SB_VERT, FALSE);
 
-	//门，图片从文档下载
+	//门
 	m_oPersonInfo->GetClientRect(&rc);
-	y += rc.Height() + 20/*间距*/;
+	y += rc.Height() + 2;
 	m_oPicDoor->SetWindowPos(0, x, y, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
-	m_oPicDoor->Set(_T("res\\closeddoor_32px.png"));
+	m_oPicDoor->Set(_T("res\\关门_58-74-_白.bmp"));
 	//m_oPicDoor->Set(_T("res\\openeddoor_32px.png"));
 
 	//按钮，根据配置灰化处理
-	y -= 15;
 	w = rc.Width();//申请列表宽度
 	m_oPicDoor->GetClientRect(&rc);
+	//y += ;
 	int nGap = 30;//按钮之间的间距
 	//应急处置
 	x += rc.Width() + 5; 
@@ -293,11 +296,12 @@ void CApplyRecordDlg::OnPaint()
 void CApplyRecordDlg::Update()
 {
 	if (m_stApplyInfo) {
-		//请求视频
-		ReqVideo();
-
 		//失效判断
-		IsInvalid();
+		bool bInvalid = IsInvalid();
+
+		//请求视频
+		if(!bInvalid)
+			ReqVideo();
 
 		//网点名称
 		GetDlgItem(IDC_title)->SetWindowText(m_stApplyInfo->strWebSiteName);
@@ -383,19 +387,6 @@ void CApplyRecordDlg::OnClickedEmergency()
 
 
 //申请视频
-//查找主机
-bool Lambda_FindNodeByID(const shared_ptr<stNode>& st, const int id) {
-	return st->nID == id;
-}
-//根据主机编码和通道号查找探头设备id
-//bool Lambda_FindDevByHostCodeAndChnlID(const shared_ptr<stNode>& st, const std::string& code, const int chnlid) {
-//	const shared_ptr<stDevice>& spDevInfo = (shared_ptr<stDevice>&)(st);
-//	return (spDevInfo->strHostCode == code && spDevInfo->nChnlNo == chnlid);
-//}
-//查找当前用户是否受理该门禁
-bool Lambda_FindDealHostByID(const USERDOORCAMERARELATION_CLIENT_GET_S& st, const int id) {
-	return st.nDoorId == id;
-}
 //线程函数：服务库视频类
 UINT TYServerVideoThread(LPVOID lpParam)
 {
@@ -406,14 +397,10 @@ UINT TYServerVideoThread(LPVOID lpParam)
 	//构造申请结构，调服务库申请视频，传入窗口句柄
 	//在回调中，调解码库播放
 
-	//查找用户受理的门禁
+	//查找用户受理的门禁，一定存在，因为之前过滤过
 	const auto& pVecDealHost = theApp.m_mapUserInfo[theApp.m_strCurUserName]->pDealedACSHost;
-	if (!pVecDealHost || pVecDealHost->empty()) return true; //无联动视频
-
 	auto itDealHost = std::find_if(pVecDealHost->begin(), pVecDealHost->end(),
-		std::bind(Lambda_FindDealHostByID, _1, dlg.GetApplyInfo()->nDevID));
-
-	if (pVecDealHost->end() == itDealHost) return true; //不受理该门禁
+		std::bind(lambda_FindDealHostByID, _1, dlg.GetApplyInfo()->nDevID));
 
 	dlg.StopVideo();
 
@@ -451,7 +438,7 @@ UINT TYServerVideoThread(LPVOID lpParam)
 
 		//查找主机信息，获取厂商类型
 		auto itHost = std::find_if(vecHostInfo.begin(), vecHostInfo.end(),
-			std::bind(Lambda_FindNodeByID, _1, nDevID));
+			std::bind(lambda_FindNodeByID, _1, nDevID));
 		const shared_ptr<stHost>& spHostInfo = (shared_ptr<stHost>&)(*itHost);
 
 		stVideo.nPlayID = nPlayID;
@@ -467,16 +454,11 @@ UINT TYServerVideoThread(LPVOID lpParam)
 
 	return TRUE;
 }
-bool CApplyRecordDlg::ReqVideo()
+void CApplyRecordDlg::ReqVideo()
 {
-	//如果请求相同的2路视频
-	//if(m_stApplyInfo->nDevID == m_vecVideoInfo[0].nDevID &&
-	//	m_stApplyInfo)
-
 	//TY_Server都是同步的，开启工作线程
 	AfxBeginThread(TYServerVideoThread, this);
 
-	return true;
 }
 
 void CApplyRecordDlg::OnDblclkVideo1()
@@ -577,30 +559,24 @@ void CApplyRecordDlg::OnStnClickedRefuseopen()
 }
 
 
-void CApplyRecordDlg::IsInvalid()
+bool CApplyRecordDlg::IsInvalid()
 {
-	//计时“已失效”，N秒，点击左侧就不能这样了
-	//SetTimer(IDT_Valid, 5 * 1000, 0);
-	//点击ListBox、初始化，计算剩余时间
 	CTimeSpan tmLeft = CTime::GetCurrentTime() - m_stApplyInfo->tmApply;
 	int nLeftSecond = (int)tmLeft.GetTotalSeconds();
+	
 	//认证处理有效时长
 	int nLimitSecond = 0;
-	//auto& spCtrlPlan = theApp.m_mapCtrlPlan[m_stApplyInfo->nImportance];
 	auto& spCtrlPlan = theApp.GetCtrlPlanInfo(m_stApplyInfo->nImportance);
 	nLimitSecond = spCtrlPlan->nAuthTimeLimit * 60;
-	//if (0 == spCtrlPlan) {//没有就用默认的
-	//	stCtrlPlanInfo st;
-	//	nLimitSecond = st.nAuthTimeLimit * 60;
-	//}
-	//else
-	//	nLimitSecond = spCtrlPlan->nAuthTimeLimit * 60;
+
 	if (nLeftSecond < nLimitSecond) {
 		SetTimer(IDT_Valid, (nLimitSecond - nLeftSecond) * 1000, 0);
+		return false;
 	}
 	else {
 		//OnTimer(IDT_Valid);  //窗口还没创建好，崩溃
 		SetTimer(IDT_Valid, 0, 0);//立即触发
+		return true;
 	}
 }
 
@@ -628,6 +604,7 @@ void CApplyRecordDlg::DoInvalid()
 	//灰化按钮
 	EnableButton({ GrantBtn ,OpenDoorBtn ,LockDoorBtn ,RefuseOpenBtn }, false);
 
+	m_oMediator->RemoveApply(m_stApplyInfo);
 }
 
 //停止预览视频

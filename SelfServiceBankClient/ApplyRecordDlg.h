@@ -8,6 +8,7 @@ class CMyStatic1;
 class CMyStatic2;
 //class CApplyState;//申请状态
 class CSelfServiceBankClientDlg;//中介
+class CStgOperator;//结构化存储
 
 //视频信息
 struct stVideoInfo {
@@ -48,6 +49,7 @@ protected:
 	//中介者，复杂的控件通信逻辑交给中介
 	//两种实现：1）Observer；2）直接提供接口；
 	CSelfServiceBankClientDlg* m_oMediator;
+	//std::shared_ptr<CStgOperator> m_oStg = 0;
 
 	CStatic m_oVideo1;//视频
 	CStatic m_oVideo2;
@@ -83,7 +85,7 @@ public:
 	//灰化/可用处理，有空改为按钮，因为CStatic的可用是重绘的
 	void EnableButton(std::vector<emButton> em, bool b);
 	//申请视频
-	bool ReqVideo();
+	void ReqVideo();
 	//停止预览视频
 	void StopVideo();
 
@@ -96,7 +98,7 @@ public:
 
 private:
 	//失效判断
-	void IsInvalid();
+	bool IsInvalid();
 	//失效处理
 	void DoInvalid();
 	//远程认证分支

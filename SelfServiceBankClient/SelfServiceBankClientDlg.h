@@ -13,6 +13,7 @@ class CMyListBox1;
 struct stApplyInfo;
 class CApplyRecordDlg;
 struct T_TRANSMITALARMINFO;
+class CStgOperator;
 
 class CSelfServiceBankClientDlg : public CDialogEx, public CZCMsgObserver
 {
@@ -25,6 +26,8 @@ public:
 	void DisplayDetail(const std::shared_ptr<stApplyInfo>& st);
 	//关闭记录，删除左边，右边
 	void DeleteRecord(int idx);
+	//删除申请
+	void RemoveApply(const std::shared_ptr<stApplyInfo>& st);
 
 	//消息通知
 	virtual void Update(bool, DWORD, DWORD, PBYTE, INT);
@@ -46,6 +49,7 @@ protected:
 protected:
 	HICON m_hIcon;
 	CRect m_rcClient, m_rcCaption, m_rcList, m_rcRecord; //客户区、标题区，列表区，记录区
+	DWORD m_dwApplyID = 0;//申请id
 	
 	std::shared_ptr<CMyStatic1> m_oCloseWindow = 0;//关闭按钮
 	std::shared_ptr<CMyListBox1> m_oApplyList = 0;//申请列表
@@ -55,6 +59,7 @@ protected:
 	//std::vector<tplMultiApplyInfo> m_vecMultiApplyInfo;//多人刷卡信息
 
 	std::shared_ptr<CLogDialog> m_oLogDlg = 0;//日志对话框
+	std::shared_ptr<CStgOperator> m_oStg = 0;//结构化存储
 
 	// Generated message map functions
 	virtual BOOL OnInitDialog();
@@ -69,7 +74,10 @@ protected:
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 
 private:
-	void InsertApplyInfo(const std::shared_ptr<stApplyInfo>&);//插入申请消息
+	//读取历史申请记录并显示
+	void GetHistoryApplyAndDisplay();
+	//插入申请消息
+	void InsertApplyInfo(const std::shared_ptr<stApplyInfo>&);
 	
 	//初始化ZCMsgManager消息处理函数
 	void InitZCMsgHandler();
