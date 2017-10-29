@@ -174,7 +174,7 @@ struct stApplyPersonInfo {
 多人模式下，同一个网点（场所），同一个部位代表同一个申请
 */
 struct stApplyInfo {
-	unsigned long nApplyID = 0;//申请id
+	WORD nApplyID = 0;//申请id
 	CString strWebSiteName;//申请网点（区域）
 	CString strPartName;//申请部位
 	int nImportance = -1;//重要程度（管控等级）
@@ -230,3 +230,5 @@ bool lambda_FindApplyInfoByCardID(const std::shared_ptr<stApplyInfo>& st, const 
 bool lambda_InsertRecord(const std::shared_ptr<stApplyInfo>& sp, const std::shared_ptr<stApplyInfo>& st);
 //排序申请记录，申请时间早的 > 空的
 bool lambda_SortApplyVector(const std::shared_ptr<stApplyInfo>& sp1, const std::shared_ptr<stApplyInfo>& sp2);
+//根据预案名称，查找预案信息
+bool lambda_FindEMPlanByName(const std::shared_ptr<stEmergPlan>& sp, const CString& name);

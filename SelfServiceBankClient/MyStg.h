@@ -8,53 +8,43 @@
 流结构图
 			root@(0)
 		/			\
-	辅助流~		申请记录流~
+	辅助流~		申请记录流N~
 
 */
 
-
-//流类型
-enum StgStreamType {
-	StgAssist,//辅助流
-	StgApply,//申请记录
-	StgStreamTypeBuff
-};
-
-//基类：读写
+//基类
 struct StgBase{
-	virtual void Read(LPSTREAM) = 0;
-	virtual void Write(LPSTREAM) = 0;
+	virtual bool Read(LPSTREAM) = 0;
+	virtual bool Write(LPSTREAM) = 0;
 };
 
-//处置过程
-struct stStgAction : StgBase {
-	TCHAR szActType[32];//<操作名称
-	char chActDate[32];//<操作时间
-	TCHAR chActPerson[32];//<操作人
-	
-	void Read(LPSTREAM);
-	void Write(LPSTREAM);
-};
 
-//申请记录索引
-struct stStgApplyIndex : StgBase {
-	int nApplyID = 0;//申请id
-	int nPos = 0;//在流中的其实位置
-	int nSize = 0;//记录大小
-
-	void Read(LPSTREAM);
-	void Write(LPSTREAM);
-};
 
 //流结构：辅助信息
 struct stStgAssist : StgBase {
-	unsigned long nCurApplyID = 0;//当前申请id
+	WORD nCurApplyID = 0;//当前申请id
+	WORD nUploadID = 0;//上一次上传的id
 
-	stStgApplyIndex* pIndex = 0;
-	int nIndexCnt = 0;
+	bool Read(LPSTREAM);
+	bool Write(LPSTREAM);
+};
 
-	void Read(LPSTREAM);
-	void Write(LPSTREAM);
+//流结构：处置动作
+struct stStgAction : StgBase {
+	TCHAR szActType[32] = { 0 };//<操作名称
+	TCHAR szActDate[32] = { 0 };//<操作时间
+	TCHAR szActPerson[32] = { 0 };//<操作人
+
+	stStgAction() {}
+	stStgAction(const TCHAR* ActName, const TCHAR* ActDate, const TCHAR* ActMan) {
+		//memcpy_s(szActType, _countof(szActType), ActName, _TRUNCATE); //崩溃
+		memcpy_s(szActType, _countof(szActType), ActName, _countof(szActType));
+		memcpy_s(szActDate, _countof(szActDate), ActDate, _countof(szActDate));
+		memcpy_s(szActPerson, _countof(szActPerson), ActMan, _countof(szActPerson));
+	}
+
+	bool Read(LPSTREAM);
+	bool Write(LPSTREAM);
 };
 
 //流结构：申请日志
@@ -78,14 +68,14 @@ struct stStgApplyLog : StgBase{
 	TCHAR szApplyType[32] = { 0 };//<认证模式
 	//TCHAR chDoorGUID[64] = { 0 };//<认证GUID
 
-	//处置过程
+	//处置动作
 	//执行预案、申请授权 + 开门/关门/上锁、拒绝开门。。。
 	stStgAction* pAction = 0;
 	UINT8 nActionNum = 0;
 	//
 
-	void Read(LPSTREAM);
-	void Write(LPSTREAM);
+	bool Read(LPSTREAM);
+	bool Write(LPSTREAM);
 };
 
 //Stg操作类
@@ -93,15 +83,6 @@ struct stApplyInfo;
 
 class CStgOperator {
 public:
-	//
-	struct StreamNode {//stream节点属性
-		StgStreamType em;//流类型
-		CString name;//流名称
-		//StgBase* cfg;//数据
-
-		StreamNode(StgStreamType e, CString nm)
-			: em(e), name(nm){}
-	};
 	
 	enum LogType { Write, Update, LogTypeBuff }; //操作类型：写，更新
 
@@ -112,27 +93,32 @@ public:
 	
 	//面向客户的接口
 	//获取申请id
-	unsigned long GetApplyID();
+	WORD GetApplyID();
+	//获取申请记录
+	bool GetApplyRecord(const WORD, std::shared_ptr<stApplyInfo>&);
 	//读取最近n条申请记录
-	bool GetRecentNRecord(const int nCnt, std::vector<stApplyInfo>&);
+	//bool GetRecentNRecord(const int nCnt, std::vector<stApplyInfo>&);
 	//写入申请日志
 	void WriteApplyLog(const std::shared_ptr<stApplyInfo>&, bool bResumeOrDo = true);
-	//修改申请日志
-	void ModifyApplyLog(const std::shared_ptr<stApplyInfo>&/*成员名，值*/, bool bResumeOrDo = true);
+	//添加申请处置动作日志
+	void AddApplyActionLog(const WORD, const TCHAR*, bool bResumeOrDo = true);
 	//上传日志到db（复核、值班长查看。。。）
-	bool UploadApplyLog();
+	bool UploadApplyLog(bool bClear = false);
 
 private:
-	//处理继承关系
-	//void TransformBase2Derived(StreamNode& node, void*& pv, ULONG& len);
 	//创建默认结构
 	bool CreateDefaultStg();
-
-	//面向客户的接口
-	
+	//打开日志流
+	bool OpenLogStream(LPSTREAM& pAssist, const WORD id, LPSTREAM& pRecord);
+	//构造申请日志结构
+	void SetLogStruct(const std::shared_ptr<stApplyInfo>& sp, stStgApplyLog& stLog);
 
 public:
+	//线程使用
 	LogType m_emLogType = LogTypeBuff;//操作类型
+	//emStgActionType m_emCurAction = StgActionTypeBuff;//当前要记录的动作类型
+	CString m_strCurAction;//当前动作名
+	WORD m_dwCurApplyID = 0;//当前要处理的申请id
 	std::shared_ptr<stApplyInfo> m_pCurApplyInfo = 0;//当前申请记录
 	CWinThread* m_pThread = 0; //CWinThread成员m_autodelete控制
 

@@ -818,7 +818,7 @@ void __stdcall CSelfServiceBankClientApp::ServerExcepCallBack(U_LONG_TY dwExcept
 		//重新登录
 
 	}
-	else if (REALPLAY_ERR == dwExceptMsg)
+	else if (REALPLAY_ERR == dwExceptMsg) 
 	{
 		theApp.WriteLog(error, _T("ServerSDK异常回调：预览异常！"));
 	}

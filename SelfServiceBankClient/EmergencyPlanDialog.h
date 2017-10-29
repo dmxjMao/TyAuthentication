@@ -8,14 +8,15 @@ class CMyButton2;
 class CMyStatic1;
 class CMyListBox2;
 struct stEmergPlan;
+class CStgOperator;
 
 class CEmergencyPlanDialog : public CDialogEx
 {
 	DECLARE_DYNAMIC(CEmergencyPlanDialog)
 
 public:
-	CEmergencyPlanDialog(CWnd* pParent = NULL);   // standard constructor
-	//CEmergencyPlanDialog(const std::vector<std::shared_ptr<stEmergPlan>>& vec, CWnd* pParent = NULL);
+	CEmergencyPlanDialog(const WORD id, CString planName,
+		std::shared_ptr<CStgOperator>&, CWnd* pParent = NULL);   // standard constructor
 	virtual ~CEmergencyPlanDialog();
 	
 
@@ -39,6 +40,10 @@ protected:
 	std::shared_ptr<Image> m_img2 = nullptr;//图2
 	CToolTipCtrl m_tt;//tooltip
 
+	CString m_strCurPlanName;//当前预案名称
+	WORD m_nApplyID = 0;//当前申请id
+	std::shared_ptr<CStgOperator>& m_oStg;
+
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 	DECLARE_MESSAGE_MAP()
 public:
@@ -48,6 +53,7 @@ public:
 	afx_msg void OnBtnClickedOtherEMPlan(); //点击其他预案
 	afx_msg void OnOtherEMPlanSelchange();//选择其他预案
 	afx_msg void OnStnClickedClosewindow();//关闭窗口
+	afx_msg void OnClickEMPlanStep(UINT id);//双击预案步骤
 	virtual BOOL PreTranslateMessage(MSG* pMsg);//提示
 
 private:

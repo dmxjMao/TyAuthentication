@@ -49,7 +49,7 @@ protected:
 protected:
 	HICON m_hIcon;
 	CRect m_rcClient, m_rcCaption, m_rcList, m_rcRecord; //客户区、标题区，列表区，记录区
-	DWORD m_dwApplyID = 0;//申请id
+	WORD m_dwApplyID = 0;//申请id
 	
 	std::shared_ptr<CMyStatic1> m_oCloseWindow = 0;//关闭按钮
 	std::shared_ptr<CMyListBox1> m_oApplyList = 0;//申请列表
@@ -110,4 +110,5 @@ public:
 public:
 	afx_msg void OnBnClickedButton1();
 	afx_msg void OnDblclkDemovideo();
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
 };

@@ -29,9 +29,9 @@ public:
 	//afx_msg BOOL OnTtnNeedText(UINT id, NMHDR * pTTTStruct, LRESULT * pResult);
 	virtual void DrawItem(LPDRAWITEMSTRUCT /*lpDrawItemStruct*/);
 	//virtual BOOL PreTranslateMessage(MSG* pMsg);
-	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
-	afx_msg void OnMouseHover(UINT nFlags, CPoint point);
-	afx_msg void OnMouseLeave();
+	//afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+	//afx_msg void OnMouseHover(UINT nFlags, CPoint point);
+	//afx_msg void OnMouseLeave();
 };
 
 

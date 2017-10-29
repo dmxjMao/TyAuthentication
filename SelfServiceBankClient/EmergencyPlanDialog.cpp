@@ -13,6 +13,7 @@
 #include "MyButton1.h"
 #include "MyButton2.h"
 #include "MyListBox2.h"
+#include "MyStg.h"
 
 // CEmergencyPlanDialog dialog
 namespace{
@@ -23,11 +24,15 @@ namespace{
 	#define IDC_Submit 113//提交按钮
 
 	const int cstnCaptionH = 24;//标题栏高度
+
+	using std::placeholders::_1;
 };
 IMPLEMENT_DYNAMIC(CEmergencyPlanDialog, CDialogEx)
 
-CEmergencyPlanDialog::CEmergencyPlanDialog(CWnd* pParent /*=NULL*/)
-	: CDialogEx(IDD_EmergencyPlan, pParent), m_pParent(pParent)
+CEmergencyPlanDialog::CEmergencyPlanDialog(const WORD id, CString planName,
+	std::shared_ptr<CStgOperator>& pStg, CWnd* pParent /*=NULL*/)
+	: m_nApplyID(id), m_strCurPlanName(planName), m_oStg(pStg),
+	CDialogEx(IDD_EmergencyPlan, pParent), m_pParent(pParent)
 {
 	std::shared_ptr<Image> sp1(Image::FromFile(_T("res\\预案_灰色圆圈.png")));
 	m_img1 = std::move(sp1);
@@ -40,21 +45,6 @@ CEmergencyPlanDialog::CEmergencyPlanDialog(CWnd* pParent /*=NULL*/)
 	m_oOther = std::make_shared<CMyButton1>();
 	m_oSubmit = std::make_shared<CMyButton1>();
 }
-//
-//CEmergencyPlanDialog::CEmergencyPlanDialog(const std::vector<std::shared_ptr<stEmergPlan>>& vec, CWnd* pParent)
-//	: m_vecEmergPlan(sp), m_pParent(pParent), CDialogEx(IDD_EmergencyPlan, pParent)
-//{
-//	std::shared_ptr<Image> sp1(Image::FromFile(_T("res\\预案_灰色圆圈.png")));
-//	m_img1 = std::move(sp1);
-//	std::shared_ptr<Image> sp2(Image::FromFile(_T("res\\预案_背景常态.png")));
-//	m_img2 = std::move(sp2);
-//
-//	//关闭按钮、预案名称、其他预案、提交按钮
-//	m_oCloseWindow = std::make_shared<CMyStatic1>();
-//	m_oName = std::make_shared<CMyStatic3>();
-//	m_oOther = std::make_shared<CMyButton1>();
-//	m_oSubmit = std::make_shared<CMyButton1>();
-//}
 
 CEmergencyPlanDialog::~CEmergencyPlanDialog()
 {
@@ -72,6 +62,7 @@ BEGIN_MESSAGE_MAP(CEmergencyPlanDialog, CDialogEx)
 	ON_BN_CLICKED(IDC_OtherEMPlan, &CEmergencyPlanDialog::OnBtnClickedOtherEMPlan)
 	ON_LBN_SELCHANGE(IDC_OtherEMPlanLB, &CEmergencyPlanDialog::OnOtherEMPlanSelchange)
 	ON_NOTIFY_EX(TTN_NEEDTEXT, 0, &CEmergencyPlanDialog::OnTtnNeedText)
+	ON_COMMAND_RANGE(IDC_EMPlanStep, IDC_EMPlanStep+9, &CEmergencyPlanDialog::OnClickEMPlanStep)
 END_MESSAGE_MAP()
 
 
@@ -84,12 +75,6 @@ BOOL CEmergencyPlanDialog::OnInitDialog()
 
 	//调整窗口位置在“应急处置”按钮下方，如果超过边界就显示在上方
 	CRect rcBtn; //按钮坐标
-	//CApplyRecordDlg* pParent = (CApplyRecordDlg*)GetParent();
-	//auto p1 = pParent->GetDlgItem(IDC_Emergency);
-	//CWnd* p = GetParentOwner();
-	//auto p2 = pParent->GetDlgItem(IDC_Emergency);
-	//p = GetOwner();
-	//auto p3 = pParent->GetDlgItem(IDC_Emergency);
 
 	m_pParent->GetDlgItem(IDC_Emergency)->GetWindowRect(&rcBtn);
 	int x = rcBtn.left, y = rcBtn.bottom + 1; //dlg的左上取按钮的左上
@@ -135,7 +120,6 @@ BOOL CEmergencyPlanDialog::OnInitDialog()
 
 	//预案名称
 	//m_oName = std::make_shared<CMyStatic3>();
-	auto& stPlan = vecPlan[0]; //默认第一条
 	GetClientRect(&rc);
 	//x = rc.left, y = cstnCaptionH + 5;
 	//w = rc.left + rc.Width() / 3, h = 2 * cstnCaptionH + 5;
@@ -153,7 +137,9 @@ BOOL CEmergencyPlanDialog::OnInitDialog()
 	//m_oOther->SetWindowPos(0, rc.left, rc.top, rc.Width(), rc.Height(), SWP_NOZORDER);
 
 	//“预案步骤”
-	DrawEMPlanStep(stPlan);
+	auto it = std::find_if(theApp.m_vecEMPlanInfo.begin(), theApp.m_vecEMPlanInfo.end(),
+		std::bind(lambda_FindEMPlanByName, _1, m_strCurPlanName));
+	DrawEMPlanStep(*it);
 
 	//提交
 	//m_oSubmit = std::make_shared<CMyButton1>();
@@ -195,6 +181,9 @@ void CEmergencyPlanDialog::OnPaint()
 		gh.DrawString(_T("没有预案信息！"), -1, &font, pf, &sbrText);
 	}
 	
+	//时间
+	CTime tmCur = CTime::GetCurrentTime();
+	CString strTime = tmCur.Format(_T("%Y-%m-%d\n%H:%M:%S"));
 }
 
 
@@ -204,6 +193,45 @@ void CEmergencyPlanDialog::OnStnClickedClosewindow()
 	EndDialog(IDCANCEL);
 }
 
+//单击预案步骤
+void CEmergencyPlanDialog::OnClickEMPlanStep(UINT id)
+{
+	//static std::vector<std::tuple<bool, CString>> vecStepInfo;
+	//vecStepInfo.resize(10);//10个预案步骤
+	const auto& btn = m_vecStep[id - IDC_EMPlanStep];
+	btn->EnableWindow(FALSE);
+
+	//时间
+	CTime tmCur = CTime::GetCurrentTime();
+	CString strTime = tmCur.Format(_T("%Y-%m-%d %H:%M:%S"));
+
+	//画时间
+	CClientDC dc(this);
+	Graphics gh(dc.GetSafeHdc());
+	CRect rc;
+	btn->GetWindowRect(&rc);
+	ScreenToClient(&rc);
+
+	FontFamily ff(_T("微软雅黑"));
+	Gdiplus::Font font(&ff, 12, FontStyleRegular, UnitPixel);
+	SolidBrush sbrText(Color::Black);
+	PointF pF((rc.right + 10) * 1.0f, (rc.top + 15) * 1.0f);
+
+	gh.DrawString(strTime, -1, &font, pF, &sbrText);
+
+	//预案执行信息传给父窗口保存
+	/*vecStepInfo[id - IDC_EMPlanStep] = { true, strTmp };
+	::SetWindowLongPtr(m_pParent->GetSafeHwnd(), GWLP_USERDATA, (LONG_PTR)&vecStepInfo);*/
+
+	CString str;
+	GetDlgItem(id)->GetWindowText(str);
+	
+	CString str2;
+	str2 = m_strCurPlanName + _T("：") + str;
+	//记录日志
+	m_oStg->AddApplyActionLog(m_nApplyID, str2);
+
+}
 
 BOOL CEmergencyPlanDialog::PreTranslateMessage(MSG* pMsg)
 {
@@ -233,13 +261,6 @@ BOOL CEmergencyPlanDialog::OnTtnNeedText(UINT id, NMHDR * pNMHDR, LRESULT * pRes
 		}
 		
 		bRet = TRUE;
-		//if (nID)
-		//{
-		//	_stprintf_s(pTTT->szText, _countof(pTTT->szText),
-		//		_T("Control ID = %d"), nID);
-		//	pTTT->hinst = AfxGetResourceHandle();
-		//	bRet = TRUE;
-		//}
 	}
 
 	*pResult = 0;
@@ -292,6 +313,7 @@ void CEmergencyPlanDialog::OnOtherEMPlanSelchange()
 {
 	int nSel = m_oOtherLB->GetCurSel();
 	std::shared_ptr<stEmergPlan>* st = (std::shared_ptr<stEmergPlan>*)m_oOtherLB->GetItemData(nSel);
+	m_strCurPlanName = (*st)->strPlanName;
 	DrawEMPlanStep(*st);
 }
 

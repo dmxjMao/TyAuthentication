@@ -28,6 +28,8 @@
 stVideoInfo g_stVideInfo;
 
 namespace {
+	#define TM_UploadLog 1 //上传日志
+
 	using std::vector;
 	using std::shared_ptr;
 	using std::make_shared;
@@ -77,14 +79,11 @@ CSelfServiceBankClientDlg::CSelfServiceBankClientDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(IDD_SELFSERVICEBANKCLIENT_DIALOG, pParent)
 {
 	//
-	
-	
-	
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 
 	m_vecApplyRecordDlg.resize(cstnApplyRecordCnt);
 	for (int i = 0; i < cstnApplyRecordCnt; ++i) {
-		m_vecApplyRecordDlg[i] = make_shared<CApplyRecordDlg>(i, this);
+		m_vecApplyRecordDlg[i] = make_shared<CApplyRecordDlg>(i, this, m_oStg);
 	}
 
 	m_oLogDlg = make_shared<CLogDialog>();
@@ -121,6 +120,7 @@ BEGIN_MESSAGE_MAP(CSelfServiceBankClientDlg, CDialogEx)
 	ON_WM_LBUTTONDOWN()
 	ON_BN_CLICKED(IDC_BUTTON1, &CSelfServiceBankClientDlg::OnBnClickedButton1)
 	ON_STN_DBLCLK(IDC_demoVideo, &CSelfServiceBankClientDlg::OnDblclkDemovideo)
+	ON_WM_TIMER()
 END_MESSAGE_MAP()
 
 
@@ -214,7 +214,6 @@ BOOL CSelfServiceBankClientDlg::OnInitDialog()
 #ifdef DEBUG
 	//demo视频
 	m_demoVideo.SetWindowPos(0, m_rcRecord.left + 10, m_rcRecord.top + 100, 200, 200, SWP_NOZORDER);
-
 #endif // DEBUG
 
 	//初始化消息服务，因为界面元素可能是一个观察者，所以要等界面初始化完成
@@ -224,6 +223,8 @@ BOOL CSelfServiceBankClientDlg::OnInitDialog()
 	//获取历史申请记录并显示
 	GetHistoryApplyAndDisplay();
 	
+	//每3分钟上传一次日志
+	SetTimer(TM_UploadLog, 3 * 60 * 1000, 0);
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -287,47 +288,9 @@ void CSelfServiceBankClientDlg::OnPaint()
 	//	gh.DrawString(_T("现在没有申请认证信息！"), -1, &fontTip1, rcGdiF, &sf, &sbrText);
 	//}
 
-
-#ifdef _DEBUG
-
-	//CMyButton1 btn1;
-	//btn1.Create(_T("BTN1"), WS_CHILD | WS_VISIBLE | BS_OWNERDRAW,
-	//	CRect(0, 0, 0, 0), this, 123);
-	//btn1.SetUICfg("underline,0");
-	//btn1.SetWindowPos(nullptr, m_rcList.left, m_rcList.top, m_rcList.Width(), m_rcList.Width(), SWP_NOZORDER);
-
-	//btn1.ShowWindow(SW_NORMAL);
-#endif // _DEBUG
-
-	//if (IsIconic())
-	//{
-	//	CPaintDC dc(this); // device context for painting
-
-	//	SendMessage(WM_ICONERASEBKGND, reinterpret_cast<WPARAM>(dc.GetSafeHdc()), 0);
-
-	//	// Center icon in client rectangle
-	//	int cxIcon = GetSystemMetrics(SM_CXICON);
-	//	int cyIcon = GetSystemMetrics(SM_CYICON);
-	//	CRect rect;
-	//	GetClientRect(&rect);
-	//	int x = (rect.Width() - cxIcon + 1) / 2;
-	//	int y = (rect.Height() - cyIcon + 1) / 2;
-
-	//	// Draw the icon
-	//	dc.DrawIcon(x, y, m_hIcon);
-	//}
-	//else
-	//{
-	//	CDialogEx::OnPaint();
-	//}
 }
 
-// The system calls this function to obtain the cursor to display while the user drags
-//  the minimized window.
-//HCURSOR CSelfServiceBankClientDlg::OnQueryDragIcon()
-//{
-//	return static_cast<HCURSOR>(m_hIcon);
-//}
+
 
 
 void CSelfServiceBankClientDlg::OnStnClickedClosewindow()
@@ -356,13 +319,18 @@ void CSelfServiceBankClientDlg::GetHistoryApplyAndDisplay()
 	m_dwApplyID = m_oStg->GetApplyID();
 
 	//读取stg，显示历史记录，前N条（今天，昨天，。。。不同的分类如何做？）
-	vector<stApplyInfo> vecApplyLog;
-	m_oStg->GetRecentNRecord(100, vecApplyLog);
 
-	for (const auto& stLog : vecApplyLog) {
-		//auto& sp = make_shared<stApplyInfo>();
-
-		//InsertApplyInfo
+	int iBegin = 0, iCnt = 0; //开始获取记录的索引，获取条数
+	WORD nCnt = 50;//获取近50条
+	if (m_dwApplyID < nCnt)
+		iBegin = 0, iCnt = m_dwApplyID;
+	else
+		iBegin = m_dwApplyID - 100, iCnt = 100;
+	
+	for (int i = 0; i < iCnt; ++i) {
+		shared_ptr<stApplyInfo> sp = make_shared<stApplyInfo>();
+		if(m_oStg->GetApplyRecord(i, sp))
+			InsertApplyInfo(sp);
 	}
 	
 }
@@ -464,10 +432,6 @@ void CSelfServiceBankClientDlg::Update(bool bOK, DWORD dwType, DWORD dwMsgID, PB
 			(this->*pfun)(pMsg, dwMsgID, nMsgLen);
 		}
 	}
-	//else {
-	//	extern std::map<DWORD, TCHAR*> g_mapZCMsgErrInfo;
-	//	theApp.WriteLog(error, g_mapZCMsgErrInfo[dwType]);
-	//}
 }
 
 
@@ -745,7 +709,12 @@ bool CSelfServiceBankClientDlg::CreateApplyInfo(const T_TRANSMITALARMINFO& stAut
 	spApplyInfo->stPersonInfo = std::make_shared<stApplyPersonInfo>();
 	auto& spApplyPersonInfo = spApplyInfo->stPersonInfo;
 
-	spApplyInfo->nApplyID = ++m_dwApplyID % 10000; 
+	if (++m_dwApplyID >= theApp.m_oGobal->cstnMaxApplyLogCnt) {
+		//上传一波日志
+		m_dwApplyID = 1;
+		m_oStg->UploadApplyLog(true);
+	}
+	spApplyInfo->nApplyID = m_dwApplyID % theApp.m_oGobal->cstnMaxApplyLogCnt; 
 	spApplyInfo->nLocal = nLocal;//本地or远程认证
 	spApplyInfo->nImportance = pHostInfo->nCtrlLevel;//管控等级
 	spApplyInfo->nDevID = stAuthInfo.nDevNumber;//刷卡设备id
@@ -780,4 +749,13 @@ bool CSelfServiceBankClientDlg::CreateApplyInfo(const T_TRANSMITALARMINFO& stAut
 	m_oStg->WriteApplyLog(spApplyInfo);
 
 	return true;
+}
+
+void CSelfServiceBankClientDlg::OnTimer(UINT_PTR nIDEvent)
+{
+	if (TM_UploadLog == nIDEvent) {
+		m_oStg->UploadApplyLog();
+	}
+
+	__super::OnTimer(nIDEvent);
 }

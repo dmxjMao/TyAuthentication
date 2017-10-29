@@ -161,6 +161,8 @@ public:
 	//SolidBrush* cstSolidBrushText = 0;  Clone返回的是Brush*
 	//static FontFamily cstFontFamily = (_T("微软雅黑"));
 
+	const WORD cstnMaxApplyLogCnt = 200;//本地最多保留多少条申请日志
+
 public:
 	CGobalVariable();
 	~CGobalVariable();

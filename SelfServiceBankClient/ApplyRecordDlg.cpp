@@ -94,11 +94,12 @@ void __stdcall RealPlayDataCallBack(long lHandle, DWORD dwDataType, BYTE *pBuffe
 
 IMPLEMENT_DYNAMIC(CApplyRecordDlg, CDialogEx)
 
-CApplyRecordDlg::CApplyRecordDlg(int nIdx, CSelfServiceBankClientDlg* pDlg, CWnd* pParent /*=NULL*/)
-	: m_nIdx(nIdx), m_oMediator(pDlg), CDialogEx(IDD_ApplyRecordDlg, pParent)
+CApplyRecordDlg::CApplyRecordDlg(int nIdx, CSelfServiceBankClientDlg* pDlg,
+	shared_ptr<CStgOperator>& pStg, CWnd* pParent /*=NULL*/)
+	: m_nIdx(nIdx), m_oMediator(pDlg), m_oStg(pStg), CDialogEx(IDD_ApplyRecordDlg, pParent)
 {
 	//m_oStg = make_shared<CStgOperator>();
-
+	//m_oStg(pStg) 这句有问题，因为子dlg比父dlg先构造，换成引用
 	m_oPersonInfo = make_shared<CMyListCtrl1>();
 	m_oPicDoor = make_shared<CMyStatic1>();
 	
@@ -159,6 +160,7 @@ BEGIN_MESSAGE_MAP(CApplyRecordDlg, CDialogEx)
 	ON_STN_CLICKED(IDC_Lock, &CApplyRecordDlg::OnStnClickedLock)
 	ON_STN_CLICKED(IDC_RefuseOpen, &CApplyRecordDlg::OnStnClickedRefuseopen)
 	ON_STN_CLICKED(IDC_Confirm, &CApplyRecordDlg::OnStnClickedConfirm)
+	ON_STN_CLICKED(IDC_Grant, &CApplyRecordDlg::OnStnClickedGrant)
 END_MESSAGE_MAP()
 
 
@@ -373,15 +375,9 @@ void CApplyRecordDlg::OnTimer(UINT_PTR nIDEvent)
 
 void CApplyRecordDlg::OnClickedEmergency()
 {
-	
-	/*static vector<stEmergPlan> vecPlan = { 
-		{stEmergPlan(_T("医院洪水预案"), { stEmergPlanStep(1,_T("开门")), stEmergPlanStep(2,_T("关警报，查看停尸间是否有人在睡觉，然后回机房拿消防斧回来砍断水管，最后关门")) })},
-		{ stEmergPlan(_T("火山喷发预案"),{ stEmergPlanStep(1,_T("扯下窗帘")), stEmergPlanStep(2,_T("裹在头上祈祷")) }) }
-	};
+	const auto& stPlan = theApp.GetCtrlPlanInfo(m_stApplyInfo->nImportance);
 
-	static auto sp = std::make_shared<vector<stEmergPlan>>(vecPlan);*/
-
-	CEmergencyPlanDialog dlg(this);
+	CEmergencyPlanDialog dlg(m_stApplyInfo->nApplyID, CString(stPlan->szEMPlanName), m_oStg, this);
 	dlg.DoModal();
 }
 
@@ -530,6 +526,9 @@ void CApplyRecordDlg::OnStnClickedOpen()
 		ZC_MSG_BCBCLIENT_CONTROLACSHOST, m_nIdx, sp.get(), sizeof(T_CONTROLACSHOSTPRARM));
 
 	//反馈消息在主对话框ZCMsgOpenDoor中处理
+
+	//记录日志
+	m_oStg->AddApplyActionLog(m_stApplyInfo->nApplyID, _T("开门"));
 }
 
 
@@ -549,13 +548,15 @@ void CApplyRecordDlg::OnStnClickedLock()
 	CZCMsgManager::Instance()->RequestMsgWithMsgID(ZC_MODULE_BCBCLIENT,
 		ZC_MSG_BCBCLIENT_CONTROLACSHOST, m_nIdx, sp.get(), sizeof(T_CONTROLACSHOSTPRARM));
 
+	//记录日志
+	m_oStg->AddApplyActionLog(m_stApplyInfo->nApplyID, _T("锁门"));
 }
 
 //拒绝开门
 void CApplyRecordDlg::OnStnClickedRefuseopen()
 {
 	//记录日志
-
+	m_oStg->AddApplyActionLog(m_stApplyInfo->nApplyID, _T("拒绝开门"));
 }
 
 
@@ -654,4 +655,11 @@ void CApplyRecordDlg::OnStnClickedConfirm()
 	//已认证和已失效，直接关闭
 	//中介者，各控件之间的关系
 	m_oMediator->DeleteRecord(m_nIdx);
+}
+
+
+void CApplyRecordDlg::OnStnClickedGrant()
+{
+	//记录日志
+	m_oStg->AddApplyActionLog(m_stApplyInfo->nApplyID, _T("申请授权"));
 }

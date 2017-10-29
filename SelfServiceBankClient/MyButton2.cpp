@@ -38,9 +38,9 @@ CMyButton2::~CMyButton2()
 BEGIN_MESSAGE_MAP(CMyButton2, CButton)
 	ON_WM_PAINT()
 	//ON_NOTIFY_EX(TTN_NEEDTEXT, 0, &CMyButton2::OnTtnNeedText)
-	ON_WM_MOUSEMOVE()
-	ON_WM_MOUSEHOVER()
-	ON_WM_MOUSELEAVE()
+	//ON_WM_MOUSEMOVE()
+	//ON_WM_MOUSEHOVER()
+	//ON_WM_MOUSELEAVE()
 END_MESSAGE_MAP()
 
 
@@ -134,43 +134,41 @@ void CMyButton2::DrawItem(LPDRAWITEMSTRUCT /*lpDrawItemStruct*/)
 
 
 
-
-void CMyButton2::OnMouseMove(UINT nFlags, CPoint point)
-{
-	//追踪鼠标悬停消息
-	if (m_bMouseTrack)
-	{
-		m_bMouseTrack = false;
-		TRACKMOUSEEVENT tme;
-		tme.cbSize = sizeof(TRACKMOUSEEVENT);
-		tme.dwFlags = TME_HOVER | TME_LEAVE;
-		//tme.dwHoverTime = HOVER_DEFAULT;  
-		tme.dwHoverTime = 50;
-		tme.hwndTrack = GetSafeHwnd();
-		TrackMouseEvent(&tme);
-
-		//tooltip
-		//m_tt.UpdateTipText(m_str, this);
-	}
-
-	CButton::OnMouseMove(nFlags, point);
-}
-
-
-void CMyButton2::OnMouseHover(UINT nFlags, CPoint point)
-{
-	m_bHover = true;
-	Invalidate();
-
-	CButton::OnMouseHover(nFlags, point);
-}
-
-
-void CMyButton2::OnMouseLeave()
-{
-	m_bMouseTrack = true;
-	m_bHover = false;
-	Invalidate();
-
-	CButton::OnMouseLeave();
-}
+//
+//void CMyButton2::OnMouseMove(UINT nFlags, CPoint point)
+//{
+//	//追踪鼠标悬停消息
+//	if (m_bMouseTrack)
+//	{
+//		m_bMouseTrack = false;
+//		TRACKMOUSEEVENT tme;
+//		tme.cbSize = sizeof(TRACKMOUSEEVENT);
+//		tme.dwFlags = TME_HOVER | TME_LEAVE;
+//		//tme.dwHoverTime = HOVER_DEFAULT;  
+//		tme.dwHoverTime = 50;
+//		tme.hwndTrack = GetSafeHwnd();
+//		TrackMouseEvent(&tme);
+//
+//	}
+//
+//	CButton::OnMouseMove(nFlags, point);
+//}
+//
+//
+//void CMyButton2::OnMouseHover(UINT nFlags, CPoint point)
+//{
+//	m_bHover = true;
+//	Invalidate();
+//
+//	CButton::OnMouseHover(nFlags, point);
+//}
+//
+//
+//void CMyButton2::OnMouseLeave()
+//{
+//	m_bMouseTrack = true;
+//	m_bHover = false;
+//	Invalidate();
+//
+//	CButton::OnMouseLeave();
+//}

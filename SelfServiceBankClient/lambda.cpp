@@ -54,3 +54,9 @@ bool lambda_SortApplyVector(const std::shared_ptr<stApplyInfo>& sp1,
 
 	return sp1->tmApply < sp2->tmApply;
 }
+
+//根据预案名称，查找预案信息
+bool lambda_FindEMPlanByName(const std::shared_ptr<stEmergPlan>& sp, const CString& name)
+{
+	return sp->strPlanName == name;
+}

@@ -28,7 +28,8 @@ class CApplyRecordDlg : public CDialogEx/*, public CZCMsgObserver*/
 	DECLARE_DYNAMIC(CApplyRecordDlg)
 	friend class CSelfServiceBankClientDlg;
 public:
-	CApplyRecordDlg(int nIdx, CSelfServiceBankClientDlg* pDlg, CWnd* pParent = NULL);   // standard constructor
+	CApplyRecordDlg(int nIdx, CSelfServiceBankClientDlg* pDlg,
+		std::shared_ptr<CStgOperator>& pStg, CWnd* pParent = NULL);   // standard constructor
 	//CApplyRecordDlg(const CApplyRecordDlg&) {} //vector<CApplyRecordDlg>需要
 	virtual ~CApplyRecordDlg();
 	//消息通知
@@ -49,7 +50,7 @@ protected:
 	//中介者，复杂的控件通信逻辑交给中介
 	//两种实现：1）Observer；2）直接提供接口；
 	CSelfServiceBankClientDlg* m_oMediator;
-	//std::shared_ptr<CStgOperator> m_oStg = 0;
+	std::shared_ptr<CStgOperator>& m_oStg;
 
 	CStatic m_oVideo1;//视频
 	CStatic m_oVideo2;
@@ -110,4 +111,5 @@ public:
 	afx_msg void OnStnClickedLock();
 	afx_msg void OnStnClickedRefuseopen();
 	afx_msg void OnStnClickedConfirm();
+	afx_msg void OnStnClickedGrant();
 };
